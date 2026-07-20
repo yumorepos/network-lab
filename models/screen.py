@@ -28,6 +28,9 @@ def confidence(row) -> str:
 
 
 def top_risk(row) -> str:
+    if row.get("share_uncertainty"):
+        return ("modeled share exceeds 70% with no nonstop incumbent: "
+                "incomplete competition likely; capped at MONITOR")
     if row["demand_source"] == "modeled":
         return ("gravity x transfer demand estimate; no current O&D truth "
                 "for this market")
@@ -66,7 +69,15 @@ def run(study_id: str) -> pd.DataFrame:
         return "MONITOR"
 
     m["verdict"] = m.apply(verdict, axis=1)
+    # Guard: >70% modeled share with zero nonstop incumbents almost always
+    # means the one-stop reconstruction missed real competition, not that the
+    # market is uncontested. Such markets cannot be emitted as LAUNCH.
+    m["share_uncertainty"] = ((m["proposed_share"] > 0.70)
+                              & (m["n_nonstop_incumbents"] == 0))
+    capped = m["share_uncertainty"] & (m["verdict"] == "LAUNCH")
+    m.loc[capped, "verdict"] = "MONITOR"
     m["confidence"] = m.apply(confidence, axis=1)
+    m.loc[m["share_uncertainty"], "confidence"] = "low"
     m["driver_1"] = ("base margin " + m["margin_pct"].round(1).astype(str)
                      + "% vs hurdle " + str(hurdle) + "%")
     method = m.get("demand_method", m["demand_source"]).fillna(
@@ -85,7 +96,8 @@ def run(study_id: str) -> pd.DataFrame:
             "confidence", "margin_pct", "fare_down_margin", "fuel_down_margin",
             "belf", "load_factor", "proposed_share", "demand_pax_yr",
             "demand_source", "demand_method", "implied_vs_anchor_ratio",
-            "anchor_2018_pax", "n_nonstop_incumbents", "top_competitor",
+            "anchor_2018_pax", "share_uncertainty",
+            "n_nonstop_incumbents", "top_competitor",
             "driver_1", "driver_2", "top_risk", "key_assumptions"]
     out = (m[cols].sort_values(["verdict", "margin_pct"],
                                ascending=[True, False])

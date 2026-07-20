@@ -15,11 +15,15 @@ after the fact.
    changes, exchange-rate swings, ULCC entry/exit) are absorbed, not modeled;
    the factor's IQR is reported everywhere it is used.
 
-3. **No MIDT/OAG.** Competitor connecting itineraries are reconstructed from
-   T-100 segment frequencies (same carrier, 1.30x detour cap, min leg
-   frequency). This overstates connectivity where banks don't align and
-   misses interline/codeshare paths. Direction of error: usually optimistic
-   about competition, i.e. conservative about the proposed service's share.
+3. **No MIDT/OAG.** Competitor connecting itineraries are reconstructed
+   from T-100 segment frequencies (same carrier, corridor within
+   min(nonstop+700mi, 2.0x nonstop), min leg frequency). The wide absolute
+   allowance exists because hub connects run far off great-circle
+   (YYC-Sacramento via Denver is 1.77x). It overstates connectivity where
+   banks don't align and misses interline/codeshare paths. Residual risk on
+   thin markets is handled downstream: any market with modeled share above
+   70% and zero nonstop incumbents is flagged high-uncertainty and capped
+   at MONITOR, never LAUNCH.
 
 4. **DB1B has no transborder fares.** Transborder fares are distance-matched
    US fares times a documented premium assumption (sensitivity-tested in

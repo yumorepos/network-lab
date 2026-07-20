@@ -6,7 +6,7 @@ metro pair we reconstruct what passengers can already fly:
 - Incumbent nonstops: T-100 latest 12 reported months, any carrier, hub
   airport to any airport in the destination metro.
 - Incumbent one-stops: same-carrier segment pairs hub->X and X->dest with a
-  plausible corridor (total distance <= 1.30x nonstop), weekly frequency =
+  plausible corridor (total <= min(nonstop+700mi, 2.0x nonstop)), weekly frequency =
   min of the two legs, elapsed = leg blocks + connect allowance. This is a
   reconstruction from segment frequencies, not observed itineraries - MIDT
   would be the real source and is priced out of a portfolio project; the
@@ -23,8 +23,8 @@ import pandas as pd
 
 from .common import OUTPUTS, assumptions, connect, study
 
-DETOUR_MAX = 1.30
-DETOUR_ABS_MI = 250          # absolute circuity allowance for short markets
+DETOUR_MAX = 2.0             # ratio bound (protects short markets)
+DETOUR_ABS_MI = 700          # absolute detour allowance (hub-connect circuity)
 MPH_CRUISE_FACTOR = 1.15078   # kts -> mph
 
 
@@ -92,10 +92,11 @@ def build_competition(study_id: str) -> pd.DataFrame:
         JOIN cand_dest c ON c.cbsa = d.cbsa
         WHERE l1.origin = '{hub}'
           AND l1.dest != '{hub}'
-          -- circuity: ratio cap for long markets, absolute allowance for
-          -- short ones (real connect detours on <500mi markets exceed 1.3x)
+          -- circuity: hub connects run far off great-circle (YYC-Sacramento
+          -- via Denver is 1.77x). Allow up to nonstop+700mi absolute detour,
+          -- bounded by 2.0x so short markets don't admit absurd paths.
           AND l1.distance_mi + l2.distance_mi
-              <= greatest({DETOUR_MAX} * c.dist_mi, c.dist_mi + {DETOUR_ABS_MI})
+              <= least(c.dist_mi + {DETOUR_ABS_MI}, {DETOUR_MAX} * c.dist_mi)
           AND least(l1.freq_wk, l2.freq_wk) >= 3
     """).df()
     con.close()

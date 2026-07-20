@@ -83,7 +83,7 @@ def validate() -> dict:
                              suffixes=("_1", "_2"))
         if nonstop_dist is not None:
             os_ = os_[os_["distance_mi_1"] + os_["distance_mi_2"]
-                      <= np.maximum(1.30 * nonstop_dist, nonstop_dist + 250)]
+                      <= np.minimum(nonstop_dist + 700, 2.0 * nonstop_dist)]
         prefs: dict[str, float] = {}
         elapsed_all = []
         itins = []
