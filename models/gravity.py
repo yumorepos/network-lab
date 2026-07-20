@@ -69,6 +69,7 @@ def build_market_frame(con, years: tuple[int, int]) -> pd.DataFrame:
           AND od.dist_mi BETWEEN {DIST_RANGE[0]} AND {DIST_RANGE[1]}
           AND da.population > 0 AND db.population > 0
           AND da.income > 0 AND db.income > 0
+        ORDER BY od.cm_a, od.cm_b   -- stable row order => reproducible holdout split
     """).df()
 
 

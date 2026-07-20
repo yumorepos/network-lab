@@ -7,17 +7,17 @@ on the resume is reproducible from `make data && make models`.
 
 - Built an airline route-evaluation platform (Python, DuckDB, statsmodels,
   Streamlit) on fully open data: gravity demand model calibrated on 6,002
-  US markets, transferred to Canada-US markets via a factor anchored to the
+  US markets (2018-19 vintage; 6,092 in the current 2023-24 fit), transferred to Canada-US markets via a factor anchored to the
   discontinued StatCan city-pair survey, with computed totals reconciling to
   published StatCan/BTS figures within 1%.
 - Reconstructed competitive one-stop itineraries from T-100 segment
   frequencies and validated a QSI-lite share model against observed DB1B
-  carrier shares (MAE 6.7 share points), then screened 206 candidate markets
+  carrier shares (MAE 7.0 share points), then screened 206 candidate markets
   across three hub studies into LAUNCH/MONITOR/PASS with 3x3 fare-fuel
   scenario grids.
 - Backtested 48 real 2021-2025 transborder route launches against a
   fixed pre-2022 model and published the honest result: demand percentile
-  does not separate survivors from failures (0.90 vs 0.86 median), even
+  does not separate survivors from failures (0.89 vs 0.86 median), even
   after excluding Lynx's corporate-shutdown casualties: genuine route cuts
   by continuing carriers were also top-decile demand markets - with the
   lookahead limitation disclosed.

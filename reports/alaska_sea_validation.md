@@ -32,7 +32,7 @@ than that.
 | Des Moines-West Des Moines, IA           | PASS      |     -142.682 | 0.807623 |      0.332791 |         0.631397 | observed        |                      0 |
 | El Paso, TX                              | PASS      |     -154.636 | 0.88158  |      0.346211 |         0.321832 | observed        |                      1 |
 | Grand Rapids-Wyoming-Kentwood, MI        | PASS      |     -155.059 | 0.876613 |      0.343691 |         0.538405 | observed        |                      0 |
-| Albany-Schenectady-Troy, NY              | PASS      |     -159.291 | 0.971266 |      0.374585 |         0.533084 | modeled         |                      0 |
+| Albany-Schenectady-Troy, NY              | PASS      |     -156.146 | 0.971266 |      0.379184 |         0.533084 | modeled         |                      0 |
 | Virginia Beach-Chesapeake-Norfolk, VA-NC | PASS      |     -167.58  | 1.00123  |      0.374179 |         0.357052 | observed        |                      0 |
 | Little Rock-North Little Rock-Conway, AR | PASS      |     -178.151 | 0.860618 |      0.309407 |         0.622773 | observed        |                      0 |
 | Fayetteville-Springdale-Rogers, AR       | PASS      |     -182.044 | 0.66967  |      0.237434 |         0.666544 | observed        |                      0 |

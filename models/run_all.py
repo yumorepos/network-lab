@@ -45,7 +45,7 @@ def main() -> int:
                          f"| {b['mean_ape']:.2f} |")
         lines.append("")
     lines += ["## Transfer factor (2018 anchor)", "",
-              f"- pairs: {tf['n_pairs']}, median {tf['median']:.3f}, "
+              f"- pairs: {tf['n_pairs']}, median {tf['median']:.2f}, "
               f"IQR [{tf['iqr'][0]:.2f}, {tf['iqr'][1]:.2f}], "
               f"range [{tf['min']:.2f}, {tf['max']:.2f}]",
               f"- per-hub medians: "

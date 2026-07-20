@@ -14,12 +14,12 @@
   1.16. Market-specific evidence beats the hub-median
   gravity transfer wherever it exists.
 - Gravity cross-check: the gravity x transfer path would have said
-  140,809 pax/yr, i.e.
-  2.09x the anchor-based estimate. That ratio
+  141,351 pax/yr, i.e.
+  2.10x the anchor-based estimate. That ratio
   is printed so a divergence from the last observed actual is never
   invisible. (Transfer factor context: hub median
-  1.26, national median 0.80, IQR
-  [0.53, 1.99].)
+  1.28, national median 0.82, IQR
+  [0.55, 2.04].)
 
 ## Competition (reconstructed from T-100; no MIDT)
 | carrier   | itin_type   |   freq_wk |   elapsed_h |

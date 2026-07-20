@@ -22,16 +22,16 @@ proof: Porter at Toronto Pearson (YYZ).
   1%** nationally and at YYZ/YVR/YYC/YUL (relationship derived from
   definitions before comparing; see `docs/reconciliation.md`).
 - Transfer factor anchored to the discontinued 2018 StatCan city-pair
-  survey: **median 0.83, IQR [0.56, 2.10]** across 87 pairs - dispersion
+  survey: **median 0.82, IQR [0.55, 2.04]** across 87 pairs - dispersion
   reported everywhere the factor is used.
 - 48 launched-and-resolved transborder routes (2021-2025) backtested with
   a pre-2022 model: survivors and ceased routes both sit in the top decile
-  of modeled demand (**0.90 vs 0.86** median percentile), and the gap barely
-  moves when Lynx's shutdown casualties are excluded (0.90 vs 0.86). Genuine
+  of modeled demand (**0.89 vs 0.86** median percentile), and the gap barely
+  moves when Lynx's shutdown casualties are excluded. Genuine
   route-level cuts by continuing carriers were also top-decile markets:
   demand rank alone does not predict survival, and the report says so
   rather than overclaiming signal.
-- QSI-lite carrier shares vs observed DB1B shares at SEA: **MAE 6.7 share
+- QSI-lite carrier shares vs observed DB1B shares at SEA: **MAE 7.0 share
   points** across 503 market-carrier rows, reported by market structure.
 - Screens that discriminate: with demand anchored to each market's own 2018
   actual where one exists, WestJet YYC resolves all 77 remaining unserved
@@ -46,7 +46,8 @@ proof: Porter at Toronto Pearson (YYZ).
 
 There is no public Canadian domestic O&D, no transborder fare data, and the
 transborder O&D survey froze in 2018. So the gravity demand model is
-calibrated where truth exists (~6,000 US city-market pairs from DB1B),
+calibrated where truth exists (6,002 US city-market pairs in the 2018-19
+vintage; 6,092 in the 2023-24 fit),
 transferred to Canada-US markets with an anchored correction factor, and
 validated end to end on a US hub. Every demand number carries an
 `observed`/`modeled` flag; every non-derived value lives in

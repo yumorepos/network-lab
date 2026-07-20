@@ -11,7 +11,7 @@ market ranks among all in-range US metros from that hub.
 |---|---|---|---|
 | ceased | 21 | 0.86 | 0.86 |
 | never_launched (excluded from N) | 2 | 0.99 | 0.99 |
-| operating | 27 | 0.90 | 0.88 |
+| operating | 27 | 0.89 | 0.88 |
 | unknown (excluded from N) | 11 | 0.93 | 0.91 |
 
 ## Ceased routes by carrier and cause
@@ -25,9 +25,9 @@ market ranks among all in-range US metros from that hub.
 
 | comparison | operating median | ceased median | gap |
 |---|---|---|---|
-| vs all ceased (n=21) | 0.90 | 0.86 | +0.04 |
-| vs ceased excl. Lynx (n=12) | 0.90 | 0.86 | +0.03 |
-| vs Lynx-only ceased (n=9) | 0.90 | 0.86 | +0.04 |
+| vs all ceased (n=21) | 0.89 | 0.86 | +0.03 |
+| vs ceased excl. Lynx (n=12) | 0.89 | 0.86 | +0.03 |
+| vs Lynx-only ceased (n=9) | 0.89 | 0.86 | +0.03 |
 
 ## Reading the result, as pre-committed
 
@@ -53,11 +53,11 @@ Separation is weak in every cut, including the one that matters most: most cease
 | WS | YEG-ORD | 2025 | unknown | 0.98 |
 | WS | YVR-BOS | 2025-06-09 | seasonal | 0.98 |
 | PD | YYZ-MDW | 2024 | operating | 0.98 |
-| F8 | YUL-FLL | 2021-12-15 | unknown | 0.97 |
+| PD | YYZ-PBI | nan | operating | 0.97 |
 | PD | YYZ-MIA | nan | operating | 0.97 |
 | PD | YYZ-FLL | nan | operating | 0.97 |
-| PD | YYZ-PBI | nan | operating | 0.97 |
 | F8 | YKF-FLL | 2021-12-16 | unknown | 0.97 |
+| F8 | YUL-FLL | 2021-12-15 | unknown | 0.96 |
 | WS | YYC-IAD | 2023-06-02 | unknown | 0.95 |
 | WS | YEG-MSP | 2023-06-02 | seasonal | 0.93 |
 | WS | YXE-MSP | 2023-06-19 | unknown | 0.93 |
@@ -69,11 +69,11 @@ Separation is weak in every cut, including the one that matters most: most cease
 | F8 | YYC-AZA | 2021-12-17 | ceased | 0.91 |
 | PD | YYZ-SAN | nan | operating | 0.90 |
 | WS | YYC-AUS | 2022 | operating | 0.90 |
-| Y9 | YYZ-PHX | 2023-10-12 | ceased | 0.90 |
-| PD | YYZ-PHX | 2024-10 | operating | 0.90 |
+| F8 | YYZ-BNA | 2022 | ceased | 0.90 |
 | WS | YVR-DTW | 2024-04-28 | operating | 0.90 |
 | WS | YYC-DTW | 2023-05-26 | seasonal | 0.89 |
-| F8 | YYZ-BNA | 2022 | ceased | 0.89 |
+| PD | YYZ-PHX | 2024-10 | operating | 0.89 |
+| Y9 | YYZ-PHX | 2023-10-12 | ceased | 0.89 |
 | WS | YEG-BNA | 2024-05-02 | seasonal | 0.88 |
 | AC | YVR-BNA | 2025-06 | operating | 0.88 |
 | F8 | YVR-PSP | 2021-12-17 | unknown | 0.86 |
@@ -87,9 +87,9 @@ Separation is weak in every cut, including the one that matters most: most cease
 | F8 | YYC-LAS | 2021-12-16 | ceased | 0.83 |
 | Y9 | YYC-LAS | 2023-02-24 | ceased | 0.83 |
 | F8 | YEG-LAS | 2021-12-16 | ceased | 0.82 |
-| F8 | YKF-SFB | 2021-12-17 | ceased | 0.80 |
 | PD | YYZ-MCO | 2023-11 | operating | 0.80 |
 | Y9 | YYZ-MCO | 2023-01-27 | ceased | 0.80 |
+| F8 | YKF-SFB | 2021-12-17 | ceased | 0.80 |
 | WS | YYC-RDU | 2025-06-09 | operating | 0.79 |
 | F8 | YHZ-SFB | 2021-12-17 | ceased | 0.79 |
 | PD | YYZ-PSP | nan | operating | 0.79 |

@@ -29,20 +29,20 @@ explainability is the requirement here, and every number traces to a source
 or a labeled assumption in one YAML file.
 
 ## Numbers I lead with
-- Share model: MAE 6.7 share points against observed DB1B carrier shares at
+- Share model: MAE 7.0 share points against observed DB1B carrier shares at
   SEA, split by market structure, using the identical machinery that scores
   unserved Canadian candidates.
 - Reconciliation: computed T-100 transborder totals match StatCan published
   enplaned+deplaned within 1% nationally and at YYZ/YVR/YYC/YUL - with the
   expected relationship derived from definitions before comparing.
-- Transfer factor: median 0.83, IQR [0.56, 2.10] across 87 anchored pairs.
+- Transfer factor: median 0.82, IQR [0.55, 2.04] across 87 anchored pairs.
   I report the dispersion because it is the honest cost of transferring a
   US-calibrated model across a border.
 - Gravity holdout: median APE ~0.6 on unseen markets. A three-covariate
   demand model is a screen, not an oracle, and the screen's job is ranking.
 - Backtest: 48 launched-and-resolved transborder routes 2021-2025 scored
   with a pre-2022 model (never-launched and unknown-status rows reported
-  separately). Survivors 0.90 vs ceased 0.86 median demand percentile, and
+  separately). Survivors 0.89 vs ceased 0.86 median demand percentile, and
   excluding Lynx's shutdown casualties barely moves it: most ceased routes
   were genuine cuts by Flair, a continuing carrier, in top-decile leisure
   markets. Demand rank alone does not flag route failure; that needs the
