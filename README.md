@@ -33,14 +33,18 @@ proof: Porter at Toronto Pearson (YYZ).
   rather than overclaiming signal.
 - QSI-lite carrier shares vs observed DB1B shares at SEA: **MAE 7.0 share
   points** across 503 market-carrier rows, reported by market structure.
-- Screens that discriminate: with demand anchored to each market's own 2018
-  actual where one exists, WestJet YYC resolves all 77 remaining unserved
-  candidates to PASS (the viable YYC transborder map is already served -
-  consistent with WestJet pointing its recent transborder growth at Edmonton
-  and Vancouver instead); Porter YYZ finds 2 LAUNCH (New York, Boston, both
-  anchor-backed) among 80; Alaska SEA's uniform PASS is a fixed-gauge
-  result (daily 178-seat mainline into thin markets), stated as such, not
-  claimed as hub saturation.
+- Screens that discriminate, each market right-sized across 3x/7x/14x weekly:
+  **Porter YYZ surfaces 5 LAUNCH** (Washington, Chicago, Boston, Philadelphia,
+  Atlanta) - all large anchor-backed markets entered at modest share against
+  real incumbents, the low-cost logic of taking a slice of a big market.
+  **WestJet YYC resolves all 76 remaining unserved candidates to PASS**, and
+  it stays PASS at every service level: the viable YYC transborder map is
+  already served, and what is left is either below the 2018 survey's own
+  4,000-passenger floor or held by a US network carrier's hub (Dallas at 23%
+  share vs American). That is the honest finding, consistent with WestJet
+  directing its recent transborder growth to Edmonton and Vancouver. Alaska
+  SEA stays all-PASS after right-sizing (lowering frequency did not rescue
+  thin mainline markets), a negative check on the machinery.
 
 ## Design in one paragraph
 
