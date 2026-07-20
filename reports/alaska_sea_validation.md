@@ -1,41 +1,46 @@
 # Alaska SEA: end-to-end validation study
 
-US domestic is the one arena where demand, share, and fare are all observed,
-so the full chain runs here with truth available at every stage.
+US domestic is the one arena where demand, share, and fare are all observed.
+The ground-truth check that matters is the share model: the same QSI-lite
+machinery that scores Canadian candidates, scored here against observed DB1B
+carrier shares.
 
-- Candidates screened: 49 (46 with observed DB1B demand).
-- Verdicts: {'PASS': 49}.
-- Share-model accuracy vs observed DB1B carrier shares is reported in
-  docs/validation.md (MAE by market structure); the same QSI-lite machinery
-  scores the Canadian studies.
-- Demand for screened candidates is observed; the gravity model is only used
-  where DB1B is too thin, and every such row is flagged `modeled`.
+## The ground-truth result
 
-## The finding
+- **Share model MAE: 7.0 share points** across 503 market-carrier
+  rows at SEA, reported by market structure in docs/validation.md.
+- Demand for screened candidates is observed DB1B (46 of 49
+  markets); every gravity-filled row is flagged `modeled`.
 
-Every remaining unserved candidate PASSES at daily 737-9 gauge. That is not a
-failure of the screen - it is agreement with Alaska's revealed strategy: a
-mature hub where everything worth serving at mainline gauge daily is already
-served, and what remains needs smaller gauge or lower frequency than this
-study's config proposes. A screen that green-lights nothing at a saturated
-hub is behaving correctly, and that is exactly the kind of negative result
-that makes the positive results at YYC credible.
+## Reading the all-PASS screen honestly
+
+All 49 remaining unserved candidates screen PASS. That is largely a
+fixed-gauge artifact, not proof of hub saturation: this study evaluates one
+schedule shape (daily, 178-seat mainline), and the remaining unserved SEA
+markets are thin enough that a daily 737-9 loses money by construction. A
+frequency-and-gauge optimization step (out of scope here, listed as an
+extension) would evaluate 4x-weekly or regional-gauge service and would
+plausibly turn some of these into viable candidates. What the uniform PASS
+does show is that the screen does not invent opportunities at a mature hub
+where the observed network has already taken the markets that fit this
+gauge - a useful negative check on the machinery, stated no more strongly
+than that.
 
 ## Ranked screen (top 15 by margin)
 | metro_name                               | verdict   |   margin_pct |     belf |   load_factor |   proposed_share | demand_source   |   n_nonstop_incumbents |
 |:-----------------------------------------|:----------|-------------:|---------:|--------------:|-----------------:|:----------------|-----------------------:|
-| Des Moines-West Des Moines, IA           | PASS      |     -101.822 | 0.807623 |      0.400167 |         0.759227 | observed        |                      0 |
+| Des Moines-West Des Moines, IA           | PASS      |     -142.682 | 0.807623 |      0.332791 |         0.631397 | observed        |                      0 |
 | El Paso, TX                              | PASS      |     -154.636 | 0.88158  |      0.346211 |         0.321832 | observed        |                      1 |
 | Grand Rapids-Wyoming-Kentwood, MI        | PASS      |     -155.059 | 0.876613 |      0.343691 |         0.538405 | observed        |                      0 |
 | Albany-Schenectady-Troy, NY              | PASS      |     -159.291 | 0.971266 |      0.374585 |         0.533084 | modeled         |                      0 |
-| Fayetteville-Springdale-Rogers, AR       | PASS      |     -162.838 | 0.66967  |      0.254784 |         0.71525  | observed        |                      0 |
 | Virginia Beach-Chesapeake-Norfolk, VA-NC | PASS      |     -167.58  | 1.00123  |      0.374179 |         0.357052 | observed        |                      0 |
-| Memphis, TN-MS-AR                        | PASS      |     -170.767 | 0.913605 |      0.337414 |         0.451222 | observed        |                      0 |
-| Madison, WI                              | PASS      |     -171.162 | 0.819074 |      0.302061 |         0.718472 | observed        |                      0 |
 | Little Rock-North Little Rock-Conway, AR | PASS      |     -178.151 | 0.860618 |      0.309407 |         0.622773 | observed        |                      0 |
-| Rochester, NY                            | PASS      |     -178.157 | 0.979403 |      0.352105 |         0.75692  | observed        |                      0 |
-| Tulsa, OK                                | PASS      |     -202.303 | 0.806142 |      0.266667 |         0.456965 | observed        |                      1 |
-| Louisville/Jefferson County, KY-IN       | PASS      |     -202.343 | 0.917485 |      0.303458 |         0.491664 | observed        |                      0 |
-| Colorado Springs, CO                     | PASS      |     -203.017 | 0.813316 |      0.268406 |         0.694511 | observed        |                      0 |
-| Wichita, KS                              | PASS      |     -204.496 | 0.921646 |      0.302679 |         0.429316 | observed        |                      1 |
+| Fayetteville-Springdale-Rogers, AR       | PASS      |     -182.044 | 0.66967  |      0.237434 |         0.666544 | observed        |                      0 |
+| Madison, WI                              | PASS      |     -186.051 | 0.819074 |      0.286338 |         0.681073 | observed        |                      0 |
+| Rochester, NY                            | PASS      |     -208.062 | 0.979403 |      0.317923 |         0.68344  | observed        |                      0 |
+| Memphis, TN-MS-AR                        | PASS      |     -212.983 | 0.913605 |      0.291903 |         0.39036  | observed        |                      0 |
 | Springfield, MO                          | PASS      |     -215.186 | 0.658658 |      0.208974 |         0.929936 | observed        |                      0 |
+| Syracuse, NY                             | PASS      |     -215.237 | 0.967946 |      0.307054 |         0.599958 | observed        |                      0 |
+| Buffalo-Cheektowaga, NY                  | PASS      |     -215.677 | 1.03163  |      0.326799 |         0.556478 | observed        |                      0 |
+| Richmond, VA                             | PASS      |     -235.61  | 1.00744  |      0.300183 |         0.425217 | observed        |                      0 |
+| Wichita, KS                              | PASS      |     -235.873 | 0.921646 |      0.274404 |         0.389211 | observed        |                      1 |

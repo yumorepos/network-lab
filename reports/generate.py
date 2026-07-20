@@ -1,11 +1,10 @@
 """Generate the written deliverables from computed outputs.
 
-- WestJet YYC: full business cases for the top three screened candidates.
-- Alaska SEA: validation report (chain vs observed truth).
+- WestJet YYC: business cases for the top three anchor-backed candidates
+  (markets with their own 2018 StatCan actual), whatever their verdict.
+- Alaska SEA: validation report led by the share-model ground-truth check.
 - Porter YYZ: portability demonstration, ranked table only.
-Markdown by design (the plan allows md when no HTML-to-PDF tool is present;
-none is installed here, and md renders on GitHub where reviewers actually
-look).
+Markdown by design (renders on GitHub where reviewers actually look).
 """
 from __future__ import annotations
 
@@ -37,34 +36,40 @@ def westjet_cases(top_n: int = 3) -> list[str]:
     dem = pd.read_parquet(OUTPUTS / "demand_westjet_yyc.parquet")
     comp = pd.read_parquet(OUTPUTS / "competition_westjet_yyc.parquet")
     tf = yaml.safe_load((OUTPUTS / "transfer_factor.yaml").read_text())
-    ranked = scr.sort_values(["margin_pct"], ascending=False)
-    picks = ranked.head(top_n)
+    anchored = scr[scr["demand_method"] == "anchor_x_growth"]
+    picks = anchored.sort_values("margin_pct", ascending=False).head(top_n)
     files = []
     for _, r in picks.iterrows():
         d = dem[dem["metro_name"] == r["metro_name"]].iloc[0]
         c = comp[comp["cbsa"] == d["cbsa"]]
         slug = (r["metro_name"].split(",")[0].lower()
                 .replace(" ", "_").replace("-", "_").replace(".", ""))
-        anchor = (f"{d['anchor_2018_pax']:,.0f} pax in the 2018 StatCan "
-                  "survey (frozen table 23-10-0256)"
-                  if pd.notna(d.get("anchor_2018_pax"))
-                  else "not separately reported in the 2018 survey")
+        flag = ("\n**Share-uncertainty flag:** modeled share exceeds 70% with "
+                "no nonstop incumbent; competition reconstruction is likely "
+                "incomplete. Verdict capped at MONITOR.\n"
+                if r.get("share_uncertainty") else "")
         md = f"""# Business case: YYC - {r['metro_name']} (WestJet 737-8)
 
 **Verdict: {r['verdict']}** (confidence: {r['confidence']})
-
+{flag}
 ## The two numbers that drive this
 1. {r['driver_1']}
 2. {r['driver_2']}
 
 ## Market
 - Distance {r['dist_mi']:.0f} mi, proposed 7x weekly, 174 seats.
-- Modeled O&D demand: {d['demand_pax_yr']:,.0f} pax/yr - **modeled, not
-  observed**: gravity (US-calibrated) x transfer factor
-  {d['transfer_factor']:.2f} (hub median; national median {tf['median']:.2f},
-  IQR [{tf['iqr'][0]:.2f}, {tf['iqr'][1]:.2f}]) x T-100 corridor growth
-  {d['t100_growth']:.2f}.
-- 2018 anchor cross-check: {anchor}.
+- Demand {d['demand_pax_yr']:,.0f} pax/yr, method **{d['demand_method']}**:
+  the market's own 2018 StatCan actual ({d['anchor_2018_pax']:,.0f} pax,
+  frozen table 23-10-0256) times T-100 corridor growth
+  {d['t100_growth']:.2f}. Market-specific evidence beats the hub-median
+  gravity transfer wherever it exists.
+- Gravity cross-check: the gravity x transfer path would have said
+  {d['gravity_implied_pax']:,.0f} pax/yr, i.e.
+  {d['implied_vs_anchor_ratio']:.2f}x the anchor-based estimate. That ratio
+  is printed so a divergence from the last observed actual is never
+  invisible. (Transfer factor context: hub median
+  {d['transfer_factor']:.2f}, national median {tf['median']:.2f}, IQR
+  [{tf['iqr'][0]:.2f}, {tf['iqr'][1]:.2f}].)
 
 ## Competition (reconstructed from T-100; no MIDT)
 {c[['carrier','itin_type','freq_wk','elapsed_h']].sort_values(['itin_type','freq_wk'], ascending=[True,False]).head(8).to_markdown(index=False) if len(c) else 'No incumbent nonstop or qualifying one-stop found. Treat the share estimate skeptically.'}
@@ -96,28 +101,35 @@ indirect burden (derived from Form 41), so the hurdle is fully-allocated.
 def alaska_validation() -> str:
     scr = pd.read_parquet(OUTPUTS / "screen_alaska_sea.parquet")
     obs = scr[scr["demand_source"] == "observed"]
+    sv = pd.read_parquet(OUTPUTS / "share_validation.parquet")
+    mae = 100 * sv["abs_err"].mean()
     md = f"""# Alaska SEA: end-to-end validation study
 
-US domestic is the one arena where demand, share, and fare are all observed,
-so the full chain runs here with truth available at every stage.
+US domestic is the one arena where demand, share, and fare are all observed.
+The ground-truth check that matters is the share model: the same QSI-lite
+machinery that scores Canadian candidates, scored here against observed DB1B
+carrier shares.
 
-- Candidates screened: {len(scr)} ({len(obs)} with observed DB1B demand).
-- Verdicts: {scr['verdict'].value_counts().to_dict()}.
-- Share-model accuracy vs observed DB1B carrier shares is reported in
-  docs/validation.md (MAE by market structure); the same QSI-lite machinery
-  scores the Canadian studies.
-- Demand for screened candidates is observed; the gravity model is only used
-  where DB1B is too thin, and every such row is flagged `modeled`.
+## The ground-truth result
 
-## The finding
+- **Share model MAE: {mae:.1f} share points** across {len(sv)} market-carrier
+  rows at SEA, reported by market structure in docs/validation.md.
+- Demand for screened candidates is observed DB1B ({len(obs)} of {len(scr)}
+  markets); every gravity-filled row is flagged `modeled`.
 
-Every remaining unserved candidate PASSES at daily 737-9 gauge. That is not a
-failure of the screen - it is agreement with Alaska's revealed strategy: a
-mature hub where everything worth serving at mainline gauge daily is already
-served, and what remains needs smaller gauge or lower frequency than this
-study's config proposes. A screen that green-lights nothing at a saturated
-hub is behaving correctly, and that is exactly the kind of negative result
-that makes the positive results at YYC credible.
+## Reading the all-PASS screen honestly
+
+All {len(scr)} remaining unserved candidates screen PASS. That is largely a
+fixed-gauge artifact, not proof of hub saturation: this study evaluates one
+schedule shape (daily, 178-seat mainline), and the remaining unserved SEA
+markets are thin enough that a daily 737-9 loses money by construction. A
+frequency-and-gauge optimization step (out of scope here, listed as an
+extension) would evaluate 4x-weekly or regional-gauge service and would
+plausibly turn some of these into viable candidates. What the uniform PASS
+does show is that the screen does not invent opportunities at a mature hub
+where the observed network has already taken the markets that fit this
+gauge - a useful negative check on the machinery, stated no more strongly
+than that.
 
 ## Ranked screen (top 15 by margin)
 {scr.head(15)[['metro_name','verdict','margin_pct','belf','load_factor','proposed_share','demand_source','n_nonstop_incumbents']].to_markdown(index=False)}
@@ -137,7 +149,7 @@ Ranked table only by design; no full business cases.
 
 Verdicts: {scr['verdict'].value_counts().to_dict()}
 
-{scr.head(20)[['metro_name','verdict','margin_pct','belf','proposed_share','demand_pax_yr','n_nonstop_incumbents','top_competitor']].to_markdown(index=False)}
+{scr.head(20)[['metro_name','verdict','margin_pct','belf','proposed_share','share_uncertainty','demand_method','demand_pax_yr','n_nonstop_incumbents','top_competitor']].to_markdown(index=False)}
 """
     path = RPT / "porter_yyz_portability.md"
     path.write_text(md)
