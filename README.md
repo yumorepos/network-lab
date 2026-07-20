@@ -62,14 +62,16 @@ one-stops are reconstructed from T-100 segment frequencies first.
 ## Run it
 
 ```
-make setup   # venv + dependencies
-make data    # download all sources, build DuckDB warehouse, reconcile (~30-60 min)
-make models  # demand -> share -> economics -> screens for all three studies
-make test    # sanity tests
+make setup   # venv + dependencies              (~1-2 min)
+make data    # download sources, build warehouse, reconcile (~50 min from scratch, ~1 s cached)
+make all     # models + backtest + reports       (~40 s)
+make test    # sanity + consistency tests         (~4 s)
 make app     # Streamlit dashboard (reads precomputed outputs)
-python -m backtest.run_backtest   # launch backtest
-python -m reports.generate        # business cases + validation reports
 ```
+
+Individual stages: `make models` (~35 s), `make backtest` (~5 s), `make
+reports` (~2 s). Deploy steps in [docs/deploy.md](docs/deploy.md); demo
+storyboard in [docs/demo_script.md](docs/demo_script.md).
 
 No API keys required. If you have a Census key, `CENSUS_API_KEY=... make
 data` upgrades US income to ACS median household income (documented fallback

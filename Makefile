@@ -1,7 +1,7 @@
 PY := .venv/bin/python
 PIP := .venv/bin/pip
 
-.PHONY: setup data marts reconcile models screen app test clean-data
+.PHONY: setup data marts reconcile models screen backtest reports app test clean-data all
 
 setup:
 	python3 -m venv .venv
@@ -27,6 +27,17 @@ models:
 
 screen:
 	$(PY) -m models.screen
+
+# Launch backtest against the register (single pre-2022 model, disclosed lookahead).
+backtest:
+	$(PY) -m backtest.run_backtest
+
+# WestJet route evaluations, Alaska/Porter reports, two YYC-LAS post-mortems.
+reports:
+	$(PY) -m reports.generate
+
+# Everything after `make data`: models, backtest, reports.
+all: models backtest reports
 
 app:
 	.venv/bin/streamlit run app/streamlit_app.py
