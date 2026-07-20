@@ -78,10 +78,10 @@ def build() -> None:
     log("dim_carrier")
     con.execute(f"""
         CREATE OR REPLACE TABLE dim_carrier AS
-        SELECT UNIQUE_CARRIER_CODE AS carrier,
+        SELECT UNIQUE_CARRIER AS carrier,
                any_value(UNIQUE_CARRIER_NAME) AS carrier_name
         FROM read_parquet('{p}/lookups/carrier_decode.parquet')
-        GROUP BY UNIQUE_CARRIER_CODE
+        GROUP BY UNIQUE_CARRIER
     """)
 
     log("fact_segment")
@@ -90,14 +90,17 @@ def build() -> None:
         SELECT * FROM read_parquet('{p}/t100/t100_*.parquet')
     """)
 
-    log("fact_od_market (DB1B, sample expanded x10)")
-    con.execute(f"""
-        CREATE OR REPLACE TABLE fact_od_market AS
-        SELECT year, quarter, origin, origin_cm, dest, dest_cm, tk_carrier,
-               passengers * 10.0 AS passengers_est,   -- 10% sample, expanded once here
-               mkt_fare, mkt_distance, nonstop_miles, coupons
-        FROM read_parquet('{p}/db1b/db1b_*.parquet')
-    """)
+    if list((p / "db1b").glob("db1b_*.parquet")):
+        log("fact_od_market (DB1B, sample expanded x10)")
+        con.execute(f"""
+            CREATE OR REPLACE TABLE fact_od_market AS
+            SELECT year, quarter, origin, origin_cm, dest, dest_cm, tk_carrier,
+                   passengers * 10.0 AS passengers_est,   -- 10% sample, expanded once here
+                   mkt_fare, mkt_distance, nonstop_miles, coupons
+            FROM read_parquet('{p}/db1b/db1b_*.parquet')
+        """)
+    else:
+        log("fact_od_market skipped: no DB1B parquet yet")
 
     log("fact_costs (Form 41 P-5.2, P-1.2)")
     con.execute(f"""
@@ -126,21 +129,15 @@ def build() -> None:
         _generic_statcan(con, p, tid, f"statcan_{tid}")
 
     log("dim_metro")
-    # US: CBSA population/income (ACS or BEA fallback) + GDP (BEA).
-    gdp_cols = [r[0] for r in con.execute(
-        f"DESCRIBE SELECT * FROM read_parquet('{p}/bea/metro_gdp.parquet')"
-    ).fetchall()]
-    gdp_year = sorted(c for c in gdp_cols if c[:2] == "20" and c.isdigit())[-1]
+    # US: CBSA population/income + GDP, both county-aggregated upstream.
     con.execute(f"""
         CREATE OR REPLACE TABLE dim_metro_us AS
-        WITH gdp AS (
-          SELECT cbsa, try_cast("{gdp_year}" AS DOUBLE) AS gdp_kusd
-          FROM read_parquet('{p}/bea/metro_gdp.parquet')
-        )
         SELECT a.cbsa, a.name, a.population, a.income, a.income_measure,
                g.gdp_kusd
         FROM read_parquet('{p}/census/metro_pop_income.parquet') a
-        LEFT JOIN gdp g USING (cbsa)
+        LEFT JOIN (SELECT cbsa, gdp_kusd
+                   FROM read_parquet('{p}/bea/metro_gdp.parquet')) g
+        USING (cbsa)
     """)
     if _exists(p, "statcan/sc_17100135.parquet"):
         sc_cols = [r[0] for r in con.execute(
@@ -160,12 +157,18 @@ def build() -> None:
         """)
 
     con.execute("CREATE OR REPLACE TABLE ca_airport_cma AS SELECT * FROM (VALUES "
-                + ",".join(f"('{k}','{v}')" for k, v in CA_AIRPORT_CMA.items())
+                + ",".join("('{}','{}')".format(k, v.replace("'", "''"))
+                           for k, v in CA_AIRPORT_CMA.items())
                 + ") t(iata_code, cma_name)")
 
+    from warehouse.metro_map import build_map
+    build_map(con)
+
+    have = [r[0] for r in con.execute("SHOW TABLES").fetchall()]
     counts = {t: con.execute(f"SELECT count(*) FROM {t}").fetchone()[0]
               for t in ["dim_airport", "dim_carrier", "fact_segment",
-                        "fact_od_market", "fact_costs", "fact_fuel"]}
+                        "fact_od_market", "fact_costs", "fact_fuel"]
+              if t in have}
     log(f"warehouse built: {counts}")
     con.close()
 

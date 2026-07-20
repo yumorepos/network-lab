@@ -94,7 +94,7 @@ def acs_or_bea() -> None:
         src = "ACS 2023 1-year"
     else:
         d = delineation()
-        metro = d[d["kind"].str.startswith("Metropolitan", na=False)]
+        metro = d.dropna(subset=["kind"])   # metro + micro CBSAs
         inc, latest = _county_bea(BEA_INC_URL, "CAINC1.zip")
         inc["val"] = pd.to_numeric(inc[latest], errors="coerce")
         pi = inc[inc["LineCode"] == "1"].set_index("fips")["val"]     # $000s
@@ -122,7 +122,7 @@ def bea_gdp() -> None:
         log(f"cached: {pq.name}")
         return
     d = delineation()
-    metro = d[d["kind"].str.startswith("Metropolitan", na=False)]
+    metro = d.dropna(subset=["kind"])   # metro + micro CBSAs
     gdp, latest = _county_bea(BEA_GDP_URL, "CAGDP2.zip")
     gdp = gdp[gdp["LineCode"] == "1"].copy()   # all-industry total, $000s
     gdp["val"] = pd.to_numeric(gdp[latest], errors="coerce")
