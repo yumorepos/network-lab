@@ -173,6 +173,8 @@ one.
 
 
 if __name__ == "__main__":
+    from backtest.postmortem import write as postmortems
     print(westjet_cases())
     print(alaska_validation())
     print(porter_table())
+    print(postmortems())
