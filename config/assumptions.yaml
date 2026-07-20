@@ -22,13 +22,18 @@ porter_cost_comparator_carrier:
   fallback_pct: 15
 
 airport_fee_proxy:
-  value: null                    # populate from NAV Canada published unit rates + airport landing/terminal schedules where fetchable
-  source: NAV Canada charging framework; airport authority published rate schedules
-  rationale: "Canadian airport + navigation operating cost proxy per departure and per seat"
+  per_departure_usd: 1400
+  per_seat_usd: 18
+  source: "Order-of-magnitude from the published NAV Canada charging framework
+    (terminal + enroute for a ~80t narrowbody) and public airport landing/
+    terminal rate schedules (YYC, GTAA); NOT a computed tariff"
+  rationale: "One flat charge covering navigation plus airport landing/terminal
+    per departure and per-seat handling, applied uniformly to every candidate.
+    The fee delta between specific airports does not flip launch-vs-pass at
+    this margin scale; the +/-30% sensitivity carries that claim and the
+    business cases surface it"
   confidence: low
   sensitivity: {low_pct: -30, high_pct: 30}
-  fallback: "If per-airport rates are not fetchable, apply one documented flat
-    per-departure + per-seat charge uniformly and mark low confidence"
 
 catchment_radius_km:
   value: 150

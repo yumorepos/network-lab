@@ -150,9 +150,13 @@ def build() -> None:
             extra += " AND \"Age group\" = 'All ages'"
         con.execute(f"""
             CREATE OR REPLACE TABLE dim_metro_ca AS
+            WITH latest AS (
+              SELECT max(REF_DATE) AS y
+              FROM read_parquet('{p}/statcan/sc_17100135.parquet')
+            )
             SELECT GEO AS cma, max(try_cast(VALUE AS DOUBLE)) AS population
-            FROM read_parquet('{p}/statcan/sc_17100135.parquet')
-            WHERE REF_DATE LIKE '2023%'{extra}
+            FROM read_parquet('{p}/statcan/sc_17100135.parquet'), latest
+            WHERE REF_DATE = latest.y AND GEO LIKE '%(CMA)%'{extra}
             GROUP BY GEO
         """)
 
