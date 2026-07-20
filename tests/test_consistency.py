@@ -24,6 +24,23 @@ def test_transfer_median_consistent():
         assert canon in (ROOT / f).read_text(), f"{f} lacks '{canon}'"
 
 
+def test_transfer_consistent_in_progress():
+    """PROGRESS.md drifted to pre-fix transfer numbers once; guard it, and
+    guard against stale values reappearing in any reader-facing doc."""
+    _need(OUT / "transfer_factor.yaml")
+    tf = yaml.safe_load((OUT / "transfer_factor.yaml").read_text())
+    canon = (f"median {tf['median']:.2f}, IQR "
+             f"[{tf['iqr'][0]:.2f}, {tf['iqr'][1]:.2f}]")
+    assert canon in (ROOT / "PROGRESS.md").read_text(), \
+        f"PROGRESS.md lacks '{canon}'"
+    for f in ("PROGRESS.md", "README.md", "docs/validation.md",
+              "docs/interview_story.md"):
+        t = (ROOT / f).read_text()
+        assert "0.56, 2.10" not in t, f"{f} has stale IQR"
+        assert "median 0.83" not in t and "median 0.86" not in t, \
+            f"{f} has stale transfer median"
+
+
 def test_share_mae_consistent():
     _need(OUT / "share_validation.parquet")
     sv = pd.read_parquet(OUT / "share_validation.parquet")

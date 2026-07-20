@@ -9,9 +9,11 @@ market ranks among all in-range US metros from that hub.
 
 | group | n | median pctile | mean pctile |
 |---|---|---|---|
+*(operating folds in still-flying seasonal routes; the status field distinguishes them in launches.csv)*
+
 | ceased | 21 | 0.86 | 0.86 |
 | never_launched (excluded from N) | 2 | 0.99 | 0.99 |
-| operating | 27 | 0.89 | 0.88 |
+| operating + seasonal | 27 | 0.89 | 0.88 |
 | unknown (excluded from N) | 11 | 0.93 | 0.91 |
 
 ## Ceased routes by carrier and cause

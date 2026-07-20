@@ -118,9 +118,13 @@ def report(df: pd.DataFrame) -> str:
               "ceased). Never-launched and unknown-status routes are "
               "reported separately below and are not part of that count.", ""]
     g = sc.groupby("outcome")["pctile"].agg(["median", "mean", "count"])
+    labels = {"operating": "operating + seasonal", "ceased": "ceased"}
     lines += ["| group | n | median pctile | mean pctile |", "|---|---|---|---|"]
+    lines.append("*(operating folds in still-flying seasonal routes; the "
+                 "status field distinguishes them in launches.csv)*")
+    lines.append("")
     for o, r in g.iterrows():
-        label = o if o in ("operating", "ceased") else f"{o} (excluded from N)"
+        label = labels.get(o, f"{o} (excluded from N)")
         lines.append(f"| {label} | {int(r['count'])} | {r['median']:.2f} "
                      f"| {r['mean']:.2f} |")
 
