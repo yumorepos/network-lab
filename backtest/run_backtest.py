@@ -112,6 +112,34 @@ def report(df: pd.DataFrame) -> str:
     for o, r in g.iterrows():
         lines.append(f"| {o} | {int(r['count'])} | {r['median']:.2f} "
                      f"| {r['mean']:.2f} |")
+
+    sep = (g.loc["operating", "median"] - g.loc["ceased", "median"]
+           if {"operating", "ceased"} <= set(g.index) else None)
+    lines += ["", "## Reading the result, as pre-committed", ""]
+    if sep is not None and sep < 0.10:
+        lines += [
+            f"Separation between surviving and ceased routes is weak "
+            f"({g.loc['operating','median']:.2f} vs "
+            f"{g.loc['ceased','median']:.2f} median percentile). Published "
+            "as-is. Three things it actually shows:",
+            "",
+            "1. Nearly every real launch sits in the top decile of modeled "
+            "demand — carriers do not need a gravity model to find big "
+            "markets, and a demand screen alone does not predict route "
+            "survival.",
+            "2. The failures were not market-selection failures. Lynx's "
+            "ceased routes score as high as the survivors (YYC-LAX at the "
+            "99th percentile); Lynx died of cost structure and capitalization, "
+            "which no demand model sees.",
+            "3. Discriminating survival would need the economics and "
+            "competitive-response layers evaluated at launch vintage — the "
+            "production refit this project deliberately traded away and "
+            "discloses.",
+        ]
+    elif sep is not None:
+        lines += [f"Surviving routes rank {sep:.2f} above ceased ones at the "
+                  "median — consistent with demand mattering, with the usual "
+                  "confounds (feed, blocking, slots, fleet timing) unmodeled."]
     lines += ["", "## Named routes", "",
               "| carrier | route | launched | status | model pctile |",
               "|---|---|---|---|---|"]

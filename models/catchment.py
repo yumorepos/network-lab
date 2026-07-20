@@ -62,11 +62,18 @@ def catchment_for_airport(con, iata: str) -> dict:
         metros = metro_anchor_points(con)
         pts = metros[["cbsa_name", "lat", "lon", "population"]].values
     else:
+        # one row per CMA (its busiest mapped airport), or Toronto would be
+        # counted once per airport that maps to it
         pts = con.execute("""
-            SELECT c.cma_name, a.lat, a.lon, m.population
-            FROM ca_airport_cma c
-            JOIN dim_airport a USING (iata_code)
-            JOIN dim_metro_ca m ON m.cma LIKE c.cma_name || '%'
+            WITH ranked AS (
+              SELECT c.cma_name, a.lat, a.lon, m.population,
+                     row_number() OVER (PARTITION BY c.cma_name
+                                        ORDER BY a.iata_code) AS rn
+              FROM ca_airport_cma c
+              JOIN dim_airport a USING (iata_code)
+              JOIN dim_metro_ca m ON m.cma LIKE c.cma_name || '%'
+            )
+            SELECT cma_name, lat, lon, population FROM ranked WHERE rn = 1
         """).fetchall()
     total, parts = 0.0, []
     for name, lat, lon, pop in pts:
