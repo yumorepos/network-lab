@@ -24,10 +24,12 @@ proof: Porter at Toronto Pearson (YYZ).
 - Transfer factor anchored to the discontinued 2018 StatCan city-pair
   survey: **median 0.83, IQR [0.56, 2.10]** across 87 pairs - dispersion
   reported everywhere the factor is used.
-- 61 real 2021-2025 transborder launches backtested with a pre-2022
-  model: survivors and ceased routes both sit in the top decile of modeled
-  demand (**0.90 vs 0.86** median percentile). The era's failures were
-  cost-structure failures, not market-selection failures; the report says so
+- 48 launched-and-resolved transborder routes (2021-2025) backtested with
+  a pre-2022 model: survivors and ceased routes both sit in the top decile
+  of modeled demand (**0.90 vs 0.86** median percentile), and the gap barely
+  moves when Lynx's shutdown casualties are excluded (0.90 vs 0.86). Genuine
+  route-level cuts by continuing carriers were also top-decile markets:
+  demand rank alone does not predict survival, and the report says so
   rather than overclaiming signal.
 - QSI-lite carrier shares vs observed DB1B shares at SEA: **MAE 6.7 share
   points** across 503 market-carrier rows, reported by market structure.

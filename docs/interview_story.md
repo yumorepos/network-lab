@@ -40,11 +40,14 @@ or a labeled assumption in one YAML file.
   US-calibrated model across a border.
 - Gravity holdout: median APE ~0.6 on unseen markets. A three-covariate
   demand model is a screen, not an oracle, and the screen's job is ranking.
-- Backtest: 61 real transborder launches 2021-2025 scored with a pre-2022
-  model. Survivors and ceased routes both sit in the top decile of modeled
-  demand (0.90 vs 0.86 median percentile) - the finding is that route
-  failures in this period were cost-structure failures, not market-selection
-  failures, and I say so instead of overclaiming signal.
+- Backtest: 48 launched-and-resolved transborder routes 2021-2025 scored
+  with a pre-2022 model (never-launched and unknown-status rows reported
+  separately). Survivors 0.90 vs ceased 0.86 median demand percentile, and
+  excluding Lynx's shutdown casualties barely moves it: most ceased routes
+  were genuine cuts by Flair, a continuing carrier, in top-decile leisure
+  markets. Demand rank alone does not flag route failure; that needs the
+  economics and competitive layers at launch vintage, and I say so instead
+  of overclaiming signal.
 
 ## The tradeoffs I made on purpose
 - Single fixed-vintage backtest with disclosed lookahead; production refits

@@ -101,45 +101,77 @@ def score() -> pd.DataFrame:
 
 
 def report(df: pd.DataFrame) -> str:
+    sc = df.dropna(subset=["pctile"])
+    known = sc[sc["outcome"].isin(["operating", "ceased"])]
+    ceased = sc[sc["outcome"] == "ceased"]
+    ceased_lynx = ceased[ceased["carrier"] == "Y9"]
+    ceased_cont = ceased[ceased["carrier"] != "Y9"]
+    op_med = sc[sc["outcome"] == "operating"]["pctile"].median()
+
     lines = ["# Backtest: pre-2022 model vs 2021-2025 launches", ""]
     lines += ["Single fixed-vintage model (gravity 2018-19 x 2018 transfer",
               "anchor, no growth term). Lookahead disclosure in the module",
               "docstring and validation.md. Percentile = where the launched",
-              "market ranks among all in-range US metros from that hub.", ""]
-    g = (df.dropna(subset=["pctile"]).groupby("outcome")["pctile"]
-         .agg(["median", "mean", "count"]))
-    lines += ["| outcome | n | median pctile | mean pctile |", "|---|---|---|---|"]
+              "market ranks among all in-range US metros from that hub.", "",
+              f"**Headline N = {len(known)}**: routes that actually launched "
+              "and have a known terminal status (operating/seasonal or "
+              "ceased). Never-launched and unknown-status routes are "
+              "reported separately below and are not part of that count.", ""]
+    g = sc.groupby("outcome")["pctile"].agg(["median", "mean", "count"])
+    lines += ["| group | n | median pctile | mean pctile |", "|---|---|---|---|"]
     for o, r in g.iterrows():
-        lines.append(f"| {o} | {int(r['count'])} | {r['median']:.2f} "
+        label = o if o in ("operating", "ceased") else f"{o} (excluded from N)"
+        lines.append(f"| {label} | {int(r['count'])} | {r['median']:.2f} "
                      f"| {r['mean']:.2f} |")
 
-    sep = (g.loc["operating", "median"] - g.loc["ceased", "median"]
-           if {"operating", "ceased"} <= set(g.index) else None)
-    lines += ["", "## Reading the result, as pre-committed", ""]
-    if sep is not None and sep < 0.10:
-        lines += [
-            f"Separation between surviving and ceased routes is weak "
-            f"({g.loc['operating','median']:.2f} vs "
-            f"{g.loc['ceased','median']:.2f} median percentile). Published "
-            "as-is. Three things it actually shows:",
-            "",
-            "1. Nearly every real launch sits in the top decile of modeled "
-            "demand - carriers do not need a gravity model to find big "
-            "markets, and a demand screen alone does not predict route "
-            "survival.",
-            "2. The failures were not market-selection failures. Lynx's "
-            "ceased routes score as high as the survivors (YYC-LAX at the "
-            "99th percentile); Lynx died of cost structure and capitalization, "
-            "which no demand model sees.",
-            "3. Discriminating survival would need the economics and "
-            "competitive-response layers evaluated at launch vintage - the "
-            "production refit this project deliberately traded away and "
-            "discloses.",
-        ]
-    elif sep is not None:
-        lines += [f"Surviving routes rank {sep:.2f} above ceased ones at the "
-                  "median - consistent with demand mattering, with the usual "
-                  "confounds (feed, blocking, slots, fleet timing) unmodeled."]
+    lines += ["", "## Ceased routes by carrier and cause", "",
+              "| carrier | n | cause | informative about route selection? |",
+              "|---|---|---|---|"]
+    for carrier, grp in ceased.groupby("carrier"):
+        if carrier == "Y9":
+            cause, informative = ("corporate shutdown 2024-02-26 (Lynx ceased "
+                                  "all operations at once)", "no")
+        else:
+            cause, informative = ("route-level cut by a carrier that kept "
+                                  "operating", "yes")
+        lines.append(f"| {carrier} | {len(grp)} | {cause} | {informative} |")
+
+    lines += ["", "## Separation, computed three ways", "",
+              "| comparison | operating median | ceased median | gap |",
+              "|---|---|---|---|",
+              f"| vs all ceased (n={len(ceased)}) | {op_med:.2f} "
+              f"| {ceased['pctile'].median():.2f} "
+              f"| {op_med - ceased['pctile'].median():+.2f} |",
+              f"| vs ceased excl. Lynx (n={len(ceased_cont)}) | {op_med:.2f} "
+              f"| {ceased_cont['pctile'].median():.2f} "
+              f"| {op_med - ceased_cont['pctile'].median():+.2f} |",
+              f"| vs Lynx-only ceased (n={len(ceased_lynx)}) | {op_med:.2f} "
+              f"| {ceased_lynx['pctile'].median():.2f} "
+              f"| {op_med - ceased_lynx['pctile'].median():+.2f} |"]
+
+    lines += ["", "## Reading the result, as pre-committed", "",
+              "Separation is weak in every cut, including the one that "
+              "matters most: most ceased routes "
+              f"({len(ceased_cont)} of {len(ceased)}) were genuine "
+              "route-level cuts by Flair, a carrier that kept operating, "
+              "not casualties of the Lynx shutdown. Those genuine failures "
+              "(the leisure-market cuts: Mesa, Sanford, Burbank, Las Vegas, "
+              "Denver, Nashville) also scored in the top demand decile. "
+              "Three things this actually shows:", "",
+              "1. Nearly every real launch sits in the top decile of modeled "
+              "demand - carriers do not need a gravity model to find big "
+              "markets, and a demand screen alone does not predict route "
+              "survival.",
+              "2. Demand ranking did not flag the genuine route-level "
+              "failures. Flair's cut routes were big leisure markets that "
+              "failed on economics, competitive response, and fit - layers "
+              "a demand percentile cannot see. The Lynx rows are separately "
+              "uninformative: a corporate shutdown says nothing about the "
+              "routes.",
+              "3. Discriminating survival would need the economics and "
+              "competitive-response layers evaluated at launch vintage - the "
+              "production refit this project deliberately traded away and "
+              "discloses."]
     lines += ["", "## Named routes", "",
               "| carrier | route | launched | status | model pctile |",
               "|---|---|---|---|---|"]

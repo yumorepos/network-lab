@@ -5,19 +5,36 @@ anchor, no growth term). Lookahead disclosure in the module
 docstring and validation.md. Percentile = where the launched
 market ranks among all in-range US metros from that hub.
 
-| outcome | n | median pctile | mean pctile |
+**Headline N = 48**: routes that actually launched and have a known terminal status (operating/seasonal or ceased). Never-launched and unknown-status routes are reported separately below and are not part of that count.
+
+| group | n | median pctile | mean pctile |
 |---|---|---|---|
 | ceased | 21 | 0.86 | 0.86 |
-| never_launched | 2 | 0.99 | 0.99 |
+| never_launched (excluded from N) | 2 | 0.99 | 0.99 |
 | operating | 27 | 0.90 | 0.88 |
-| unknown | 11 | 0.93 | 0.91 |
+| unknown (excluded from N) | 11 | 0.93 | 0.91 |
+
+## Ceased routes by carrier and cause
+
+| carrier | n | cause | informative about route selection? |
+|---|---|---|---|
+| F8 | 12 | route-level cut by a carrier that kept operating | yes |
+| Y9 | 9 | corporate shutdown 2024-02-26 (Lynx ceased all operations at once) | no |
+
+## Separation, computed three ways
+
+| comparison | operating median | ceased median | gap |
+|---|---|---|---|
+| vs all ceased (n=21) | 0.90 | 0.86 | +0.04 |
+| vs ceased excl. Lynx (n=12) | 0.90 | 0.86 | +0.03 |
+| vs Lynx-only ceased (n=9) | 0.90 | 0.86 | +0.04 |
 
 ## Reading the result, as pre-committed
 
-Separation between surviving and ceased routes is weak (0.90 vs 0.86 median percentile). Published as-is. Three things it actually shows:
+Separation is weak in every cut, including the one that matters most: most ceased routes (12 of 21) were genuine route-level cuts by Flair, a carrier that kept operating, not casualties of the Lynx shutdown. Those genuine failures (the leisure-market cuts: Mesa, Sanford, Burbank, Las Vegas, Denver, Nashville) also scored in the top demand decile. Three things this actually shows:
 
 1. Nearly every real launch sits in the top decile of modeled demand - carriers do not need a gravity model to find big markets, and a demand screen alone does not predict route survival.
-2. The failures were not market-selection failures. Lynx's ceased routes score as high as the survivors (YYC-LAX at the 99th percentile); Lynx died of cost structure and capitalization, which no demand model sees.
+2. Demand ranking did not flag the genuine route-level failures. Flair's cut routes were big leisure markets that failed on economics, competitive response, and fit - layers a demand percentile cannot see. The Lynx rows are separately uninformative: a corporate shutdown says nothing about the routes.
 3. Discriminating survival would need the economics and competitive-response layers evaluated at launch vintage - the production refit this project deliberately traded away and discloses.
 
 ## Named routes

@@ -15,10 +15,11 @@ on the resume is reproducible from `make data && make models`.
   carrier shares (MAE 6.7 share points), then screened 206 candidate markets
   across three hub studies into LAUNCH/MONITOR/PASS with 3x3 fare-fuel
   scenario grids.
-- Backtested 61 real 2021-2025 transborder route launches against a
+- Backtested 48 real 2021-2025 transborder route launches against a
   fixed pre-2022 model and published the honest result: demand percentile
-  does not separate survivors from failures in this period because the era's
-  failures (Lynx) were cost-structure, not market-selection - with the
+  does not separate survivors from failures (0.90 vs 0.86 median), even
+  after excluding Lynx's corporate-shutdown casualties: genuine route cuts
+  by continuing carriers were also top-decile demand markets - with the
   lookahead limitation disclosed.
 
 ## LinkedIn project description
