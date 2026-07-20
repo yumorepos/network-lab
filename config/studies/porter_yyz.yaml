@@ -1,0 +1,27 @@
+# Portability proof: Porter transborder from Toronto Pearson. Ranked table only,
+# no business cases. Different carrier, fleet, hub, and competitive set with the
+# same engine and zero code changes.
+study_id: porter_yyz
+role: portability
+carrier: PD
+carrier_name: Porter Airlines
+hub: YYZ
+hub_country: CA
+market_scope: transborder
+
+fleet:
+  type: "E195-E2"
+  seats: 132              # Porter public seat map, all-economy E195-E2
+  max_range_nm: 2600
+  practical_range_nm: 2200
+
+candidates:
+  destination_country: US
+  min_metro_pop: from_assumptions
+  distance_nm: {min: 250, max: 2200}
+  exclude_served_nonstop_by: PD
+  proposed_weekly_frequency: 7
+
+economics:
+  cost_comparator: from_assumptions # porter_cost_comparator_carrier (B6 E190 proxy)
+  fare_source: matched_us_markets_x_premium

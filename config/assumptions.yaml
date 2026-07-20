@@ -1,0 +1,146 @@
+# Assumption engine. Every value that is not downloaded or derived from a real
+# source lives here, with source, rationale, confidence, and sensitivity range.
+# Nothing in this file is presented as measured data anywhere downstream.
+
+cost_comparator_carrier:
+  value: WN                      # Southwest, all-737 narrowbody proxy for WestJet 737-8
+  alternate: AS
+  source: BTS Form 41 P-5.2 reporting carriers
+  rationale: "Closest public US 737 narrowbody cost structure to WestJet"
+  confidence: medium
+  sensitivity: {carrier_low: AS, carrier_high: WN}
+
+porter_cost_comparator_carrier:
+  value: B6                      # JetBlue E190 block, closest US Form 41 proxy for E195-E2
+  source: BTS Form 41 P-5.2 reporting carriers
+  rationale: "No US carrier files Form 41 costs for the E195-E2; JetBlue's E190
+    is the nearest same-family public cost structure. E2 burns ~10-15% less fuel
+    per seat than E1 per Embraer public claims; fuel is rebuilt from physics-side
+    burn anyway, so the proxy mainly drives crew/maintenance/ownership."
+  confidence: low
+  sensitivity: {carrier_low: B6, note: "no credible second proxy; sensitivity carried via cost +/-15% scenario instead"}
+  fallback_pct: 15
+
+airport_fee_proxy:
+  value: null                    # populate from NAV Canada published unit rates + airport landing/terminal schedules where fetchable
+  source: NAV Canada charging framework; airport authority published rate schedules
+  rationale: "Canadian airport + navigation operating cost proxy per departure and per seat"
+  confidence: low
+  sensitivity: {low_pct: -30, high_pct: 30}
+  fallback: "If per-airport rates are not fetchable, apply one documented flat
+    per-departure + per-seat charge uniformly and mark low confidence"
+
+catchment_radius_km:
+  value: 150
+  source: "Common air service catchment convention"
+  rationale: "Great-circle proxy for driving access with distance decay"
+  confidence: medium
+  sensitivity: {low: 100, high: 200}
+
+catchment_decay:
+  value: exponential
+  half_distance_km: 75
+  source: "Project convention"
+  rationale: "Population weight halves every 75 km from the airport; smooth
+    stand-in for drive-time decay without a road network dataset"
+  confidence: low
+  sensitivity: {half_distance_low: 50, half_distance_high: 100}
+
+transfer_factor:
+  value: estimated              # computed from StatCan 2018 transborder city-pair anchor vs gravity prediction; never hardcoded
+  source: StatCan table 23-10-0256 (transborder city-pair, frozen ~2018) + current T-100 control totals
+  rationale: "Absorbs border, currency, definitional, and transfer error the
+    US-calibrated model does not capture"
+  confidence: low
+  report: "median plus IQR, min, max, leave-one-out"
+
+transborder_fare_premium:
+  value: 1.10
+  source: "Assumption; no public transborder fare data exists (DB1B is US domestic only)"
+  rationale: "Border markets price above comparable US domestic markets: thinner
+    LCC penetration, bilateral market structure, currency friction"
+  confidence: low
+  sensitivity: {low: 1.00, high: 1.25}
+
+stimulation_elasticity:
+  value: -0.8
+  source: "Public air demand elasticity literature"
+  rationale: "Network-carrier fare stimulation; ULCC would be more elastic"
+  confidence: low
+  sensitivity: {low: -0.5, high: -1.2}
+
+spill_cov:
+  value: 0.30
+  source: "Standard airline spill modeling range"
+  rationale: "Coefficient of variation of daily demand for the truncated-normal spill model"
+  confidence: medium
+  sensitivity: {low: 0.25, high: 0.40}
+
+hurdle_margin_pct:
+  value: 8.0
+  source: "Assumed launch hurdle"
+  rationale: "Contribution margin threshold separating LAUNCH from MONITOR"
+  confidence: low
+  sensitivity: {low: 5.0, high: 12.0}
+
+qsi_weights:
+  nonstop: 1.0
+  single_connect: 0.20
+  double_connect: 0.05
+  frequency_exponent: 0.6
+  source: "QSI convention; simplified from published QSI practice"
+  rationale: "Preference weights for itinerary quality; connections are steeply
+    discounted relative to nonstops"
+  confidence: medium
+  sensitivity: {single_connect_low: 0.15, single_connect_high: 0.30}
+
+qsi_elapsed_time_exponent:
+  value: -1.5
+  source: "Project assumption"
+  rationale: "Itinerary preference scales with (elapsed / fastest elapsed)^-1.5;
+    penalizes slow connections beyond the flat connect discount"
+  confidence: low
+  sensitivity: {low: -1.0, high: -2.0}
+
+connect_time_minutes:
+  value: 90
+  source: "Common minimum-connect planning allowance"
+  rationale: "Added to leg block times when reconstructing one-stop elapsed time"
+  confidence: medium
+  sensitivity: {low: 60, high: 120}
+
+block_time_model:
+  taxi_climb_overhead_hours: 0.5
+  cruise_speed_kts: 445
+  source: "Narrowbody planning rules of thumb"
+  rationale: "block hours = distance_nm / cruise + overhead; validated against
+    T-100 ramp-to-ramp implied speeds in Phase 4"
+  confidence: medium
+  sensitivity: {overhead_low: 0.4, overhead_high: 0.6}
+
+fare_scenario_grid_pct:
+  value: [-15, 0, 10]
+  source: "Project convention"
+  rationale: "Downside, base, and upside fare scenarios around the estimated market fare"
+  confidence: medium
+
+fuel_scenario_grid:
+  value: [-30, 0, 30]
+  source: "Project convention anchored to EIA Gulf Coast jet spot 12-month average"
+  rationale: "Fuel price band covering recent historical swing"
+  confidence: medium
+
+candidate_min_metro_pop:
+  value: 400000
+  source: "Project convention"
+  rationale: "Floor for candidate destination metro population; below this,
+    narrowbody hub service from a foreign hub is rarely viable"
+  confidence: medium
+  sensitivity: {low: 250000, high: 750000}
+
+currency:
+  value: USD
+  source: "All cost and fare sources are USD (BTS, EIA)"
+  rationale: "Single-currency analysis; CAD conversion would add noise without
+    changing rankings. Noted in LIMITATIONS."
+  confidence: high

@@ -1,0 +1,26 @@
+# Validation study: Alaska at Seattle. US domestic, so demand, share, and fare
+# are all observed; the full chain is scored against ground truth here.
+study_id: alaska_sea
+role: validation
+carrier: AS
+carrier_name: Alaska Airlines
+hub: SEA
+hub_country: US
+market_scope: us_domestic
+
+fleet:
+  type: "737-9"
+  seats: 178              # Alaska public seat map, 737 MAX 9
+  max_range_nm: 3300
+  practical_range_nm: 2600
+
+candidates:
+  destination_country: US
+  min_metro_pop: from_assumptions
+  distance_nm: {min: 250, max: 2600}
+  exclude_served_nonstop_by: AS
+  proposed_weekly_frequency: 7
+
+economics:
+  cost_comparator: AS     # Alaska's own Form 41 filings; observed, not a proxy
+  fare_source: db1b_observed

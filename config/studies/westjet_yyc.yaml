@@ -1,0 +1,26 @@
+# Flagship study: WestJet transborder opportunities from Calgary.
+study_id: westjet_yyc
+role: flagship            # full chain + three business cases
+carrier: WS
+carrier_name: WestJet
+hub: YYC
+hub_country: CA
+market_scope: transborder # candidates are YYC -> US metros; demand is modeled
+                          # (gravity x transfer factor), capacity truth from T-100 International
+
+fleet:
+  type: "737-8"
+  seats: 174              # WestJet public seat map, 737 MAX 8
+  max_range_nm: 3550
+  practical_range_nm: 2600
+
+candidates:
+  destination_country: US
+  min_metro_pop: from_assumptions   # candidate_min_metro_pop
+  distance_nm: {min: 250, max: 2600}
+  exclude_served_nonstop_by: WS     # current-year T-100 nonstops from YYC
+  proposed_weekly_frequency: 7      # daily; the standard entry schedule
+
+economics:
+  cost_comparator: from_assumptions # cost_comparator_carrier (WN)
+  fare_source: matched_us_markets_x_premium
