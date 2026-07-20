@@ -114,3 +114,113 @@ downstream headline number) drifted between reruns. Fixed with a stable
 ORDER BY; two consecutive full-chain runs now produce identical numbers,
 and tests/test_consistency.py fails if any reader-facing doc drifts from
 the computed artifacts.
+
+---
+
+# Round 3: right-size service, then package (2026-07-20)
+
+The prior rounds evaluated every candidate at a single hardcoded schedule (7x
+weekly, mainline gauge). That forced daily mainline capacity onto markets far
+too thin for it and produced meaningless verdicts (YYC-Sacramento: 22% load
+factor, -161% margin). The fix and its consequences:
+
+## 1. Frequency (and gauge) right-sizing
+
+Economics now evaluates each candidate across the study's
+`target_frequency_weekly` list (3x, 7x, 14x) and gauge list, and the screen
+selects the option that **maximizes total annual contribution** subject to a
+load-factor floor (`min_feasible_load_factor` = 0.50), then applies
+LAUNCH/MONITOR/PASS to that best schedule. "Total annual contribution" (dollars),
+not margin percentage, is the objective on purpose: maximizing margin percentage
+would trivially pick the lowest frequency every time (fuller planes), whereas a
+planner sizes the schedule to the demand a market can fill. The chosen frequency
+is a column on every screen row and business case. Each study operates a single
+transborder/domestic mainline gauge, so frequency is the active axis; the gauge
+search runs for any study that lists more than one, and no regional-gauge option
+was invented for WestJet (it flies 737s transborder).
+
+Right-sizing's effect on Porter's non-PASS markets (margin at the chosen
+frequency vs at the old hardcoded 7x):
+
+| market | verdict | chosen | margin @ chosen | margin @ 7x |
+|---|---|---|---|---|
+| Philadelphia | LAUNCH | 3x | +23.2% | -13.2% |
+| Washington | LAUNCH | 3x | +32.0% | +7.1% |
+| Chicago | LAUNCH | 3x | +31.3% | +13.1% |
+| Atlanta | LAUNCH | 3x | +20.0% | +3.1% |
+| Boston | LAUNCH | 14x | +24.9% | +34.7% |
+| Hartford | MONITOR | 3x | +37.5% | -4.5% |
+| Milwaukee | MONITOR | 3x | +33.2% | -23.2% |
+| Cincinnati | MONITOR | 3x | +6.0% | -56.1% |
+
+Philadelphia lost money at a forced 7x and is viable at 3x - the exact
+"evaluated at the wrong service level" case. Boston is the reverse tell: it
+picks 14x at a *lower* margin percentage than 7x, because filling more total
+seats yields higher total contribution - confirming the objective is
+contribution, not margin percentage. Hartford/Milwaukee/Cincinnati clear on
+margin at 3x but are held at MONITOR by the existing share-uncertainty guard or
+the hurdle.
+
+## 2. Candidate-filter leak fixed (metro-level)
+
+Markets the study carrier already serves nonstop were leaking in because the
+filter matched on the metro's busiest airport: WestJet flies YYC-IAD at ~1x
+weekly, but the Washington metro's busiest airport is BWI, so an airport match
+missed it. The exclusion is now metro-level (any airport in the metro, trailing
+12 months, >= `served_market_min_deps_yr` = 26 departures ~ weekly). Dropped as
+already-served: 23 WS, 48 AS, 11 PD metros. This also correctly removes New York
+from Porter's candidate set (Porter flies YYZ-Newark), so NYC is no longer a
+Porter LAUNCH - it is an existing route, not a new-market opportunity.
+
+## 3. Negative-space demand cap (entailed by right-sizing)
+
+Right-sizing thin markets to 3x weekly initially manufactured false LAUNCHes on
+unanchored gravity markets (Boise, Spokane, Fresno at 18-34k modeled pax). But a
+market ABSENT from the 2018 StatCan >4,000 city-pair table had at most ~4,000
+transborder O&D that year by construction, and the US-calibrated gravity model
+over-predicts these by 5-8x. Unanchored transborder demand is now capped at
+4,000 x corridor growth (~4,660 for YYC) - a generous upper bound. With the cap,
+every unanchored thin market screens PASS at every frequency, which is the honest
+result.
+
+## Verdicts that moved
+
+WestJet YYC: **0 LAUNCH / 0 MONITOR / 77 PASS -> 0 LAUNCH / 0 MONITOR / 76 PASS**
+(candidate count 77->76 from the leak fix). Right-sizing did NOT create any
+WestJet LAUNCH: the unserved YYC markets are either capped-tiny (unanchored) or
+uncompetitive (Dallas at 23% share against American's hub, PASS at every
+frequency). WestJet's all-PASS is now robust across service levels, and the
+WestJet documents are retitled "Route evaluation" with the verdict in the first
+line.
+
+Porter YYZ: **2 LAUNCH / 4 MONITOR / 74 PASS -> 5 LAUNCH / 3 MONITOR / 71 PASS**.
+New York exits the candidate set (already served). Boston stays LAUNCH. Right-
+sizing promotes Washington, Chicago, Philadelphia, and Atlanta to LAUNCH - all
+large anchor-backed markets that lost money only because they were being
+evaluated at a frequency too high for their share.
+
+Alaska SEA: **all PASS -> all PASS**, now after right-sizing (lowering frequency
+did not rescue thin mainline markets), so the earlier "fixed-gauge artifact"
+caveat is partly resolved into a genuine gauge limitation.
+
+## Headline numbers that changed
+
+| number | before | after | why |
+|---|---|---|---|
+| Porter screen | 2 LAUNCH / 4 MONITOR | 5 LAUNCH / 3 MONITOR | right-sizing + NYC exclusion |
+| WS candidates | 77 | 76 | metro-level leak fix |
+| candidates screened (total) | 206 | 204 | leak fix (metro-level exclusion) |
+| new columns | - | chosen_freq_wk, chosen_seats, chosen_gauge, annual_contribution, survey_ceiling_pax | right-sizing + demand cap |
+
+Validation numbers are stable except one that shifted for a real reason: the
+transfer-factor median moved from 0.82 to **0.80** (IQR [0.55, 2.02]) because
+the metro anchor-point selection changed slightly during the right-sizing work
+(the busiest-airport pick for one metro flipped a single anchor pair across the
+median). The pipeline is deterministic - three consecutive runs give 0.8019
+exactly - and the consistency test caught the docs still pinned to the old
+0.82 and now enforces the new value across README, PROGRESS.md,
+interview_story, and validation.md, with an explicit guard against the stale
+0.82/0.83/0.86 reappearing. Share MAE 7.0, backtest N=48, and gravity
+6,002 / 6,092 are unchanged. Two route post-mortems were added (YYC-LAS: Flair
+route cut vs Lynx corporate shutdown, same market), and deploy/demo docs
+complete the package.

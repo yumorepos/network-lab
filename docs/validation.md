@@ -24,8 +24,8 @@
 
 ## Transfer factor (2018 anchor)
 
-- pairs: 87, median 0.82, IQR [0.55, 2.04], range [0.27, 8.78]
-- per-hub medians: YEG 1.58, YHZ 1.20, YOW 0.82, YUL 0.59, YVR 0.83, YWG 1.94, YYC 1.28, YYZ 0.78
+- pairs: 87, median 0.80, IQR [0.55, 2.02], range [0.27, 8.78]
+- per-hub medians: YEG 1.58, YHZ 1.20, YOW 0.67, YUL 0.59, YVR 0.83, YWG 1.94, YYC 1.28, YYZ 0.78
 - the dispersion is the honest uncertainty of transferring a US-calibrated model across the border; business cases carry it
 
 ## Share model vs observed DB1B shares (SEA, 2024)

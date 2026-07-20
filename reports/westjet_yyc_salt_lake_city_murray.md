@@ -21,7 +21,7 @@ did not clear at any service level.
   1.72x the anchor-based estimate - printed so a
   divergence from the last observed actual is never invisible. (Transfer
   factor: hub median 1.28, national median
-  0.82, IQR [0.55, 2.04].)
+  0.80, IQR [0.55, 2.02].)
 
 ## Competition (reconstructed from T-100; no MIDT)
 | carrier   | itin_type   |   freq_wk |   elapsed_h |

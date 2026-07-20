@@ -36,9 +36,10 @@ def test_transfer_consistent_in_progress():
     for f in ("PROGRESS.md", "README.md", "docs/validation.md",
               "docs/interview_story.md"):
         t = (ROOT / f).read_text()
-        assert "0.56, 2.10" not in t, f"{f} has stale IQR"
-        assert "median 0.83" not in t and "median 0.86" not in t, \
-            f"{f} has stale transfer median"
+        for stale in ("0.56, 2.10", "0.55, 2.04"):
+            assert stale not in t, f"{f} has stale IQR {stale}"
+        for stale in ("median 0.83", "median 0.86", "median 0.82"):
+            assert stale not in t, f"{f} has stale transfer median {stale}"
 
 
 def test_share_mae_consistent():

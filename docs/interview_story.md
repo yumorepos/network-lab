@@ -47,7 +47,7 @@ or a labeled assumption in one YAML file.
 - Reconciliation: computed T-100 transborder totals match StatCan published
   enplaned+deplaned within 1% nationally and at YYZ/YVR/YYC/YUL - with the
   expected relationship derived from definitions before comparing.
-- Transfer factor: median 0.82, IQR [0.55, 2.04] across 87 anchored pairs.
+- Transfer factor: median 0.80, IQR [0.55, 2.02] across 87 anchored pairs.
   I report the dispersion because it is the honest cost of transferring a
   US-calibrated model across a border.
 - Gravity holdout: median APE ~0.6 on unseen markets. A three-covariate

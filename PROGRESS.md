@@ -18,7 +18,7 @@
 ## Phase 2 - demand (2026-07-20)
 - Gravity: current n=6092 R2 0.50, pre2022 n=6002 R2 0.50, holdout median
   APE ~0.6 reported by size band. Quadratic log-distance.
-- Transfer factor: 87 anchored pairs, median 0.82, IQR [0.55, 2.04],
+- Transfer factor: 87 anchored pairs, median 0.80, IQR [0.55, 2.02],
   per-hub medians (YYC 1.28, YYZ 0.78, YVR 0.83), leave-one-out stable.
 - Every demand row flagged observed/modeled; transborder rows carry the 2018
   anchor value alongside where it exists.

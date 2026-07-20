@@ -22,7 +22,7 @@ proof: Porter at Toronto Pearson (YYZ).
   1%** nationally and at YYZ/YVR/YYC/YUL (relationship derived from
   definitions before comparing; see `docs/reconciliation.md`).
 - Transfer factor anchored to the discontinued 2018 StatCan city-pair
-  survey: **median 0.82, IQR [0.55, 2.04]** across 87 pairs - dispersion
+  survey: **median 0.80, IQR [0.55, 2.02]** across 87 pairs - dispersion
   reported everywhere the factor is used.
 - 48 launched-and-resolved transborder routes (2021-2025) backtested with
   a pre-2022 model: survivors and ceased routes both sit in the top decile
@@ -80,11 +80,12 @@ the hand-compiled launch register with per-row confidence and sources.
 
 ## Honest limitations
 
-See `docs/LIMITATIONS.md` - the ten limitations are stated with the design
-decision each one forced, including the single-vintage backtest lookahead and
-the airport-fee proxy. Planned extensions (route post-mortems, full Porter
-study, connectivity view, per-vintage refits) are listed there rather than
-implied to exist.
+See `docs/LIMITATIONS.md` - the thirteen limitations are stated with the
+design decision each one forced, including the single-vintage backtest
+lookahead, the airport-fee proxy, frequency/gauge right-sizing scope, and the
+unanchored-demand cap. Planned extensions (per-vintage backtest refit,
+connectivity view, full Porter business cases, ACS income with a key) are
+listed there rather than implied to exist.
 
 ## Data sources and licenses
 
