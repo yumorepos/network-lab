@@ -55,3 +55,31 @@ after the fact.
 10. **Load-bearing name matches.** City market to CBSA and StatCan city-pair
     parsing are name-based joins with pinned overrides; unmatched traffic is
     logged loudly rather than silently dropped.
+
+11. **Right-sizing is over frequency and gauge, not the full schedule.** The
+    screen picks the weekly frequency (from the study's target list) and gauge
+    that maximize annual contribution subject to a load-factor floor
+    (assumptions.yaml min_feasible_load_factor). It does not optimize
+    departure times, day-of-week banks, or seasonality; a real planner tunes
+    those too. Each study here operates a single transborder/domestic mainline
+    gauge, so frequency is the active axis; the gauge search runs for any
+    study that lists more than one, and a regional-gauge option was NOT
+    invented for WestJet, which flies 737s transborder.
+
+12. **Already-served markets are excluded, not evaluated as add-frequency.**
+    A metro the study carrier already serves nonstop from the hub (any airport
+    in the metro, >= ~weekly over the trailing 12 months) is dropped from the
+    candidate set: this tool answers "which NEW markets", not "add frequency
+    or upgauge an existing route". The exclusion is metro-level to stop the
+    leak where a carrier serves a secondary airport (WS flies YYC-IAD, so the
+    Washington metro is excluded even though its busiest airport is BWI).
+
+13. **Unanchored transborder demand is capped at the survey ceiling.** A
+    Canada-US market absent from the 2018 StatCan >4,000 city-pair table had
+    at most ~4,000 O&D passengers that year by construction. The US-calibrated
+    gravity model over-predicts these small markets (routinely 5-8x the
+    ceiling), so their demand is capped at 4,000 x corridor growth (~4,660 for
+    YYC) - a generous upper bound. This keeps right-sizing from manufacturing
+    launch verdicts out of gravity noise on markets known to be tiny. Anchored
+    markets keep their own observed value; the cap only touches the negative
+    space where the model has no ground truth to lean on.

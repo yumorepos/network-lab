@@ -179,3 +179,27 @@ satellite_airport_rule:
     Naples-RSW, Bridgeport-NYC), not a standalone candidate"
   confidence: medium
   sensitivity: {radius_low: 40, radius_high: 80}
+
+min_feasible_load_factor:
+  value: 0.50
+  source: "Public airline route-economics practice; system narrowbody load
+    factors run 80%+ and individual routes are rarely sustained below ~50%"
+  rationale: "Feasibility floor for the frequency/gauge right-sizing search:
+    a schedule whose best load factor is below this is treated as structurally
+    infeasible regardless of the margin arithmetic, so the search cannot pick
+    an absurdly thin high-frequency option. If no option clears the floor the
+    market keeps its highest-LF option and almost always screens PASS."
+  confidence: medium
+  sensitivity: {low: 0.45, high: 0.60}
+
+served_market_min_deps_yr:
+  value: 26
+  source: "Project convention (~weekly service over a year)"
+  rationale: "A metro the study carrier already serves nonstop from the hub at
+    roughly weekly or better is not a new-market opportunity; it is an
+    add-frequency/upgauge question this tool does not evaluate. Applied at the
+    metro level (any airport in the metro) so YYC-IAD at ~1x weekly correctly
+    excludes the Washington metro even though the metro's busiest airport is
+    BWI."
+  confidence: medium
+  sensitivity: {low: 12, high: 52}

@@ -43,22 +43,51 @@ def top_risk(row) -> str:
     return "thin absolute contribution; schedule utility matters"
 
 
+def _select_service(base: pd.DataFrame, lf_floor: float) -> pd.DataFrame:
+    """Per market, pick the (frequency, gauge) that maximizes total annual
+    contribution subject to load factor >= floor. 'Contribution' here is total
+    annual dollars, not margin percentage: maximizing margin percentage would
+    trivially pick the lowest frequency every time (fuller planes), whereas a
+    planner sizes the schedule to the demand the market can actually fill.
+    If no option clears the load-factor floor, keep the highest-LF option
+    (it will almost always screen PASS), so a market is never dropped."""
+    picks = []
+    for _, grp in base.groupby("cbsa"):
+        feasible = grp[grp["load_factor"] >= lf_floor]
+        if len(feasible):
+            picks.append(feasible.loc[feasible["annual_contribution"].idxmax()])
+        else:
+            picks.append(grp.loc[grp["load_factor"].idxmax()])
+    return pd.DataFrame(picks).reset_index(drop=True)
+
+
 def run(study_id: str) -> pd.DataFrame:
     a = assumptions()
     hurdle = float(a["hurdle_margin_pct"]["value"])
+    lf_floor = float(a["min_feasible_load_factor"]["value"])
     eco = pd.read_parquet(OUTPUTS / f"economics_{study_id}.parquet")
 
-    base = eco[(eco.fare_scenario_pct == 0) & (eco.fuel_scenario_pct == 0)]
-    fare_dn = eco[(eco.fare_scenario_pct == eco.fare_scenario_pct.min())
-                  & (eco.fuel_scenario_pct == 0)]
-    fuel_up = eco[(eco.fare_scenario_pct == 0)
-                  & (eco.fuel_scenario_pct == eco.fuel_scenario_pct.max())]
+    base_all = eco[(eco.fare_scenario_pct == 0) & (eco.fuel_scenario_pct == 0)]
+    m = _select_service(base_all, lf_floor)
+    m = m.rename(columns={"freq_wk": "chosen_freq_wk",
+                          "seats": "chosen_seats",
+                          "gauge_type": "chosen_gauge"})
 
-    m = (base
-         .merge(fare_dn[["cbsa", "margin_pct"]].rename(
-             columns={"margin_pct": "fare_down_margin"}), on="cbsa")
-         .merge(fuel_up[["cbsa", "margin_pct"]].rename(
-             columns={"margin_pct": "fuel_down_margin"}), on="cbsa"))
+    # downside scenarios evaluated at the CHOSEN frequency/gauge, not a
+    # different service level
+    key = ["cbsa", "chosen_freq_wk", "chosen_seats"]
+    fare_dn = (eco[(eco.fare_scenario_pct == eco.fare_scenario_pct.min())
+                   & (eco.fuel_scenario_pct == 0)]
+               .rename(columns={"freq_wk": "chosen_freq_wk",
+                                "seats": "chosen_seats",
+                                "margin_pct": "fare_down_margin"}))
+    fuel_up = (eco[(eco.fare_scenario_pct == 0)
+                   & (eco.fuel_scenario_pct == eco.fuel_scenario_pct.max())]
+               .rename(columns={"freq_wk": "chosen_freq_wk",
+                                "seats": "chosen_seats",
+                                "margin_pct": "fuel_down_margin"}))
+    m = (m.merge(fare_dn[key + ["fare_down_margin"]], on=key)
+          .merge(fuel_up[key + ["fuel_down_margin"]], on=key))
 
     def verdict(r):
         if pd.isna(r["margin_pct"]) or r["margin_pct"] < 0:
@@ -86,6 +115,10 @@ def run(study_id: str) -> pd.DataFrame:
                      + (100 * m["proposed_share"]).round(0).astype(int).astype(str)
                      + "% of " + (m["demand_pax_yr"] / 1000).round(0).astype(int)
                      .astype(str) + "k pax/yr (" + method + ")")
+    m["driver_service"] = ("best schedule: " + m["chosen_freq_wk"].astype(int)
+                           .astype(str) + "x weekly x " + m["chosen_seats"]
+                           .astype(int).astype(str) + " seats ("
+                           + m["chosen_gauge"] + ")")
     m["top_risk"] = m.apply(top_risk, axis=1)
     m["key_assumptions"] = (
         "transfer factor; fare premium; airport fee proxy"
@@ -93,12 +126,14 @@ def run(study_id: str) -> pd.DataFrame:
         else "comparator cost rates; spill cov; fee proxy")
 
     cols = ["study_id", "metro_name", "dest_airport", "dist_mi", "verdict",
-            "confidence", "margin_pct", "fare_down_margin", "fuel_down_margin",
-            "belf", "load_factor", "proposed_share", "demand_pax_yr",
-            "demand_source", "demand_method", "implied_vs_anchor_ratio",
-            "anchor_2018_pax", "share_uncertainty",
+            "confidence", "chosen_freq_wk", "chosen_seats", "chosen_gauge",
+            "margin_pct", "fare_down_margin", "fuel_down_margin",
+            "belf", "load_factor", "annual_contribution", "proposed_share",
+            "demand_pax_yr", "demand_source", "demand_method",
+            "implied_vs_anchor_ratio", "anchor_2018_pax", "share_uncertainty",
             "n_nonstop_incumbents", "top_competitor",
-            "driver_1", "driver_2", "top_risk", "key_assumptions"]
+            "driver_1", "driver_2", "driver_service", "top_risk",
+            "key_assumptions"]
     out = (m[cols].sort_values(["verdict", "margin_pct"],
                                ascending=[True, False])
            .reset_index(drop=True))

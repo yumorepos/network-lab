@@ -127,9 +127,27 @@ def resolve(study_id: str) -> pd.DataFrame:
         # survey's own >4,000 pax floor (documented choice).
         has_anchor = cand["anchor_2018_pax"].notna()
         anchor_est = cand["anchor_2018_pax"] * growth
-        cand["demand_pax_yr"] = np.where(has_anchor, anchor_est, gravity_est)
-        cand["demand_method"] = np.where(has_anchor, "anchor_x_growth",
-                                         "gravity_x_transfer")
+
+        # Negative-space cap: a market ABSENT from the 2018 StatCan >4,000
+        # city-pair table had at most 4,000 transborder O&D that year, by
+        # construction (the table is O&D, so even latent connect demand would
+        # have registered). Absence is therefore evidence of a small market,
+        # and the US-calibrated gravity model routinely over-predicts these
+        # (4,700-36,000 pax for markets known to be <4,000). We cap the
+        # unanchored estimate at the survey threshold scaled by corridor
+        # growth: a generous upper bound (~4,660 for YYC) that keeps a real
+        # opportunity from being missed while stopping right-sizing from
+        # manufacturing LAUNCHes out of gravity noise on tiny markets.
+        SURVEY_THRESHOLD = 4000.0
+        ceiling = SURVEY_THRESHOLD * growth
+        unanchored_est = np.minimum(gravity_est, ceiling)
+        cand["demand_pax_yr"] = np.where(has_anchor, anchor_est,
+                                         unanchored_est)
+        cand["demand_method"] = np.where(
+            has_anchor, "anchor_x_growth",
+            np.where(gravity_est > ceiling, "unanchored_capped_at_ceiling",
+                     "gravity_x_transfer"))
+        cand["survey_ceiling_pax"] = ceiling
         cand["gravity_implied_pax"] = gravity_est
         # diagnostic: what the gravity path would have said, relative to the
         # market's own last observed actual. Visible on every screen row.
@@ -146,7 +164,7 @@ def resolve(study_id: str) -> pd.DataFrame:
                         "metro_name", "dist_mi", "pop", "income",
                         "nonstop_by_others", "demand_pax_yr", "demand_source",
                         "demand_method", "gravity_implied_pax",
-                        "implied_vs_anchor_ratio",
+                        "survey_ceiling_pax", "implied_vs_anchor_ratio",
                         "fare_observed", "transfer_factor", "t100_growth",
                         "anchor_2018_pax"] if c in out.columns]
     res = out[keep].copy()

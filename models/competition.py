@@ -114,14 +114,41 @@ def build_competition(study_id: str) -> pd.DataFrame:
     return comp
 
 
+def proposed_qsi_pref(freq_wk: float, proposed_elapsed: float,
+                      fastest_elapsed: float, w: dict, f_exp: float,
+                      t_exp: float) -> float:
+    """QSI-lite preference of the proposed nonstop at a given weekly frequency.
+    Frequency is the only argument that varies during right-sizing; the rest
+    are market constants."""
+    return (w["nonstop"] * freq_wk ** f_exp
+            * (proposed_elapsed / fastest_elapsed) ** t_exp)
+
+
+def share_at_freq(freq_wk: float, proposed_elapsed: float,
+                  fastest_elapsed: float, comp_pref_sum: float,
+                  w: dict, f_exp: float, t_exp: float) -> float:
+    """Proposed-service share at a given frequency: prop_pref / (prop + comp).
+    comp_pref_sum is frequency-independent (competitors keep their own freqs)."""
+    p = proposed_qsi_pref(freq_wk, proposed_elapsed, fastest_elapsed,
+                          w, f_exp, t_exp)
+    return p / (p + comp_pref_sum) if p else 0.0
+
+
 def qsi_share(study_id: str) -> pd.DataFrame:
-    """Proposed-service share per candidate metro under QSI-lite."""
+    """Frequency-independent share components per candidate metro.
+
+    The proposed service's share depends on the frequency we choose to fly,
+    which is decided later during right-sizing. So this stores the market
+    constants (proposed and fastest elapsed times, the competitors' summed
+    QSI preference) and leaves the frequency-dependent share to
+    share_at_freq(). It still emits a reference share at the config's first
+    target frequency for quick inspection and for the dashboard."""
     cfg = study(study_id)
     a = assumptions()
     w = a["qsi_weights"]
     t_exp = a["qsi_elapsed_time_exponent"]["value"]
     f_exp = w["frequency_exponent"]
-    prop_freq = cfg["candidates"]["proposed_weekly_frequency"]
+    ref_freq = cfg["candidates"]["target_frequency_weekly"][1]  # 7x reference
 
     cand = pd.read_parquet(OUTPUTS / f"demand_{study_id}.parquet")
     comp = build_competition(study_id)
@@ -131,19 +158,20 @@ def qsi_share(study_id: str) -> pd.DataFrame:
         mine = comp[comp["cbsa"] == c["cbsa"]]
         prop_elapsed = float(_block_hours(c["dist_mi"]))
         fastest = min([prop_elapsed] + mine["elapsed_h"].tolist())
-        def pref(itype, freq, elapsed):
-            base = w["nonstop"] if itype == "nonstop" else w["single_connect"]
-            return (base * freq ** f_exp
-                    * (elapsed / fastest) ** t_exp)
-        prop_pref = pref("nonstop", prop_freq, prop_elapsed)
-        comp_pref = sum(pref(r["itin_type"], r["freq_wk"], r["elapsed_h"])
-                        for _, r in mine.iterrows())
-        share = prop_pref / (prop_pref + comp_pref) if prop_pref else 0.0
+        comp_pref_sum = sum(
+            (w["nonstop"] if r["itin_type"] == "nonstop" else w["single_connect"])
+            * r["freq_wk"] ** f_exp * (r["elapsed_h"] / fastest) ** t_exp
+            for _, r in mine.iterrows())
         n_ns = (mine["itin_type"] == "nonstop").sum()
         rows.append({
             "study_id": study_id, "cbsa": c["cbsa"],
             "metro_name": c["metro_name"],
-            "proposed_share": share,
+            "proposed_elapsed_h": prop_elapsed,
+            "fastest_elapsed_h": fastest,
+            "comp_pref_sum": comp_pref_sum,
+            "proposed_share": share_at_freq(ref_freq, prop_elapsed, fastest,
+                                            comp_pref_sum, w, f_exp, t_exp),
+            "ref_freq_wk": ref_freq,
             "n_nonstop_incumbents": int(n_ns),
             "n_onestop_carriers": int(mine[mine["itin_type"] == "onestop"]
                                       ["carrier"].nunique()),

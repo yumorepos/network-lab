@@ -18,8 +18,11 @@ candidates:
   destination_country: US
   min_metro_pop: from_assumptions
   distance_nm: {min: 250, max: 2600}
-  exclude_served_nonstop_by: AS
-  proposed_weekly_frequency: 7
+  exclude_served_nonstop_by: AS      # metro-level, trailing 12 months
+  target_frequency_weekly: [3, 7, 14]
+
+gauges:
+  - {type: "737-9", seats: 178}
 
 economics:
   cost_comparator: AS     # Alaska's own Form 41 filings; observed, not a proxy

@@ -41,14 +41,16 @@ if page == "Route screen":
         c1.metric("LAUNCH", int(counts.get("LAUNCH", 0)))
         c2.metric("MONITOR", int(counts.get("MONITOR", 0)))
         c3.metric("PASS", int(counts.get("PASS", 0)))
-        st.caption("Margins are contribution over direct operating cost plus "
-                   "the airport-fee proxy; demand rows are flagged observed "
-                   "or modeled. See Validation for what that means.")
-        show = df[["metro_name", "verdict", "confidence", "margin_pct",
-                   "fare_down_margin", "fuel_down_margin", "belf",
-                   "load_factor", "proposed_share", "demand_pax_yr",
-                   "demand_source", "n_nonstop_incumbents", "top_competitor",
-                   "top_risk"]]
+        st.caption("Each market is right-sized: the screen picks the "
+                   "frequency (and gauge) that maximizes annual contribution "
+                   "at a feasible load factor, then judges that schedule. "
+                   "Margins are a fully-allocated proxy; demand rows are "
+                   "flagged observed or modeled. See Validation.")
+        show = df[["metro_name", "verdict", "confidence", "chosen_freq_wk",
+                   "chosen_seats", "margin_pct", "fare_down_margin",
+                   "fuel_down_margin", "belf", "load_factor", "proposed_share",
+                   "demand_pax_yr", "demand_method", "n_nonstop_incumbents",
+                   "top_competitor", "top_risk"]]
         st.dataframe(show, use_container_width=True, height=560)
         st.download_button("Download CSV", df.to_csv(index=False),
                            f"screen_{sid}.csv")
@@ -60,12 +62,23 @@ elif page == "Market detail":
     if eco is None:
         st.warning("Run `make models` first.")
     else:
+        scr = load(f"screen_{sid}.parquet")
         mkt = st.selectbox("Market", sorted(eco["metro_name"].unique()))
         e = eco[eco["metro_name"] == mkt]
+        # filter economics to this market's right-sized service (the frequency
+        # and gauge the screen selected), so the scenario grid is one schedule
+        if scr is not None and (scr["metro_name"] == mkt).any():
+            srow = scr[scr["metro_name"] == mkt].iloc[0]
+            e = e[(e["freq_wk"] == srow["chosen_freq_wk"])
+                  & (e["seats"] == srow["chosen_seats"])]
+            st.caption(f"Right-sized service: {int(srow['chosen_freq_wk'])}x "
+                       f"weekly x {int(srow['chosen_seats'])} seats "
+                       f"({srow['chosen_gauge']}) - verdict {srow['verdict']}")
         base = e[(e.fare_scenario_pct == 0) & (e.fuel_scenario_pct == 0)].iloc[0]
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("Demand (pax/yr)", f"{base['demand_pax_yr']:,.0f}",
-                  help=f"source: {base['demand_source']}")
+                  help=f"source: {base['demand_source']} / "
+                       f"{base.get('demand_method','')}")
         c2.metric("Modeled share", f"{base['proposed_share']:.0%}")
         c3.metric("Base margin", f"{base['margin_pct']:.1f}%")
         c4.metric("Break-even LF", f"{base['belf']:.2f}")

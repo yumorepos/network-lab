@@ -137,8 +137,17 @@ def scenario_grid(study_id: str) -> pd.DataFrame:
     else:
         rates = comparator_rates(comp_cfg)
 
-    seats = cfg["fleet"]["seats"]
-    freq_wk = cfg["candidates"]["proposed_weekly_frequency"]
+    from .competition import share_at_freq
+    w = a["qsi_weights"]
+    f_exp = w["frequency_exponent"]
+    t_exp = a["qsi_elapsed_time_exponent"]["value"]
+
+    freqs = cfg["candidates"]["target_frequency_weekly"]
+    # Gauge list: explicit config, else the single fleet gauge. Each study here
+    # runs one transborder/domestic mainline gauge, so frequency is the active
+    # axis; the loop supports multiple gauges for any study that lists them.
+    gauges = cfg.get("gauges") or [{"type": cfg["fleet"]["type"],
+                                    "seats": cfg["fleet"]["seats"]}]
     fee = a["airport_fee_proxy"]
     fee_dep = fee["per_departure_usd"]
     fee_seat = fee["per_seat_usd"]
@@ -149,9 +158,10 @@ def scenario_grid(study_id: str) -> pd.DataFrame:
 
     demand = pd.read_parquet(OUTPUTS / f"demand_{study_id}.parquet")
     share = pd.read_parquet(OUTPUTS / f"share_{study_id}.parquet")
-    m = demand.merge(share[["cbsa", "proposed_share", "n_nonstop_incumbents",
-                            "n_onestop_carriers", "top_competitor"]],
-                     on="cbsa")
+    m = demand.merge(
+        share[["cbsa", "proposed_elapsed_h", "fastest_elapsed_h",
+               "comp_pref_sum", "n_nonstop_incumbents", "n_onestop_carriers",
+               "top_competitor"]], on="cbsa")
 
     rows = []
     for _, r in m.iterrows():
@@ -159,45 +169,58 @@ def scenario_grid(study_id: str) -> pd.DataFrame:
         fare_base = (r["fare_observed"]
                      if pd.notna(r.get("fare_observed", np.nan))
                      else float(curve(r["dist_mi"])) * premium)
-        carried = r["demand_pax_yr"] * r["proposed_share"]
-        deps_yr = freq_wk * 52
-        pax_per_dep = spill.expected_boardings(carried / deps_yr, seats)
-        for f_pct in a["fare_scenario_grid_pct"]["value"]:
-            for g_pct in a["fuel_scenario_grid"]["value"]:
-                fare = fare_base * (1 + f_pct / 100)
-                gal = p_base * (1 + g_pct / 100)
-                fuel_cost = rates["burn_gph"] * gal * bh
-                doc = (rates["crew_ph"] + rates["maint_ph"] + rates["own_ph"]
-                       + rates["other_ph"]) * bh
-                fees = fee_dep + fee_seat * seats
-                # fully-allocated proxy: comparator's own indirect burden on
-                # direct cost, plus the incremental Canadian fee proxy
-                cost = (fuel_cost + doc) * rates["indirect_mult"] + fees
-                rev = fare * pax_per_dep
-                asm = seats * r["dist_mi"]
-                rows.append({
-                    "study_id": study_id, "cbsa": r["cbsa"],
-                    "metro_name": r["metro_name"],
-                    "dest_airport": r["dest_airport"],
-                    "dist_mi": r["dist_mi"], "block_h": bh,
-                    "fare_scenario_pct": f_pct, "fuel_scenario_pct": g_pct,
-                    "fare_used": fare, "fuel_usd_gal": gal,
-                    "pax_per_dep": pax_per_dep,
-                    "load_factor": pax_per_dep / seats,
-                    "revenue_dep": rev, "cost_dep": cost,
-                    "casm_c": 100 * cost / asm, "rasm_c": 100 * rev / asm,
-                    "margin_pct": 100 * (rev - cost) / rev if rev else np.nan,
-                    "belf": cost / (fare * seats) if fare else np.nan,
-                    "demand_source": r["demand_source"],
-                    "demand_method": r.get("demand_method", "observed_db1b"),
-                    "implied_vs_anchor_ratio":
-                        r.get("implied_vs_anchor_ratio", np.nan),
-                    "anchor_2018_pax": r.get("anchor_2018_pax", np.nan),
-                    "proposed_share": r["proposed_share"],
-                    "demand_pax_yr": r["demand_pax_yr"],
-                    "n_nonstop_incumbents": r["n_nonstop_incumbents"],
-                    "top_competitor": r["top_competitor"],
-                })
+        for g in gauges:
+            seats = g["seats"]
+            # fuel burn scales ~linearly with gauge; the study comparator burn
+            # is for the fleet gauge, scaled if a config lists a different one
+            burn = rates["burn_gph"] * (seats / cfg["fleet"]["seats"])
+            for freq_wk in freqs:
+                shr = share_at_freq(freq_wk, r["proposed_elapsed_h"],
+                                    r["fastest_elapsed_h"], r["comp_pref_sum"],
+                                    w, f_exp, t_exp)
+                carried = r["demand_pax_yr"] * shr
+                deps_yr = freq_wk * 52
+                pax_per_dep = spill.expected_boardings(carried / deps_yr, seats)
+                for f_pct in a["fare_scenario_grid_pct"]["value"]:
+                    for g_pct in a["fuel_scenario_grid"]["value"]:
+                        fare = fare_base * (1 + f_pct / 100)
+                        gal = p_base * (1 + g_pct / 100)
+                        fuel_cost = burn * gal * bh
+                        doc = (rates["crew_ph"] + rates["maint_ph"]
+                               + rates["own_ph"] + rates["other_ph"]) * bh
+                        fees = fee_dep + fee_seat * seats
+                        cost = (fuel_cost + doc) * rates["indirect_mult"] + fees
+                        rev = fare * pax_per_dep
+                        asm = seats * r["dist_mi"]
+                        rows.append({
+                            "study_id": study_id, "cbsa": r["cbsa"],
+                            "metro_name": r["metro_name"],
+                            "dest_airport": r["dest_airport"],
+                            "dist_mi": r["dist_mi"], "block_h": bh,
+                            "gauge_type": g["type"], "seats": seats,
+                            "freq_wk": freq_wk,
+                            "fare_scenario_pct": f_pct,
+                            "fuel_scenario_pct": g_pct,
+                            "fare_used": fare, "fuel_usd_gal": gal,
+                            "pax_per_dep": pax_per_dep,
+                            "load_factor": pax_per_dep / seats,
+                            "revenue_dep": rev, "cost_dep": cost,
+                            "annual_contribution": deps_yr * (rev - cost),
+                            "casm_c": 100 * cost / asm,
+                            "rasm_c": 100 * rev / asm,
+                            "margin_pct": 100 * (rev - cost) / rev if rev else np.nan,
+                            "belf": cost / (fare * seats) if fare else np.nan,
+                            "demand_source": r["demand_source"],
+                            "demand_method": r.get("demand_method",
+                                                   "observed_db1b"),
+                            "implied_vs_anchor_ratio":
+                                r.get("implied_vs_anchor_ratio", np.nan),
+                            "anchor_2018_pax": r.get("anchor_2018_pax", np.nan),
+                            "proposed_share": shr,
+                            "demand_pax_yr": r["demand_pax_yr"],
+                            "n_nonstop_incumbents": r["n_nonstop_incumbents"],
+                            "top_competitor": r["top_competitor"],
+                        })
     con.close()
     out = pd.DataFrame(rows)
     out.to_parquet(OUTPUTS / f"economics_{study_id}.parquet", index=False)

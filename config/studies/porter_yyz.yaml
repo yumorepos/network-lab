@@ -19,8 +19,14 @@ candidates:
   destination_country: US
   min_metro_pop: from_assumptions
   distance_nm: {min: 250, max: 2200}
-  exclude_served_nonstop_by: PD
-  proposed_weekly_frequency: 7
+  exclude_served_nonstop_by: PD      # metro-level, trailing 12 months
+  target_frequency_weekly: [3, 7, 14]
+
+# Porter's transborder jet fleet is the E195-E2 only (the Q400s are domestic
+# turboprop and do not fly YYZ-US jet routes), so this is a single-gauge study.
+# The gauge-search code path is exercised by any study that lists more than one.
+gauges:
+  - {type: "E195-E2", seats: 132}
 
 economics:
   cost_comparator: from_assumptions # porter_cost_comparator_carrier (B6 E190 proxy)

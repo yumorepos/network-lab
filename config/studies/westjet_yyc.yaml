@@ -18,8 +18,14 @@ candidates:
   destination_country: US
   min_metro_pop: from_assumptions   # candidate_min_metro_pop
   distance_nm: {min: 250, max: 2600}
-  exclude_served_nonstop_by: WS     # current-year T-100 nonstops from YYC
-  proposed_weekly_frequency: 7      # daily; the standard entry schedule
+  exclude_served_nonstop_by: WS     # metro-level: any WS nonstop from YYC in
+                                    # the trailing 12 months excludes the metro
+  target_frequency_weekly: [3, 7, 14]  # screen picks the best per market
+
+# WestJet transborder is 737-only; a single gauge is the honest option set.
+# We do NOT invent a regional-gauge WestJet transborder aircraft.
+gauges:
+  - {type: "737-8", seats: 174}
 
 economics:
   cost_comparator: from_assumptions # cost_comparator_carrier (WN)
