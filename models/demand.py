@@ -79,33 +79,74 @@ def resolve(study_id: str) -> pd.DataFrame:
         cand["pop_b"] = cand["pop"]
         cand["inc_a"] = cand["income"]     # destination-income proxy, see doc
         cand["inc_b"] = cand["income"]
-        cand["demand_pax_yr"] = (gravity.predict(cand, "current")
-                                 * factor * growth)
-        cand["demand_source"] = "modeled"
-        cand["transfer_factor"] = factor
-        cand["t100_growth"] = growth
-        cand["fare_observed"] = np.nan
-        # report the frozen anchor value alongside where the pair existed
+        gravity_est = gravity.predict(cand, "current") * factor * growth
         anchor = con.execute("""
             SELECT GEO, try_cast(VALUE AS DOUBLE) AS pax
             FROM fact_od_transborder_2018
             WHERE REF_DATE='2018'
               AND Estimates='Number of outbound and inbound passengers'
         """).df()
-        city = {"YYC": "Calgary", "YYZ": "Toronto", "YUL": "Montréal",
-                "YVR": "Vancouver", "YEG": "Edmonton"}.get(hub, "")
-        sub = anchor[anchor["GEO"].str.contains(city, na=False)]
+        # Parse anchor pairs properly (city tokens AND state), not by raw
+        # substring: "Columbia, SC" must not match "District of Columbia",
+        # Portland ME must not match Portland OR, and StatCan's compound
+        # names ("Dallas-Fort Worth, Texas", "Washington/Baltimore") must
+        # still match their metros. City names are split into tokens on
+        # both sides and compared exactly, gated on state.
+        import re as _re
+        from .transfer import CA_CITY_HUB, US_STATE_CODE, _parse_geo
+        hub_city = {v[1]: k for k, v in CA_CITY_HUB.items()}.get(hub, "")
+        def _tokens(city_str):
+            return [t.strip().lower() for t in _re.split(r"[-/]", city_str)
+                    if t.strip()]
+        by_token_state: dict[tuple[str, str], float] = {}
+        for _, ar in anchor.iterrows():
+            parsed = _parse_geo(ar["GEO"])
+            if not parsed:
+                continue
+            (us_city, us_state), (ca_city, _) = parsed
+            if ca_city != hub_city or pd.isna(ar["pax"]):
+                continue
+            for tok in _tokens(us_city):
+                key = (tok, US_STATE_CODE[us_state])
+                by_token_state[key] = max(by_token_state.get(key, 0.0),
+                                          float(ar["pax"]))
         def find_anchor(name):
-            us_city = name.split("-")[0].split(",")[0].strip()
-            hit = sub[sub["GEO"].str.contains(us_city, na=False, regex=False)]
-            return float(hit["pax"].iloc[0]) if len(hit) else np.nan
+            city_part, _, state_part = name.rpartition(",")
+            states = [s.strip() for s in state_part.split("-")]
+            for tok in _tokens(city_part):
+                for st in states:
+                    if (tok, st) in by_token_state:
+                        return by_token_state[(tok, st)]
+            return np.nan
         cand["anchor_2018_pax"] = cand["metro_name"].map(find_anchor)
+
+        # Market-specific evidence beats the hub median: where the pair has
+        # its own 2018 anchor, demand = anchor x T-100 corridor growth.
+        # Gravity x hub-median transfer is the fallback for unanchored pairs
+        # only. No shrinkage applied: every anchor already clears the
+        # survey's own >4,000 pax floor (documented choice).
+        has_anchor = cand["anchor_2018_pax"].notna()
+        anchor_est = cand["anchor_2018_pax"] * growth
+        cand["demand_pax_yr"] = np.where(has_anchor, anchor_est, gravity_est)
+        cand["demand_method"] = np.where(has_anchor, "anchor_x_growth",
+                                         "gravity_x_transfer")
+        cand["gravity_implied_pax"] = gravity_est
+        # diagnostic: what the gravity path would have said, relative to the
+        # market's own last observed actual. Visible on every screen row.
+        cand["implied_vs_anchor_ratio"] = np.where(
+            has_anchor, gravity_est / anchor_est, np.nan)
+        cand["demand_source"] = "modeled"
+        cand["transfer_factor"] = factor
+        cand["t100_growth"] = growth
+        cand["fare_observed"] = np.nan
         out = cand
     con.close()
 
     keep = [c for c in ["study_id", "hub", "carrier", "dest_airport", "cbsa",
                         "metro_name", "dist_mi", "pop", "income",
                         "nonstop_by_others", "demand_pax_yr", "demand_source",
+                        "demand_method", "gravity_implied_pax",
+                        "implied_vs_anchor_ratio",
                         "fare_observed", "transfer_factor", "t100_growth",
                         "anchor_2018_pax"] if c in out.columns]
     res = out[keep].copy()

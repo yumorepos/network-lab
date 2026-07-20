@@ -22,6 +22,8 @@ BELF_MAX = 0.85
 def confidence(row) -> str:
     if row["demand_source"] == "observed":
         return "high" if row["n_nonstop_incumbents"] > 0 else "medium"
+    if row.get("demand_method") == "anchor_x_growth":
+        return "medium"   # anchored to the market's own last observed actual
     return "medium" if row["n_nonstop_incumbents"] > 0 else "low"
 
 
@@ -67,10 +69,12 @@ def run(study_id: str) -> pd.DataFrame:
     m["confidence"] = m.apply(confidence, axis=1)
     m["driver_1"] = ("base margin " + m["margin_pct"].round(1).astype(str)
                      + "% vs hurdle " + str(hurdle) + "%")
+    method = m.get("demand_method", m["demand_source"]).fillna(
+        m["demand_source"]) if "demand_method" in m else m["demand_source"]
     m["driver_2"] = ("modeled share "
                      + (100 * m["proposed_share"]).round(0).astype(int).astype(str)
                      + "% of " + (m["demand_pax_yr"] / 1000).round(0).astype(int)
-                     .astype(str) + "k pax/yr (" + m["demand_source"] + ")")
+                     .astype(str) + "k pax/yr (" + method + ")")
     m["top_risk"] = m.apply(top_risk, axis=1)
     m["key_assumptions"] = (
         "transfer factor; fare premium; airport fee proxy"
@@ -80,7 +84,8 @@ def run(study_id: str) -> pd.DataFrame:
     cols = ["study_id", "metro_name", "dest_airport", "dist_mi", "verdict",
             "confidence", "margin_pct", "fare_down_margin", "fuel_down_margin",
             "belf", "load_factor", "proposed_share", "demand_pax_yr",
-            "demand_source", "n_nonstop_incumbents", "top_competitor",
+            "demand_source", "demand_method", "implied_vs_anchor_ratio",
+            "anchor_2018_pax", "n_nonstop_incumbents", "top_competitor",
             "driver_1", "driver_2", "top_risk", "key_assumptions"]
     out = (m[cols].sort_values(["verdict", "margin_pct"],
                                ascending=[True, False])

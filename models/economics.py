@@ -189,6 +189,10 @@ def scenario_grid(study_id: str) -> pd.DataFrame:
                     "margin_pct": 100 * (rev - cost) / rev if rev else np.nan,
                     "belf": cost / (fare * seats) if fare else np.nan,
                     "demand_source": r["demand_source"],
+                    "demand_method": r.get("demand_method", "observed_db1b"),
+                    "implied_vs_anchor_ratio":
+                        r.get("implied_vs_anchor_ratio", np.nan),
+                    "anchor_2018_pax": r.get("anchor_2018_pax", np.nan),
                     "proposed_share": r["proposed_share"],
                     "demand_pax_yr": r["demand_pax_yr"],
                     "n_nonstop_incumbents": r["n_nonstop_incumbents"],
