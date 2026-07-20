@@ -53,3 +53,14 @@
 ## Known future work
 - Route post-mortems (two, highest ROI), per-vintage backtest refit, ACS
   income with a key, connectivity view, full Porter study.
+
+## Integrity pass (2026-07-20, post-review)
+- Backtest narrative corrected: 12 of 21 ceased routes were Flair route-level
+  cuts, not Lynx shutdown casualties; N pinned at 48 launched-and-resolved.
+- Anchor-first transborder demand (market's own 2018 actual beats hub-median
+  transfer); three anchor-matching bugs fixed; verdicts moved both ways
+  (WS YYC 2 LAUNCH -> 0; PD NYC PASS -> LAUNCH).
+- Share guard (>70% share + 0 nonstops -> MONITOR cap) and 700mi circuity.
+- Alaska all-PASS reframed as fixed-gauge artifact, not saturation.
+- Deterministic fits (ORDER BY) + consistency test; canonical numbers:
+  transfer 0.82, MAE 7.0, N=48, medians 0.89/0.86. See INTEGRITY_REPORT.md.
