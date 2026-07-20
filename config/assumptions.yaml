@@ -144,3 +144,14 @@ currency:
   rationale: "Single-currency analysis; CAD conversion would add noise without
     changing rankings. Noted in LIMITATIONS."
   confidence: high
+
+us_metro_income_source:
+  value: bea_per_capita_personal_income
+  preferred: acs_median_hh_income   # used automatically if CENSUS_API_KEY is set
+  source: BEA MAINC1 flat file (no API key required)
+  rationale: "Census ACS API now requires a key, which would break zero-config
+    reproducibility. BEA per-capita personal income is a real measured metro
+    income variable from an official source; it is not median household income,
+    and the gravity model's income elasticity is interpreted accordingly."
+  confidence: medium
+  sensitivity: "gravity refit with ACS income (if key provided) is the check"
