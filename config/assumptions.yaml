@@ -160,3 +160,22 @@ us_metro_income_source:
     and the gravity model's income elasticity is interpreted accordingly."
   confidence: medium
   sensitivity: "gravity refit with ACS income (if key provided) is the check"
+
+candidate_min_airport_seats_yr:
+  value: 250000
+  source: "Project convention (~2-3 daily narrowbody departures)"
+  rationale: "A candidate destination must have a functioning airline airport;
+    metros below this floor receive their air service through a neighbor and
+    modeling them as virgin markets double-counts the neighbor's demand"
+  confidence: medium
+  sensitivity: {low: 100000, high: 500000}
+
+satellite_airport_rule:
+  radius_mi: 60
+  seat_ratio: 5
+  source: "Project convention"
+  rationale: "A metro whose anchor airport sits within 60 mi of an airport
+    with 5x the seats is a leakage catchment of that airport (Provo-SLC,
+    Naples-RSW, Bridgeport-NYC), not a standalone candidate"
+  confidence: medium
+  sensitivity: {radius_low: 40, radius_high: 80}

@@ -9,10 +9,14 @@ public efficiency claims). Crew, maintenance, ownership, and other direct
 costs are per-air-hour rates applied to modeled block hours (slightly
 conservative: block > air hours).
 
-Scope note, stated everywhere the numbers appear: this is CONTRIBUTION over
-direct operating cost plus the airport-fee proxy. Indirect costs (stations,
-sales, G&A) are excluded; the hurdle rate in assumptions.yaml is set on that
-basis.
+Scope note, stated everywhere the numbers appear: margins are a
+FULLY-ALLOCATED PROXY - direct operating cost times the comparator's own
+indirect burden (P-1.2 total opex / P-5.2 direct opex, derived not assumed),
+plus the incremental Canadian airport/nav fee proxy. Without the burden,
+every decent market clears an 8% hurdle and the screen stops discriminating;
+with it, the hurdle means what a planner expects it to mean. Possible modest
+double-count between the burden and the fee proxy is inside the fee's +/-30%
+sensitivity band and noted in LIMITATIONS.
 
 Fares: US domestic markets use observed DB1B fares. Transborder markets use a
 distance-matched fare curve fit on DB1B x the documented transborder premium.
@@ -65,10 +69,29 @@ def comparator_rates(carrier: str, year: int = 2024,
     burn_gph = r["AIR_FUELS_ISSUED"] / hours
     # sanity: narrowbody burn should land in a physical range
     assert 400 < burn_gph < 1400, f"implausible burn {burn_gph:.0f} gal/h"
+    # indirect burden derived from the same carrier's filings: P-1.2 total
+    # operating expense over P-5.2 total direct aircraft operating expense.
+    # This converts direct-cost margins into a fully-allocated proxy.
+    con2 = connect(read_only=True)
+    mult = con2.execute(f"""
+        WITH direct AS (
+          SELECT sum(try_cast(TOT_AIR_OP_EXPENSES AS DOUBLE)) AS d
+          FROM fact_costs
+          WHERE UNIQUE_CARRIER = '{carrier}' AND YEAR = {year}
+        ),
+        total AS (
+          SELECT sum(try_cast(OP_EXPENSES AS DOUBLE)) AS t
+          FROM fact_income_p12
+          WHERE UNIQUE_CARRIER = '{carrier}' AND YEAR = {year}
+        )
+        SELECT t / d FROM direct, total
+    """).fetchone()[0]
+    con2.close()
+    assert mult and 1.2 < mult < 3.0, f"implausible indirect mult {mult}"
     return {"carrier": carrier, "year": year,
             "crew_ph": float(crew), "maint_ph": float(maint),
             "own_ph": float(own), "other_ph": float(other),
-            "burn_gph": float(burn_gph)}
+            "burn_gph": float(burn_gph), "indirect_mult": float(mult)}
 
 
 def fuel_price_base(con) -> float:
@@ -147,7 +170,9 @@ def scenario_grid(study_id: str) -> pd.DataFrame:
                 doc = (rates["crew_ph"] + rates["maint_ph"] + rates["own_ph"]
                        + rates["other_ph"]) * bh
                 fees = fee_dep + fee_seat * seats
-                cost = fuel_cost + doc + fees
+                # fully-allocated proxy: comparator's own indirect burden on
+                # direct cost, plus the incremental Canadian fee proxy
+                cost = (fuel_cost + doc) * rates["indirect_mult"] + fees
                 rev = fare * pax_per_dep
                 asm = seats * r["dist_mi"]
                 rows.append({

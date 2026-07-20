@@ -1,10 +1,10 @@
 """Recommendation screen: LAUNCH / MONITOR / PASS per candidate.
 
 Rules (from the project brief, thresholds in assumptions.yaml):
-  LAUNCH  — base margin clears the hurdle AND the downside fare scenario stays
+  LAUNCH  - base margin clears the hurdle AND the downside fare scenario stays
             positive AND base break-even load factor is attainable (<= 0.85).
-  MONITOR — base margin positive but a downside test fails.
-  PASS    — base margin negative.
+  MONITOR - base margin positive but a downside test fails.
+  PASS    - base margin negative.
 
 Every verdict ships with: the two numbers that drove it, the top assumptions
 it rests on, the biggest risk, and a confidence grade derived from data

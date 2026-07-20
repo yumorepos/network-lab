@@ -1,4 +1,4 @@
-"""StatCan stable-URL table CSVs (Open Government Licence — Canada; attributed
+"""StatCan stable-URL table CSVs (Open Government Licence - Canada; attributed
 in README). Includes the discontinued transborder O&D tables frozen around
 2018, which anchor the transfer factor, and current airport traffic tables
 used as reconciliation controls.
@@ -34,7 +34,7 @@ def run() -> None:
         z = DATA_RAW / "statcan" / f"{tid}.zip"
         ok = download_file(URL.format(tid=tid), z, ok_404=True)
         if not ok:
-            log(f"statcan {tid} 404 — record in LIMITATIONS if load-bearing")
+            log(f"statcan {tid} 404 - record in LIMITATIONS if load-bearing")
             continue
         extracted = unzip_all(z, DATA_RAW / "statcan" / tid)
         csv = [p for p in extracted
@@ -47,7 +47,7 @@ def run() -> None:
         """)
         n = con.execute(f"SELECT count(*) FROM '{pq}'").fetchone()[0]
         assert n > 10, f"statcan {tid}: too few rows"
-        log(f"statcan {tid}: {n} rows — {desc}")
+        log(f"statcan {tid}: {n} rows - {desc}")
 
 
 if __name__ == "__main__":

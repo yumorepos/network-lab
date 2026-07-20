@@ -21,7 +21,7 @@ from .common import UA, log
 RING = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 BASE = "https://www.transtats.bts.gov"
 
-# Table 293: T-100 Segment (All Carriers) — domestic AND international
+# Table 293: T-100 Segment (All Carriers) - domestic AND international
 # segments, every carrier reporting to BTS. 295/297: Form 41 P-1.2 / P-5.2.
 # 288/300/304: Master Coordinate, AircraftTypes, Carrier Decode support tables.
 T100_SEGMENT_ALL = 293

@@ -8,7 +8,7 @@ metro pair we reconstruct what passengers can already fly:
 - Incumbent one-stops: same-carrier segment pairs hub->X and X->dest with a
   plausible corridor (total distance <= 1.30x nonstop), weekly frequency =
   min of the two legs, elapsed = leg blocks + connect allowance. This is a
-  reconstruction from segment frequencies, not observed itineraries — MIDT
+  reconstruction from segment frequencies, not observed itineraries - MIDT
   would be the real source and is priced out of a portfolio project; the
   approximation and its direction of error are documented in LIMITATIONS.
 
@@ -24,6 +24,7 @@ import pandas as pd
 from .common import OUTPUTS, assumptions, connect, study
 
 DETOUR_MAX = 1.30
+DETOUR_ABS_MI = 250          # absolute circuity allowance for short markets
 MPH_CRUISE_FACTOR = 1.15078   # kts -> mph
 
 
@@ -91,7 +92,10 @@ def build_competition(study_id: str) -> pd.DataFrame:
         JOIN cand_dest c ON c.cbsa = d.cbsa
         WHERE l1.origin = '{hub}'
           AND l1.dest != '{hub}'
-          AND l1.distance_mi + l2.distance_mi <= {DETOUR_MAX} * c.dist_mi
+          -- circuity: ratio cap for long markets, absolute allowance for
+          -- short ones (real connect detours on <500mi markets exceed 1.3x)
+          AND l1.distance_mi + l2.distance_mi
+              <= greatest({DETOUR_MAX} * c.dist_mi, c.dist_mi + {DETOUR_ABS_MI})
           AND least(l1.freq_wk, l2.freq_wk) >= 3
     """).df()
     con.close()

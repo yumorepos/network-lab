@@ -56,7 +56,7 @@ def resolve(study_id: str) -> pd.DataFrame:
         """, [cfg["hub"]]).fetchone()
         cand["pop_a"], cand["inc_a"] = hub_metro
         cand["pop_b"], cand["inc_b"] = cand["pop"], cand["income"]
-        cand["cm"] = cand["cbsa"].map(cm_of)
+        cand["cm"] = pd.to_numeric(cand["cbsa"].map(cm_of), errors="coerce")
         merged = cand.merge(obs, left_on="cm", right_on="other_cm", how="left")
         thin = merged["pax_yr"].isna() | (merged["pax_yr"] < 4000)
         merged["demand_pax_yr"] = merged["pax_yr"]

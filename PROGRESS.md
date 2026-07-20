@@ -1,36 +1,55 @@
 # Progress log
 
-## Phase 0 — plan and assumption engine (2026-07-20)
+## Phase 0 - plan and assumption engine (2026-07-20)
 - Repo, PLAN.md, assumptions.yaml, three study configs, Makefile.
-- Environment: Python 3.12.6 (plan says 3.11; works), 101 GB free disk.
 
-## Phase 1 — data pipeline (2026-07-20)
+## Phase 1 - data pipeline (2026-07-20)
 - TranStats client drives the site's own DL_SelectFields form (URL params are
   rot13 over [A-Z0-9]; ASP.NET event validation requires posting only valid
-  dropdown options). Old Download_Lookup.asp is dead; support tables 288/300/
-  304 replace it.
-- Census ACS API now requires a key -> BEA county files (CAINC1/CAGDP2)
-  aggregated to CBSA via the official delineation file; documented in
-  assumptions.yaml. BEA metro-level zips are retired (HTML at old URLs).
-- T-100 2018-2026, Form 41 P-5.2/P-1.2 2018-2025, StatCan 8 tables, EIA,
-  OurAirports all land. DB1B 28 quarters via PREZIP (long pole).
-- Marts + city-market->CBSA mapping (810 mapped; unmatched-with-traffic
-  logged; territories/rural AK legitimately outside CBSA system).
-- Reconciliation: national transborder T-100 vs StatCan within 1% for
-  2018/2019/2023/2024; airport-level YYZ/YVR/YYC/YUL within 1%. DB1B check
-  reruns after full download.
+  dropdown options). Retired endpoints (Download_Lookup.asp, BEA metro zips,
+  keyless ACS) all found documented alternates.
+- T-100 2018-2026, Form 41 P-5.2/P-1.2, StatCan 8 tables, BEA county files
+  aggregated via the Census delineation crosswalk, EIA, OurAirports, DB1B 26
+  quarters (2025 Q3/Q4 unpublished, tolerated). ~50 min wall clock.
+- Reconciliation 14/14 in band: national transborder T-100 vs StatCan within
+  1% (2018/2019/2023/2024); airport-level YYZ/YVR/YYC/YUL within 1%; DB1B
+  journeys vs T-100 boardings 1.52-1.57 for all complete years.
 
-## Phases 2-5 — model chain (2026-07-20, code complete)
-- Gravity: pre2022 fit n=6002, R2 0.51, holdout median APE 0.59 (reported
-  honestly; quadratic log-distance added for the ground-substitution hump).
-- Transfer factor: 87 anchor pairs, median 0.86, IQR [0.55, 2.00]; per-hub
-  medians (YYC 1.26, YYZ 0.77, YVR 0.80). Border effect visible and reported.
-- Candidates: 105 (YYC) / 76 (SEA) / 104 (YYZ). Competition reconstruction,
-  QSI-lite, spill, P-5.2 economics (fuel burn derived from AIR_FUELS_ISSUED),
-  3x3 grids, screen. Share validation vs DB1B (SEA) written.
-- Waiting on DB1B completion to fit the current-vintage gravity and run the
-  full chain end to end.
+## Phase 2 - demand (2026-07-20)
+- Gravity: current n=6092 R2 0.50, pre2022 n=6002 R2 0.50, holdout median
+  APE ~0.6 reported by size band. Quadratic log-distance.
+- Transfer factor: 87 anchored pairs, median 0.83, IQR [0.56, 2.10],
+  per-hub medians (YYC 1.29, YYZ 0.80, YVR 0.85), leave-one-out stable.
+- Every demand row flagged observed/modeled; transborder rows carry the 2018
+  anchor value alongside where it exists.
 
-## Phase 6 — in progress
-- Backtest module, Streamlit app, report generator, LIMITATIONS.md, CI
-  written; run + final docs after the chain completes.
+## Phase 3 - share (2026-07-20)
+- One-stop reconstruction with ratio + absolute circuity allowance (the
+  absolute floor matters on short markets: YYZ-BDL via PHL is a real path at
+  1.4x circuity). QSI-lite validated vs DB1B at SEA: MAE 6.7 share points
+  (503 rows, by market structure in validation.md).
+
+## Phase 4 - economics (2026-07-20)
+- P-5.2 rates with fuel burn derived from AIR_FUELS_ISSUED/TOTAL_AIR_HOURS;
+  indirect burden derived from P-1.2/P-5.2 (fully-allocated proxy margins);
+  3x3 fare-fuel grids; truncated-normal spill.
+
+## Phase 5 - screens (2026-07-20)
+- Candidate hygiene that changed the story: airport seat floor + satellite
+  rule removed 25-28 phantom "virgin markets" per study (Provo, Naples,
+  Bridgeport...). Final: WS YYC 2 LAUNCH / 3 MONITOR / 72 PASS;
+  AS SEA all 49 PASS at daily mainline gauge (saturated-hub agreement);
+  PD YYZ 10 / 5 / 65.
+
+## Phase 6 - validation and packaging (2026-07-20)
+- Backtest: 61 transborder launches, operating 0.90 vs ceased 0.86 median
+  percentile; weak separation published with the pre-committed reading (the
+  era's failures were cost-structure, not market selection; lookahead
+  disclosed).
+- Three WestJet business cases, Alaska validation report, Porter portability
+  table, validation.md, reconciliation.md, LIMITATIONS.md, interview story,
+  resume material, Streamlit app, CI, 6 tests green.
+
+## Known future work
+- Route post-mortems (two, highest ROI), per-vintage backtest refit, ACS
+  income with a key, connectivity view, full Porter study.

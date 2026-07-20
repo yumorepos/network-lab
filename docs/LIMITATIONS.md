@@ -25,12 +25,12 @@ after the fact.
    US fares times a documented premium assumption (sensitivity-tested in
    every scenario grid). No exceptions.
 
-5. **Costs are direct operating cost plus a fee proxy.** Form 41 P-5.2 is
-   direct aircraft operating expense; stations, sales, and G&A are excluded.
-   Margins are contribution margins, and the hurdle rate is set on that
-   basis. The airport fee proxy is one flat per-departure + per-seat charge
-   from published rate frameworks, applied uniformly, low confidence, +/-30%
-   sensitivity.
+5. **Costs are a fully-allocated proxy.** Direct aircraft operating expense
+   (Form 41 P-5.2, fuel rebuilt at scenario prices) times the comparator's
+   own indirect burden (P-1.2 total opex over P-5.2 direct opex - derived,
+   not assumed), plus a flat Canadian airport/nav fee proxy (+/-30%
+   sensitivity, low confidence). A modest double-count between the burden
+   and the fee proxy is possible and sits inside the fee's sensitivity band.
 
 6. **US income is per-capita personal income (BEA), not median household
    income (ACS)** unless a CENSUS_API_KEY is supplied; the ACS API now

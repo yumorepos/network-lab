@@ -40,7 +40,8 @@ def metro_anchor_points(con) -> pd.DataFrame:
           WHERE a.iso_country = 'US'
         )
         SELECT u.cbsa, u.cbsa_name, u.iata_code AS anchor_airport,
-               u.lat, u.lon, d.population, d.income, d.gdp_kusd
+               u.lat, u.lon, u.seats AS anchor_seats_yr,
+               d.population, d.income, d.gdp_kusd
         FROM us u
         JOIN dim_metro_us d USING (cbsa)
         WHERE u.rn = 1 AND d.population IS NOT NULL

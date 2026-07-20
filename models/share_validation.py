@@ -59,9 +59,9 @@ def validate() -> dict:
           AND s.origin_country='US' AND s.dest_country='US'
         GROUP BY 1,2,3,4 HAVING sum(s.departures) >= 26
     """).df()
-    cm_of = dict(con.execute(
+    cm_of = {k: int(v) for k, v in con.execute(
         "SELECT iata_code, city_market_id FROM dim_airport "
-        "WHERE city_market_id IS NOT NULL").fetchall())
+        "WHERE city_market_id IS NOT NULL").fetchall()}
     con.close()
 
     seg["o_cm"] = seg["origin"].map(cm_of)
@@ -83,7 +83,7 @@ def validate() -> dict:
                              suffixes=("_1", "_2"))
         if nonstop_dist is not None:
             os_ = os_[os_["distance_mi_1"] + os_["distance_mi_2"]
-                      <= 1.30 * nonstop_dist]
+                      <= np.maximum(1.30 * nonstop_dist, nonstop_dist + 250)]
         prefs: dict[str, float] = {}
         elapsed_all = []
         itins = []

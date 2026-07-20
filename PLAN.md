@@ -1,4 +1,4 @@
-# Network Lab — Plan
+# Network Lab - Plan
 
 A route evaluation platform for airline network planning, built on open data.
 Flagship study: WestJet transborder opportunities from Calgary (YYC). Validation
@@ -49,7 +49,7 @@ outputs          ranked LAUNCH/MONITOR/PASS tables per study config,
    transborder city-pair table, forward-scaled with T-100 control totals).
    Every demand value carries an `observed` or `modeled` flag.
 3. **Share**: QSI-lite. Competitor one-stop itineraries are reconstructed from
-   T-100 segment frequencies before any share is computed — a proposed nonstop
+   T-100 segment frequencies before any share is computed - a proposed nonstop
    scored against no competition is a bug, not a result.
 4. **Spill**: truncated-normal expected boardings at a given gauge.
 5. **Economics**: decomposed cost build from a US comparator carrier's Form 41
@@ -78,17 +78,17 @@ outputs          ranked LAUNCH/MONITOR/PASS tables per study config,
 | StatCan census/estimates | CMA population, income; province GDP proxy | stable table CSVs, same zip pattern | Open Licence |
 | EIA | Gulf Coast jet fuel spot, weekly | https://www.eia.gov/dnav/pet/hist_xls/EER_EPJK_PF4_RGC_DPGw.xls | Public domain |
 
-Vintages: DB1B and T-100 for 2018–2019 (pre-COVID calibration), 2023–present
-(current), 2021–2022 (backtest only). Raw files live in `data/raw/`
+Vintages: DB1B and T-100 for 2018-2019 (pre-COVID calibration), 2023-present
+(current), 2021-2022 (backtest only). Raw files live in `data/raw/`
 (gitignored); only derived aggregates are committed.
 
 ## Study configs
 
-- `config/studies/westjet_yyc.yaml` — WS, YYC, transborder candidates. Flagship:
+- `config/studies/westjet_yyc.yaml` - WS, YYC, transborder candidates. Flagship:
   full chain + three business cases.
-- `config/studies/alaska_sea.yaml` — AS, SEA, US domestic candidates. Validation:
+- `config/studies/alaska_sea.yaml` - AS, SEA, US domestic candidates. Validation:
   every stage scored against observed truth.
-- `config/studies/porter_yyz.yaml` — PD, YYZ, transborder candidates. Portability:
+- `config/studies/porter_yyz.yaml` - PD, YYZ, transborder candidates. Portability:
   ranked table only.
 
 ## Milestones

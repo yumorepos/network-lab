@@ -41,7 +41,17 @@ def generate(study_id: str) -> pd.DataFrame:
     served_by_study = set(served[served["carrier"] == carrier]["airport"])
     served_by_any = set(served["airport"])
 
-    rows = []
+    min_seats = float(a["candidate_min_airport_seats_yr"]["value"])
+    sat = a["satellite_airport_rule"]
+
+    def is_satellite(m) -> bool:
+        near = metros[(metros["cbsa"] != m["cbsa"])
+                      & (metros["anchor_seats_yr"]
+                         >= sat["seat_ratio"] * max(m["anchor_seats_yr"], 1))]
+        return any(haversine_mi(m["lat"], m["lon"], n["lat"], n["lon"])
+                   <= sat["radius_mi"] for _, n in near.iterrows())
+
+    rows, dropped = [], {"seats_floor": 0, "satellite": 0}
     for _, m in metros.iterrows():
         if m["population"] is None or m["population"] < min_pop:
             continue
@@ -49,6 +59,12 @@ def generate(study_id: str) -> pd.DataFrame:
         if not (dmin <= dist <= dmax):
             continue
         if m["anchor_airport"] in served_by_study:
+            continue
+        if m["anchor_seats_yr"] < min_seats:
+            dropped["seats_floor"] += 1
+            continue
+        if is_satellite(m):
+            dropped["satellite"] += 1
             continue
         rows.append({
             "study_id": study_id, "hub": hub, "carrier": carrier,
@@ -59,6 +75,9 @@ def generate(study_id: str) -> pd.DataFrame:
             "nonstop_by_others": m["anchor_airport"] in served_by_any,
         })
     con.close()
+    print(f"[candidates] {study_id}: {len(rows)} kept; dropped "
+          f"{dropped['seats_floor']} below seat floor, "
+          f"{dropped['satellite']} satellites of larger airports")
     df = pd.DataFrame(rows).sort_values("pop", ascending=False)
     return df.reset_index(drop=True)
 

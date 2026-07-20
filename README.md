@@ -22,24 +22,30 @@ proof: Porter at Toronto Pearson (YYZ).
   1%** nationally and at YYZ/YVR/YYC/YUL (relationship derived from
   definitions before comparing; see `docs/reconciliation.md`).
 - Transfer factor anchored to the discontinued 2018 StatCan city-pair
-  survey: **median 0.86, IQR [0.55, 2.00]** across 87 pairs — dispersion
+  survey: **median 0.83, IQR [0.56, 2.10]** across 87 pairs - dispersion
   reported everywhere the factor is used.
-- 50 real 2021-2025 transborder launches backtested with a pre-2022
+- 61 real 2021-2025 transborder launches backtested with a pre-2022
   model: survivors and ceased routes both sit in the top decile of modeled
   demand (**0.90 vs 0.86** median percentile). The era's failures were
   cost-structure failures, not market-selection failures; the report says so
   rather than overclaiming signal.
+- QSI-lite carrier shares vs observed DB1B shares at SEA: **MAE 6.7 share
+  points** across 503 market-carrier rows, reported by market structure.
+- Screens that behave like screens: WestJet YYC resolves 77 candidates to
+  **2 LAUNCH / 3 MONITOR / 72 PASS**; Alaska SEA resolves all 49 remaining
+  unserved candidates to PASS at daily mainline gauge, agreeing with the
+  revealed saturation of a mature hub; Porter YYZ finds 10 LAUNCH among 80.
 
 ## Design in one paragraph
 
 There is no public Canadian domestic O&D, no transborder fare data, and the
 transborder O&D survey froze in 2018. So the gravity demand model is
-calibrated where truth exists (6,002 US city-market pairs from DB1B),
+calibrated where truth exists (~6,000 US city-market pairs from DB1B),
 transferred to Canada-US markets with an anchored correction factor, and
 validated end to end on a US hub. Every demand number carries an
 `observed`/`modeled` flag; every non-derived value lives in
 `config/assumptions.yaml` with source, confidence, and sensitivity; and a
-proposed nonstop is never scored against an empty market — competitor
+proposed nonstop is never scored against an empty market - competitor
 one-stops are reconstructed from T-100 segment frequencies first.
 
 ## Run it
@@ -61,7 +67,7 @@ the hand-compiled launch register with per-row confidence and sources.
 
 ## Honest limitations
 
-See `docs/LIMITATIONS.md` — the ten limitations are stated with the design
+See `docs/LIMITATIONS.md` - the ten limitations are stated with the design
 decision each one forced, including the single-vintage backtest lookahead and
 the airport-fee proxy. Planned extensions (route post-mortems, full Porter
 study, connectivity view, per-vintage refits) are listed there rather than
@@ -69,7 +75,7 @@ implied to exist.
 
 ## Data sources and licenses
 
-BTS TranStats (public domain), StatCan (Open Government Licence — Canada;
+BTS TranStats (public domain), StatCan (Open Government Licence - Canada;
 tables 23-10-0253/0256/0249/0255/0257/0259/0312, 17-10-0135), BEA (public
 domain), EIA (public domain), Census delineation files (public domain),
 OurAirports (public domain).

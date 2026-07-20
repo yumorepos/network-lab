@@ -1,6 +1,6 @@
 """DB1B Market: 10% ticket sample, market-level O&D with fares.
 
-PREZIP bulk endpoint, one zip per quarter. US domestic only by construction —
+PREZIP bulk endpoint, one zip per quarter. US domestic only by construction -
 there are no transborder fares in DB1B and nothing here implies otherwise.
 Raw zips are kept as the local cache; extracted CSVs are deleted after the
 slim Parquet is written.

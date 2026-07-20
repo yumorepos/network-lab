@@ -5,7 +5,7 @@ demographics live at CBSA granularity ("Seattle-Tacoma-Bellevue, WA"). The
 join is name-based: a city market matches a CBSA when one of its city tokens
 equals one of the CBSA's principal-city tokens and the state matches. Ties go
 to the larger CBSA. A handful of known mismatches are pinned manually.
-Unmatched city markets that actually carry traffic are logged loudly — silent
+Unmatched city markets that actually carry traffic are logged loudly - silent
 mapping loss would bias the gravity calibration toward well-named metros.
 """
 from __future__ import annotations

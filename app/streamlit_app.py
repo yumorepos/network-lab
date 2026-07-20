@@ -88,7 +88,7 @@ elif page == "Market detail":
                                           ascending=[True, False]),
                              use_container_width=True)
             else:
-                st.info("No incumbent itineraries reconstructed — check the "
+                st.info("No incumbent itineraries reconstructed - check the "
                         "share number skeptically, not gratefully.")
 
 elif page == "Validation":

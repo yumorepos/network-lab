@@ -11,7 +11,7 @@ Definitional groundwork:
   one-way journey, so national transborder E+D should approximate T-100
   CA-US onboard passengers summed over both directions (ratio ~ 1.0).
   A Canadian DOMESTIC passenger touches two Canadian airports, so domestic
-  E+D is ~2x journeys — that sector has no T-100 counterpart at all (Canadian
+  E+D is ~2x journeys - that sector has no T-100 counterpart at all (Canadian
   domestic segments never touch the US), which is exactly the data gap this
   project's transfer-factor design works around.
 - DB1B counts O&D JOURNEYS (10% sample, expanded); T-100 counts segment
@@ -137,9 +137,13 @@ def main() -> int:
                 AND service_class IN ('F','L')
               GROUP BY year
             ),
-            d AS (
-              SELECT year, sum(passengers_est) AS j FROM fact_od_market
+            d AS (   -- only years where all 4 DB1B quarters are published;
+                     -- a full T-100 year vs a partial DB1B year is a units
+                     -- mismatch, not a residual
+              SELECT year, sum(passengers_est) AS j
+              FROM fact_od_market
               GROUP BY year
+              HAVING count(DISTINCT quarter) = 4
             )
             SELECT t.year, t.pax, d.j, t.pax/d.j
             FROM t JOIN d USING (year) ORDER BY year

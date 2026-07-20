@@ -42,7 +42,11 @@ abnormal fares filtered at ingest).
 | year | T-100 dom boardings | DB1B journeys x10 | ratio |
 |---|---|---|---|
 | 2018 | 787,922,331 | 511,290,430 | 1.541 |
-| 2019 | 821,070,480 | 258,976,640 | 3.170  OUTSIDE BAND |
+| 2019 | 821,070,480 | 532,824,540 | 1.541 |
+| 2021 | 613,365,346 | 391,456,490 | 1.567 |
+| 2022 | 760,134,527 | 500,823,260 | 1.518 |
+| 2023 | 829,148,617 | 534,570,750 | 1.551 |
+| 2024 | 859,500,716 | 559,722,100 | 1.536 |
 
 ## D. The Canadian domestic gap, stated plainly
 
@@ -57,7 +61,4 @@ design rather than by omission.
 
 ## Result summary
 
-9/10 checks inside their stated bands.
-
-Outside band (reported, not adjusted):
-- db1b vs t100 2019: ratio 3.170
+14/14 checks inside their stated bands.

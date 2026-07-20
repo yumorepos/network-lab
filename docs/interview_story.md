@@ -3,7 +3,7 @@
 ## The problem airlines solve
 A network planning team decides where to fly next: which unserved markets
 clear an economic hurdle with a specific fleet, at a specific hub, against
-specific competitors. The inputs they buy — MIDT bookings, OAG schedules —
+specific competitors. The inputs they buy - MIDT bookings, OAG schedules -
 are priced for airlines, not portfolios. The craft is the chain: market size,
 achievable share, spill, cost, and a decision someone can defend.
 
@@ -12,9 +12,9 @@ Two reasons. First, to demonstrate that chain end to end on open data.
 Second, and more interesting: Canada is a natural experiment in missing data.
 There is no public Canadian domestic O&D, no public transborder fare data,
 and the StatCan transborder city-pair survey froze around 2018. The design
-answer — calibrate on US markets where truth exists, transfer across the
+answer - calibrate on US markets where truth exists, transfer across the
 border with an anchored correction factor, and validate on a US hub where
-every stage is checkable — is the project's core idea, and the
+every stage is checkable - is the project's core idea, and the
 observed-vs-modeled flag on every demand number is its discipline.
 
 ## Architecture (60 seconds)
@@ -29,17 +29,20 @@ explainability is the requirement here, and every number traces to a source
 or a labeled assumption in one YAML file.
 
 ## Numbers I lead with
+- Share model: MAE 6.7 share points against observed DB1B carrier shares at
+  SEA, split by market structure, using the identical machinery that scores
+  unserved Canadian candidates.
 - Reconciliation: computed T-100 transborder totals match StatCan published
-  enplaned+deplaned within 1% nationally and at YYZ/YVR/YYC/YUL — with the
+  enplaned+deplaned within 1% nationally and at YYZ/YVR/YYC/YUL - with the
   expected relationship derived from definitions before comparing.
-- Transfer factor: median 0.86, IQR [0.55, 2.00] across 87 anchored pairs.
+- Transfer factor: median 0.83, IQR [0.56, 2.10] across 87 anchored pairs.
   I report the dispersion because it is the honest cost of transferring a
   US-calibrated model across a border.
 - Gravity holdout: median APE ~0.6 on unseen markets. A three-covariate
   demand model is a screen, not an oracle, and the screen's job is ranking.
-- Backtest: 50 real transborder launches 2021-2025 scored with a pre-2022
+- Backtest: 61 real transborder launches 2021-2025 scored with a pre-2022
   model. Survivors and ceased routes both sit in the top decile of modeled
-  demand (0.90 vs 0.86 median percentile) — the finding is that route
+  demand (0.90 vs 0.86 median percentile) - the finding is that route
   failures in this period were cost-structure failures, not market-selection
   failures, and I say so instead of overclaiming signal.
 

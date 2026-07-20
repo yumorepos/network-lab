@@ -59,7 +59,7 @@ def westjet_cases(top_n: int = 3) -> list[str]:
 
 ## Market
 - Distance {r['dist_mi']:.0f} mi, proposed 7x weekly, 174 seats.
-- Modeled O&D demand: {d['demand_pax_yr']:,.0f} pax/yr — **modeled, not
+- Modeled O&D demand: {d['demand_pax_yr']:,.0f} pax/yr - **modeled, not
   observed**: gravity (US-calibrated) x transfer factor
   {d['transfer_factor']:.2f} (hub median; national median {tf['median']:.2f},
   IQR [{tf['iqr'][0]:.2f}, {tf['iqr'][1]:.2f}]) x T-100 corridor growth
@@ -71,7 +71,7 @@ def westjet_cases(top_n: int = 3) -> list[str]:
 
 Modeled share for the proposed service: {r['proposed_share']:.0%}.
 
-## Economics (contribution over direct operating cost + fee proxy)
+## Economics (fully-allocated proxy: direct cost x comparator indirect burden + fee proxy)
 {_grid_table(eco, d['cbsa'])}
 
 Break-even load factor {r['belf']:.2f} vs planned {r['load_factor']:.2f}.
@@ -83,8 +83,9 @@ with fuel rebuilt at EIA scenario prices.
 {r['top_risk']}
 
 ## Assumptions this rests on
-{r['key_assumptions']} — all in config/assumptions.yaml with sources,
-confidence, and sensitivity ranges. Indirect costs excluded (stated scope).
+{r['key_assumptions']} - all in config/assumptions.yaml with sources,
+confidence, and sensitivity ranges. Margins carry the comparator's own
+indirect burden (derived from Form 41), so the hurdle is fully-allocated.
 """
         path = RPT / f"westjet_yyc_{slug}.md"
         path.write_text(md)
@@ -107,6 +108,16 @@ so the full chain runs here with truth available at every stage.
   scores the Canadian studies.
 - Demand for screened candidates is observed; the gravity model is only used
   where DB1B is too thin, and every such row is flagged `modeled`.
+
+## The finding
+
+Every remaining unserved candidate PASSES at daily 737-9 gauge. That is not a
+failure of the screen - it is agreement with Alaska's revealed strategy: a
+mature hub where everything worth serving at mainline gauge daily is already
+served, and what remains needs smaller gauge or lower frequency than this
+study's config proposes. A screen that green-lights nothing at a saturated
+hub is behaving correctly, and that is exactly the kind of negative result
+that makes the positive results at YYC credible.
 
 ## Ranked screen (top 15 by margin)
 {scr.head(15)[['metro_name','verdict','margin_pct','belf','load_factor','proposed_share','demand_source','n_nonstop_incumbents']].to_markdown(index=False)}
