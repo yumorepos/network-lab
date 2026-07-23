@@ -2,9 +2,9 @@
 
 Route-evaluation engine for airline network planning, built on open government
 data. One config-driven pipeline, three studies (WestJet YYC flagship, Alaska
-SEA validation, Porter YYZ portability). The build is complete; work now is
-correctness, documentation, and packaging. Read PROGRESS.md for the canonical
-current numbers and NEXT_SESSION.md for the active work plan.
+SEA validation, Porter YYZ portability). The build is complete and shipped. Read
+PROGRESS.md for the canonical current numbers and INTEGRITY_REPORT.md for the
+correctness-review history.
 
 ## Stack
 
