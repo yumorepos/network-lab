@@ -19,3 +19,4 @@ __pycache__/
 # Local scratch and archived design history (kept locally, not published)
 scratch/
 archive/
+.playwright-mcp/

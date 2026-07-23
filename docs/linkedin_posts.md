@@ -22,7 +22,7 @@ Vancouver instead, are the same finding from two directions.
 
 A model that only ever says "launch" is a sales tool. The useful part of an
 analysis is the markets it rules out and why. Full write-up and a live dashboard
-you can click through: [links]
+you can click through: Live demo: https://network-lab-tweqoqjxhfrhj7imgmuftl.streamlit.app  |  Code: https://github.com/yumorepos/network-lab
 
 #aviation #dataanalytics #airlineindustry #networkplanning
 
@@ -46,7 +46,7 @@ Same market. One economic verdict, one balance-sheet death. If you feed both int
 a model as "failed routes," you teach it a false lesson. This is exactly why a
 demand-first screen needs an economics and competition layer, and why provenance
 on every data point matters. Both post-mortems are built entirely from public
-T-100 segment data: [links]
+T-100 segment data: Live demo: https://network-lab-tweqoqjxhfrhj7imgmuftl.streamlit.app  |  Code: https://github.com/yumorepos/network-lab
 
 #aviation #dataanalytics #aviationanalytics
 
@@ -72,6 +72,6 @@ What is under the hood:
   within 1%.
 
 Every assumption lives in one file with a source and a sensitivity range. Live
-dashboard and code: [links]
+dashboard and code: Live demo: https://network-lab-tweqoqjxhfrhj7imgmuftl.streamlit.app  |  Code: https://github.com/yumorepos/network-lab
 
 #dataengineering #python #aviation #softwareengineering

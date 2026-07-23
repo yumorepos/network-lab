@@ -6,14 +6,18 @@ and EIA files into LAUNCH / MONITOR / PASS verdicts for new airline routes, with
 every demand number flagged observed or modeled and every assumption traceable
 to a source.
 
+[![Live demo](https://img.shields.io/badge/live%20demo-Streamlit-ff4b4b?logo=streamlit&logoColor=white)](https://network-lab-tweqoqjxhfrhj7imgmuftl.streamlit.app)
 [![tests](https://github.com/yumorepos/network-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/yumorepos/network-lab/actions/workflows/ci.yml)
 ![python](https://img.shields.io/badge/python-3.11-blue)
 ![license](https://img.shields.io/badge/license-MIT-green)
 ![data](https://img.shields.io/badge/data-open%20government-informational)
 
-> Live demo: add the Streamlit Community Cloud URL here after deploying (see
-> [docs/deploy.md](docs/deploy.md)). Everything below is reproducible from
-> public sources with `make data && make all`.
+**Live dashboard: https://network-lab-tweqoqjxhfrhj7imgmuftl.streamlit.app** -
+click through the route screen, per-market scenario economics, validation, and
+backtest. Everything is reproducible from public sources with `make data && make
+all`.
+
+[![Route screen](docs/img/dashboard_route_screen.png)](https://network-lab-tweqoqjxhfrhj7imgmuftl.streamlit.app)
 
 ---
 
@@ -71,6 +75,13 @@ grade, and a sensitivity range.
 So Alaska's lone MONITOR (Fayetteville-Springdale-Rogers) is fully traceable: its
 best-fit margin is +0.2%, positive but below the 8% hurdle, so it is held for
 watching, not launched or rejected.
+
+Every market carries a 3 fare x 3 fuel contribution-margin grid, so a verdict is
+read against its own downside, not a single point estimate. The example below is
+a thin Porter candidate that is negative in all nine cells, a clean PASS the tool
+does not dress up:
+
+![Per-market scenario grid](docs/img/dashboard_scenario_grid.png)
 
 ## Validation: the numbers behind the verdicts
 
