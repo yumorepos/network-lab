@@ -6,10 +6,10 @@ and EIA files into LAUNCH / MONITOR / PASS verdicts for new airline routes, with
 every demand number flagged observed or modeled and every assumption traceable
 to a source.
 
+[![tests](https://github.com/yumorepos/network-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/yumorepos/network-lab/actions/workflows/ci.yml)
 ![python](https://img.shields.io/badge/python-3.11-blue)
-![tests](https://img.shields.io/badge/tests-13%20passing-brightgreen)
+![license](https://img.shields.io/badge/license-MIT-green)
 ![data](https://img.shields.io/badge/data-open%20government-informational)
-![license](https://img.shields.io/badge/license-public%20sources-lightgrey)
 
 > Live demo: add the Streamlit Community Cloud URL here after deploying (see
 > [docs/deploy.md](docs/deploy.md)). Everything below is reproducible from
