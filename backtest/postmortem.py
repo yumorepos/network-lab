@@ -75,14 +75,39 @@ def write() -> list[str]:
     subjects = [
         ("F8", "Flair Airlines", "07Q", "route-level cut (carrier still flying)",
          "Flair announced it would cease YYC-LAS on 2025-04-07, citing "
-         "competition, while continuing to operate its wider network."),
+         "competition, while continuing to operate its wider network.",
+         "Flair got a fair market test and still could not make it pay. It flew "
+         "YYC-LAS for about two and a half years, including a full sustained "
+         "year in 2024 (157 departures), and its load factor peaked near 0.70 "
+         "then slid to 0.59 into 2025, while WestJet held roughly 0.90 across "
+         "the whole period. A ULCC cost advantage was not enough to pry a "
+         "profitable share out of a fortress incumbent that defended with both "
+         "capacity and yield. Flair cut the route while continuing to fly "
+         "everywhere else, which makes this a route-level economic verdict, "
+         "not a corporate one. The demand model green-lit the market on size, "
+         "and size is exactly what drew a defended incumbent; the entrant's "
+         "sub-0.70 load factor against the incumbent's 0.90 is the gap a "
+         "demand rank never shows.",
+         "postmortem_y9_yyc_las.md (Lynx, same market, corporate shutdown)"),
         ("Y9", "Lynx Air", "Y9", "corporate shutdown",
          "Lynx entered YYC-LAS in early 2023 and ceased ALL operations on "
          "2024-02-26 under creditor protection; the route died with the "
-         "airline, not on its own economics."),
+         "airline, not on its own economics.",
+         "Lynx's exit tells us about Lynx, not about YYC-LAS. It flew the route "
+         "for a single year at about 0.53 load factor, well below Flair's, "
+         "then a stub of 2024 before the February 26 shutdown took every Lynx "
+         "route at once. The low first-year load factor hints the market was "
+         "hard for a third entrant, but the route never got the chance to "
+         "prove itself: its cause of death was a balance sheet, not a fare "
+         "war. Treating this as a failed market would teach the model a false "
+         "negative, which is why the backtest labels corporate-shutdown "
+         "casualties separately from genuine route-level cuts. A ceased route "
+         "is not automatically a failed market, and provenance is the "
+         "difference.",
+         "postmortem_f8_yyc_las.md (Flair, same market, route-level cut)"),
     ]
     files = []
-    for code_l, name, code_t, fate, fate_detail in subjects:
+    for code_l, name, code_t, fate, fate_detail, synthesis, compare_to in subjects:
         reg = launches[(launches.carrier == code_l)
                        & (launches.origin == "YYC")
                        & (launches.destination == "LAS")]
@@ -125,12 +150,16 @@ low-yield gap for an entrant, and can hold capacity rather than cede share.
   lock-in on a heavily-managed leisure-and-business market. These decided the
   outcome and sit in no public segment table.
 
-## Human synthesis (TO COMPLETE)
-> _[Author: two or three sentences on why {name} specifically failed here -
-> for Flair, the ULCC cost gap against WestJet on a route WestJet defends;
-> for Lynx, that the route never got the chance to prove itself before the
-> airline failed. Keep it honest about the limits of a demand-first screen:
-> the model flagged a big market, and being a big market was not enough._
+## Synthesis: why this exit, specifically
+{synthesis}
+
+## Same market, different fate
+This market carried three carriers with three outcomes, so the market-level
+sections above (incumbent behaviour, what the model could and could not see) are
+held constant on purpose: the market is the control, and the carrier is the
+variable. A demand screen would have ranked both entrants identically on this
+pair, yet one exit was an economic verdict and the other was a corporate
+collapse. Compare {compare_to}.
 """
         slug = f"postmortem_{code_l.lower()}_yyc_las"
         path = RPT / f"{slug}.md"

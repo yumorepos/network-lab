@@ -114,6 +114,21 @@ def alaska_validation() -> str:
     obs = scr[scr["demand_source"] == "observed"]
     sv = pd.read_parquet(OUTPUTS / "share_validation.parquet")
     mae = 100 * sv["abs_err"].mean()
+    order = {"LAUNCH": 0, "MONITOR": 1, "PASS": 2}
+    vc = scr["verdict"].value_counts().to_dict()
+    dist = ", ".join(f"{vc[k]} {k}" for k in sorted(vc, key=order.get))
+    hurdle = float(assumptions()["hurdle_margin_pct"]["value"])
+    mon = scr[scr["verdict"] == "MONITOR"]
+    if len(mon):
+        m0 = mon.sort_values("margin_pct", ascending=False).iloc[0]
+        monitor_note = (
+            f"The one exception is {m0['metro_name'].split(',')[0]}, which "
+            f"screens MONITOR rather than PASS: its best-fit margin is "
+            f"{m0['margin_pct']:+.1f}%, positive but below the {hurdle:.0f}% "
+            f"launch hurdle, so the rule holds it for watching rather than "
+            f"launching or rejecting. ")
+    else:
+        monitor_note = ""
     md = f"""# Alaska SEA: end-to-end validation study
 
 US domestic is the one arena where demand, share, and fare are all observed.
@@ -128,22 +143,24 @@ carrier shares.
 - Demand for screened candidates is observed DB1B ({len(obs)} of {len(scr)}
   markets); every gravity-filled row is flagged `modeled`.
 
-## Reading the all-PASS screen honestly
+## Reading the screen honestly
 
-All {len(scr)} remaining unserved candidates screen PASS, and this now holds
-after right-sizing: each was tested at 3x, 7x, and 14x weekly (still a single
-178-seat mainline gauge, which is what Alaska flies from SEA), and none
-cleared at its best frequency. So the earlier "fixed-gauge artifact" caveat is
-partly resolved - lowering frequency did not rescue these markets - and what
-remains is a genuine gauge limitation: a regional-jet gauge (which Alaska
-operates through Horizon/SkyWest but is out of this study's mainline scope)
-would be the honest next test for the thinnest markets. The uniform PASS shows
-the screen does not invent opportunities at a mature hub where the observed
-network already holds the markets that fit mainline economics - a negative
-check on the machinery, stated no more strongly than that.
+The screen resolves the {len(scr)} unserved candidates to {dist}: effectively
+no new-market opportunity at a mature hub. {monitor_note}This holds after
+right-sizing: each market was tested at 3x, 7x, and 14x weekly (a single
+178-seat mainline gauge, which is what Alaska flies from SEA), and none cleared
+its best-fit schedule on the launch hurdle. So the earlier "fixed-gauge
+artifact" caveat is partly resolved (lowering frequency did not rescue these
+markets), and what remains is a genuine gauge limitation: a regional-jet gauge
+(which Alaska operates through Horizon/SkyWest but is out of this study's
+mainline scope) would be the honest next test for the thinnest markets. The
+near-uniform PASS shows the screen does not invent opportunities at a mature
+hub where the observed network already holds the markets that fit mainline
+economics - a negative check on the machinery, stated no more strongly than
+that.
 
 ## Ranked screen (top 15 by margin)
-{scr.head(15)[['metro_name','verdict','margin_pct','belf','load_factor','proposed_share','demand_source','n_nonstop_incumbents']].to_markdown(index=False)}
+{scr.head(15)[['metro_name','verdict','chosen_freq_wk','margin_pct','belf','load_factor','proposed_share','demand_source','n_nonstop_incumbents']].to_markdown(index=False)}
 """
     path = RPT / "alaska_sea_validation.md"
     path.write_text(md)
@@ -152,6 +169,9 @@ check on the machinery, stated no more strongly than that.
 
 def porter_table() -> str:
     scr = pd.read_parquet(OUTPUTS / "screen_porter_yyz.parquet")
+    order = {"LAUNCH": 0, "MONITOR": 1, "PASS": 2}
+    vc = scr["verdict"].value_counts().to_dict()
+    pdist = " / ".join(f"{vc[k]} {k}" for k in sorted(vc, key=order.get))
     md = f"""# Porter YYZ: portability demonstration
 
 Same engine, different config: carrier PD, hub YYZ, E195-E2 economics (B6
@@ -160,10 +180,23 @@ Ranked table only by design; no full business cases.
 
 Each market is right-sized: the engine picks the frequency (3x/7x/14x weekly)
 that maximizes annual contribution at a feasible load factor, then judges that
-schedule. Verdicts: {scr['verdict'].value_counts().to_dict()}. Every LAUNCH is
-an anchor-backed large market entered at modest share against real incumbents -
-the low-cost entry logic of taking a slice of a big market, not owning a small
-one.
+schedule. Verdicts: **{pdist}**. Every LAUNCH is an anchor-backed large market
+entered at modest share against real incumbents - the low-cost entry logic of
+taking a slice of a big market, not owning a small one.
+
+## What "unserved" means here
+
+Candidates are filtered to metros Porter does not already serve nonstop from
+YYZ, measured at the metro level from T-100 (any airport in the metro, trailing
+twelve months, at least roughly weekly). This correctly removes New York
+(Porter flies YYZ-LGA) and Las Vegas from the candidate set. One LAUNCH deserves
+an explicit caveat: Chicago. Porter has served Chicago historically from Billy
+Bishop (YTZ) with Dash-8 turboprops, a different airport and gauge that sits
+outside this YYZ mainline-jet study; T-100 shows no Porter YYZ-Chicago jet
+service, so Chicago is treated here as a genuine new-market candidate for the
+E195-E2 rather than an existing route. The verified incumbent-network reference
+file (data/reference/) records each carrier's current nonstop map so this
+filter can be audited independently of the T-100 join.
 
 {scr.sort_values('margin_pct', ascending=False).head(20)[['metro_name','verdict','chosen_freq_wk','margin_pct','belf','proposed_share','demand_method','demand_pax_yr','n_nonstop_incumbents','top_competitor']].to_markdown(index=False)}
 """

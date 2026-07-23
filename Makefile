@@ -1,7 +1,7 @@
 PY := .venv/bin/python
 PIP := .venv/bin/pip
 
-.PHONY: setup data marts reconcile models screen backtest reports app test clean-data all
+.PHONY: setup data marts reconcile models screen backtest reports app test clean-data all deploy-prep
 
 setup:
 	python3 -m venv .venv
@@ -47,3 +47,9 @@ test:
 
 clean-data:
 	rm -rf data/raw data/parquet data/warehouse.duckdb
+
+# Force-add the small precomputed outputs the Streamlit Community Cloud app
+# needs (normally gitignored); the large raw data and warehouse stay out.
+deploy-prep:
+	git add -f data/parquet/outputs/*.parquet data/parquet/outputs/*.yaml data/parquet/outputs/*.csv
+	@echo "outputs staged. commit, push, then deploy per docs/deploy.md"

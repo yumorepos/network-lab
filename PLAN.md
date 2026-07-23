@@ -56,8 +56,13 @@ outputs          ranked LAUNCH/MONITOR/PASS tables per study config,
    filings (fuel stripped and rebuilt at scenario prices), airport fee proxy,
    fare from DB1B or matched markets x documented premium. Output RASM, CASM,
    contribution margin, break-even load factor on a 3 fare x 3 fuel grid.
-6. **Recommendation**: LAUNCH / MONITOR / PASS with the two driving numbers,
-   the top assumptions, the biggest risks, and a confidence level.
+6. **Recommendation**: each market is right-sized across the study's frequency
+   and gauge grid (the schedule that maximizes annual contribution at a feasible
+   load factor is chosen, then judged), then emitted as LAUNCH / MONITOR / PASS
+   with the two driving numbers, the top assumptions, the biggest risks, and a
+   confidence level. Markets the carrier already serves (metro-level, from
+   T-100) are dropped as candidates, and unanchored gravity demand is capped at
+   the 2018 survey's own floor so thin markets cannot manufacture false LAUNCHes.
 
 ## Dataset manifest
 
@@ -114,6 +119,9 @@ from T-100 rather than observed schedules.
 
 ## Non-goals
 
-No audit trail, config hashing, determinism tests, orchestration, FastAPI,
-Next.js, or VPS deployment. Explainability over ceremony: every recommendation
-traces to a documented assumption, and that is the requirement here.
+No audit trail, config hashing, orchestration, FastAPI, Next.js, or VPS
+deployment. Explainability over ceremony: every recommendation traces to a
+documented assumption, and that is the requirement here. Determinism turned out
+to be in scope after all: the fits are order-stable and
+tests/test_consistency.py fails if any reader-facing number or verdict count
+drifts from the computed artifacts.

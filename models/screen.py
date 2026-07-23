@@ -31,13 +31,23 @@ def top_risk(row) -> str:
     if row.get("share_uncertainty"):
         return ("modeled share exceeds 70% with no nonstop incumbent: "
                 "incomplete competition likely; capped at MONITOR")
-    if row["demand_source"] == "modeled":
-        return ("gravity x transfer demand estimate; no current O&D truth "
-                "for this market")
+    # Unanchored gravity demand is the dominant risk only when there is no
+    # anchor. Anchor-backed rows (demand_method == anchor_x_growth) are pinned
+    # to the market's own 2018 StatCan actual scaled by corridor growth, so
+    # their top risk is structural (competition, break-even), not demand truth.
+    if (row["demand_source"] == "modeled"
+            and row.get("demand_method") != "anchor_x_growth"):
+        return ("gravity x transfer demand estimate; no anchor and no current "
+                "O&D truth for this market")
     if row["belf"] > 0.80:
         return "break-even load factor leaves little room below plan"
     if row["n_nonstop_incumbents"] >= 2:
-        return "two or more nonstop incumbents; share model optimistic if they respond"
+        return ("two or more nonstop incumbents; share model optimistic if "
+                "they respond")
+    if row.get("demand_method") == "anchor_x_growth":
+        return ("demand anchored to the 2018 StatCan actual scaled by T-100 "
+                "corridor growth; the 2018 survey is the last transborder O&D "
+                "truth")
     if row["fuel_down_margin"] < 0:
         return "margin goes negative in the high-fuel scenario"
     return "thin absolute contribution; schedule utility matters"

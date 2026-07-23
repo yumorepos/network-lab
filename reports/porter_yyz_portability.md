@@ -6,10 +6,23 @@ Ranked table only by design; no full business cases.
 
 Each market is right-sized: the engine picks the frequency (3x/7x/14x weekly)
 that maximizes annual contribution at a feasible load factor, then judges that
-schedule. Verdicts: {'PASS': 71, 'LAUNCH': 5, 'MONITOR': 3}. Every LAUNCH is
-an anchor-backed large market entered at modest share against real incumbents -
-the low-cost entry logic of taking a slice of a big market, not owning a small
-one.
+schedule. Verdicts: **5 LAUNCH / 3 MONITOR / 71 PASS**. Every LAUNCH is an anchor-backed large market
+entered at modest share against real incumbents - the low-cost entry logic of
+taking a slice of a big market, not owning a small one.
+
+## What "unserved" means here
+
+Candidates are filtered to metros Porter does not already serve nonstop from
+YYZ, measured at the metro level from T-100 (any airport in the metro, trailing
+twelve months, at least roughly weekly). This correctly removes New York
+(Porter flies YYZ-LGA) and Las Vegas from the candidate set. One LAUNCH deserves
+an explicit caveat: Chicago. Porter has served Chicago historically from Billy
+Bishop (YTZ) with Dash-8 turboprops, a different airport and gauge that sits
+outside this YYZ mainline-jet study; T-100 shows no Porter YYZ-Chicago jet
+service, so Chicago is treated here as a genuine new-market candidate for the
+E195-E2 rather than an existing route. The verified incumbent-network reference
+file (data/reference/) records each carrier's current nonstop map so this
+filter can be audited independently of the T-100 join.
 
 | metro_name                                     | verdict   |   chosen_freq_wk |   margin_pct |     belf |   proposed_share | demand_method   |   demand_pax_yr |   n_nonstop_incumbents | top_competitor   |
 |:-----------------------------------------------|:----------|-----------------:|-------------:|---------:|-----------------:|:----------------|----------------:|-----------------------:|:-----------------|

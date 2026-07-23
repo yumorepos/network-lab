@@ -47,7 +47,7 @@ with fuel rebuilt at EIA scenario prices, carrying the comparator's own
 indirect burden (fully-allocated).
 
 ## Why this is a PASS, plainly
-gravity x transfer demand estimate; no current O&D truth for this market. This conclusion holds at WestJet's actual transborder
+demand anchored to the 2018 StatCan actual scaled by T-100 corridor growth; the 2018 survey is the last transborder O&D truth. This conclusion holds at WestJet's actual transborder
 service levels: the market was tested at 3x, 7x, and 14x weekly and did not
 clear. The broader finding is that WestJet already serves its viable YYC
 transborder markets (New York, the California and Nevada leisure markets,

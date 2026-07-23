@@ -36,6 +36,29 @@ def test_gravity_predict_refuses_missing_columns():
         gravity.predict(pd.DataFrame({"pop_a": [1]}), "pre2022")
 
 
+def test_no_screened_market_is_already_served():
+    """A LAUNCH/MONITOR/PASS row must never name a metro the study carrier
+    already serves nonstop from the hub. Cross-checks the screen against the
+    hand-auditable incumbent-network reference file. This would have caught the
+    original candidate-filter leak (New York appeared as a Porter LAUNCH before
+    the metro-level fix)."""
+    from pathlib import Path
+    import pandas as pd
+    inc_path = Path("data/reference/incumbent_network_202604.csv")
+    inc = pd.read_csv(inc_path)
+    for sid in ("westjet_yyc", "alaska_sea", "porter_yyz"):
+        p = Path(f"data/parquet/outputs/screen_{sid}.parquet")
+        if not p.exists():
+            pytest.skip(f"screen_{sid} not built yet")
+        scr = pd.read_parquet(p)
+        served = set(inc[inc["study_id"] == sid]["dest_metro_name"])
+        overlap = set(scr["metro_name"]) & served
+        assert not overlap, (
+            f"{sid}: screened markets already served by the carrier: {overlap}")
+        launched = set(scr[scr["verdict"] == "LAUNCH"]["metro_name"]) & served
+        assert not launched, f"{sid}: LAUNCH on already-served market: {launched}"
+
+
 def test_no_transborder_fare_from_db1b():
     """DB1B is US domestic only; the demand module must never mark a
     transborder market as having an observed fare."""

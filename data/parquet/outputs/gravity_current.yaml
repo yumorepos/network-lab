@@ -1,0 +1,45 @@
+vintage: current
+years:
+- 2023
+- 2024
+n_markets: 6092
+n_train: 4878
+n_test: 1214
+predict:
+  params:
+    const: -36.800169351267165
+    ln_pop_product: 0.6586517267126997
+    ln_income_product: 1.0257212531913182
+    ln_dist: 1.777386913534557
+    ln_dist_sq: -0.14479162895455922
+  r2: 0.4919454241162603
+diagnostic:
+  params:
+    const: -21.13955780886274
+    ln_pop_product: 0.3127086549202305
+    ln_income_product: 0.44465652142940804
+    ln_dist: 2.9742325197955544
+    ln_dist_sq: -0.1885664845135776
+    has_nonstop: -1.1791620826993519
+    ln_seats1p: 0.2745938183075361
+  r2: 0.8044386295509911
+holdout:
+  median_ape: 0.6152816294926011
+  mean_ape: 1.0504136546029563
+  by_band:
+  - band: 4,000-25,000
+    n: 765
+    median_ape: 0.6879852074426199
+    mean_ape: 1.3465402744180133
+  - band: 25,000-100,000
+    n: 265
+    median_ape: 0.40033590632946775
+    mean_ape: 0.46002269526937656
+  - band: 100,000-500,000
+    n: 144
+    median_ape: 0.6610058109597972
+    mean_ape: 0.6276438566435991
+  - band: 500,000-inf
+    n: 40
+    median_ape: 0.8356190445102029
+    mean_ape: 0.8203034288786346

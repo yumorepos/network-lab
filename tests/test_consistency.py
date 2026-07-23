@@ -38,7 +38,8 @@ def test_transfer_consistent_in_progress():
         t = (ROOT / f).read_text()
         for stale in ("0.56, 2.10", "0.55, 2.04"):
             assert stale not in t, f"{f} has stale IQR {stale}"
-        for stale in ("median 0.83", "median 0.86", "median 0.82"):
+        for stale in ("median 0.83", "median 0.86", "median 0.82",
+                      "transfer 0.82", "transfer 0.83"):
             assert stale not in t, f"{f} has stale transfer median {stale}"
 
 
@@ -60,6 +61,27 @@ def test_backtest_n_consistent():
     for f in ("README.md", "docs/interview_story.md",
               "docs/resume_material.md"):
         assert f"{n} " in (ROOT / f).read_text(), f"{f} lacks N={n}"
+
+
+def test_screen_reports_state_computed_verdict_counts():
+    """Each generated report must state its study's verdict counts exactly as
+    computed, so prose can never drift from the screen. This is the claim-level
+    guard the numeric tests lacked: it caught the Alaska report asserting
+    'all-PASS' when the screen was 48 PASS / 1 MONITOR."""
+    reports = {
+        "porter_yyz": "reports/porter_yyz_portability.md",
+        "alaska_sea": "reports/alaska_sea_validation.md",
+    }
+    for sid, rel in reports.items():
+        _need(OUT / f"screen_{sid}.parquet")
+        scr = pd.read_parquet(OUT / f"screen_{sid}.parquet")
+        text = (ROOT / rel).read_text()
+        for verdict, n in scr["verdict"].value_counts().items():
+            assert f"{n} {verdict}" in text, \
+                f"{rel} lacks '{n} {verdict}'; verdict counts drifted from screen"
+    alaska = (ROOT / reports["alaska_sea"]).read_text()
+    for stale in ("all-PASS", "All 49 remaining", "all 49 PASS"):
+        assert stale not in alaska, f"alaska report has stale claim '{stale}'"
 
 
 def test_gravity_counts_labeled_by_vintage():

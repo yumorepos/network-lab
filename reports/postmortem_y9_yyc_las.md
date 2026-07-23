@@ -43,9 +43,13 @@ low-yield gap for an entrant, and can hold capacity rather than cede share.
   lock-in on a heavily-managed leisure-and-business market. These decided the
   outcome and sit in no public segment table.
 
-## Human synthesis (TO COMPLETE)
-> _[Author: two or three sentences on why Lynx Air specifically failed here -
-> for Flair, the ULCC cost gap against WestJet on a route WestJet defends;
-> for Lynx, that the route never got the chance to prove itself before the
-> airline failed. Keep it honest about the limits of a demand-first screen:
-> the model flagged a big market, and being a big market was not enough._
+## Synthesis: why this exit, specifically
+Lynx's exit tells us about Lynx, not about YYC-LAS. It flew the route for a single year at about 0.53 load factor, well below Flair's, then a stub of 2024 before the February 26 shutdown took every Lynx route at once. The low first-year load factor hints the market was hard for a third entrant, but the route never got the chance to prove itself: its cause of death was a balance sheet, not a fare war. Treating this as a failed market would teach the model a false negative, which is why the backtest labels corporate-shutdown casualties separately from genuine route-level cuts. A ceased route is not automatically a failed market, and provenance is the difference.
+
+## Same market, different fate
+This market carried three carriers with three outcomes, so the market-level
+sections above (incumbent behaviour, what the model could and could not see) are
+held constant on purpose: the market is the control, and the carrier is the
+variable. A demand screen would have ranked both entrants identically on this
+pair, yet one exit was an economic verdict and the other was a corporate
+collapse. Compare postmortem_f8_yyc_las.md (Flair, same market, route-level cut).

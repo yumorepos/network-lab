@@ -72,7 +72,14 @@ after the fact.
     candidate set: this tool answers "which NEW markets", not "add frequency
     or upgauge an existing route". The exclusion is metro-level to stop the
     leak where a carrier serves a secondary airport (WS flies YYC-IAD, so the
-    Washington metro is excluded even though its busiest airport is BWI).
+    Washington metro is excluded even though its busiest airport is BWI). The
+    exclusion trusts the T-100 join, which for a Canadian carrier depends on
+    foreign-carrier reporting to T-100 International; it is cross-checked by the
+    committed `data/reference/incumbent_network_202604.csv` (spot-verified against
+    published schedules), and `tests/test_sanity.py` fails if any screened metro
+    appears in the carrier's incumbent list. One documented edge case: Porter's
+    Chicago and Boston history is Billy Bishop (YTZ) turboprop service, a
+    different airport and gauge outside this YYZ mainline-jet study.
 
 13. **Unanchored transborder demand is capped at the survey ceiling.** A
     Canada-US market absent from the 2018 StatCan >4,000 city-pair table had

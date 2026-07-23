@@ -1,5 +1,19 @@
 # Progress log
 
+## Canonical numbers (current, post round 3)
+
+These are the live values; the dated phase entries below record the state at
+each phase and some were superseded by the round-3 right-sizing pass (see
+INTEGRITY_REPORT.md). Where a phase entry differs, this block wins.
+
+- Porter YYZ screen: 5 LAUNCH / 3 MONITOR / 71 PASS.
+- WestJet YYC screen: 0 LAUNCH / 0 MONITOR / 76 PASS (deliberate honest negative).
+- Alaska SEA screen: 48 PASS / 1 MONITOR (Fayetteville, positive margin below
+  the 8% hurdle); not all-PASS.
+- Transfer factor: median 0.80, IQR [0.55, 2.02], 87 anchored pairs.
+- Share MAE 7.0 points; backtest N = 48 (operating 0.89 vs ceased 0.86);
+  gravity 6,002 (2018-19) / 6,092 (2023-24), R2 0.50.
+
 ## Phase 0 - plan and assumption engine (2026-07-20)
 - Repo, PLAN.md, assumptions.yaml, three study configs, Makefile.
 
@@ -37,15 +51,15 @@
 ## Phase 5 - screens (2026-07-20)
 - Candidate hygiene that changed the story: airport seat floor + satellite
   rule removed 25-28 phantom "virgin markets" per study (Provo, Naples,
-  Bridgeport...). Final: WS YYC 2 LAUNCH / 3 MONITOR / 72 PASS;
-  AS SEA all 49 PASS at daily mainline gauge (saturated-hub agreement);
-  PD YYZ 10 / 5 / 65.
+  Bridgeport...). Initial screens at a single hardcoded schedule (superseded by
+  round-3 right-sizing; see the canonical block above for final numbers).
 
 ## Phase 6 - validation and packaging (2026-07-20)
-- Backtest: 61 transborder launches, operating 0.90 vs ceased 0.86 median
-  percentile; weak separation published with the pre-committed reading (the
-  era's failures were cost-structure, not market selection; lookahead
-  disclosed).
+- Backtest: N = 48 launched-and-resolved transborder routes, operating 0.89 vs
+  ceased 0.86 median percentile; weak separation published with the pre-committed
+  reading (the era's failures were cost-structure, not market selection;
+  lookahead disclosed). Earlier drafts said "61 launches / 0.90"; corrected in
+  the integrity pass to the precise N=48 count and deterministic 0.89.
 - Three WestJet business cases, Alaska validation report, Porter portability
   table, validation.md, reconciliation.md, LIMITATIONS.md, interview story,
   resume material, Streamlit app, CI, 6 tests green.
@@ -62,5 +76,7 @@
   (WS YYC 2 LAUNCH -> 0; PD NYC PASS -> LAUNCH).
 - Share guard (>70% share + 0 nonstops -> MONITOR cap) and 700mi circuity.
 - Alaska all-PASS reframed as fixed-gauge artifact, not saturation.
-- Deterministic fits (ORDER BY) + consistency test; canonical numbers:
-  transfer 0.82, MAE 7.0, N=48, medians 0.89/0.86. See INTEGRITY_REPORT.md.
+- Deterministic fits (ORDER BY) + consistency test. Round-3 right-sizing then
+  moved the transfer median from 0.82 to the current 0.80 and re-scored every
+  screen; the canonical numbers are in the block at the top of this file and in
+  INTEGRITY_REPORT.md.

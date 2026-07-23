@@ -21,6 +21,13 @@ on the resume is reproducible from `make data && make models`.
   after excluding Lynx's corporate-shutdown casualties: genuine route cuts
   by continuing carriers were also top-decile demand markets - with the
   lookahead limitation disclosed.
+- Delivered a defensible negative as the flagship result: the engine recommended
+  zero new WestJet transborder routes from Calgary because every viable market is
+  already served or structurally held (Dallas at 23% share vs American), matching
+  the carrier's own network decisions; paired it with two route post-mortems
+  (Flair vs Lynx on the same Calgary-Las Vegas market) that separate an economic
+  route failure from a corporate shutdown to show what a demand-first screen
+  cannot see.
 
 ## LinkedIn project description
 
