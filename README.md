@@ -27,14 +27,19 @@ Three studies run through the same engine. The point is not that the model says
 yes; it is that the model says yes, no, and "watch it" for defensible, traceable
 reasons, and admits what it cannot see.
 
-**1. Porter at Toronto Pearson (YYZ): 5 LAUNCH / 3 MONITOR / 71 PASS.**
-The five LAUNCHes (Washington, Chicago, Boston, Philadelphia, Atlanta) are all
-large, anchor-backed markets that the engine enters at modest share against real
-incumbents, then right-sizes down to 3x or 14x weekly. This is the low-cost
-entry logic of taking a slice of a big market rather than owning a small one.
-Each is a market Porter does not serve nonstop from YYZ today (verified against
-Porter's actual T-100 network; the one edge case, Chicago, is documented on the
-page).
+**1. Porter at Toronto Pearson (YYZ): 1 LAUNCH / 1 MONITOR / 77 PASS.**
+The single LAUNCH is Boston, a large anchor-backed market the engine enters at
+16% share against real incumbents and right-sizes to 3x weekly. This is the
+low-cost entry logic of taking a slice of a big market rather than owning a
+small one. It is a market Porter does not serve nonstop from YYZ inside the
+T-100 window this study reads.
+
+An earlier version of this study reported five LAUNCHes. That result did not
+survive correctness review: it divided bidirectional demand by one-directional
+departures, and it reconstructed competitors by operating certificate rather
+than marketing brand, which made every mainline-plus-regional itinerary
+invisible. Both defects are fixed and the before and after is in
+[INTEGRITY_REPORT.md](INTEGRITY_REPORT.md).
 
 **2. WestJet transborder from Calgary (YYC): 0 LAUNCH / 0 MONITOR / 76 PASS.**
 The flagship study recommends nothing, and that is the finding. Every viable
@@ -72,9 +77,9 @@ grade, and a sensitivity range.
 | Verdict | **PASS** if base margin < 0; **LAUNCH** if margin >= 8% and the fare-downside stays positive and break-even LF <= 0.85; else **MONITOR** | hurdle 8%, BELF cap 0.85 |
 | Competition guard | a modeled share above 70% with zero nonstop incumbents caps LAUNCH to MONITOR (the one-stop reconstruction probably missed real competition) | `> 0.70` share, 0 incumbents |
 
-So Alaska's lone MONITOR (Fayetteville-Springdale-Rogers) is fully traceable: its
-best-fit margin is +0.2%, positive but below the 8% hurdle, so it is held for
-watching, not launched or rejected.
+So Porter's lone MONITOR (Hartford) is fully traceable: its best-fit margin is
++4.9%, positive but below the 8% hurdle, so it is held for watching, not
+launched or rejected.
 
 Every market carries a 3 fare x 3 fuel contribution-margin grid, so a verdict is
 read against its own downside, not a single point estimate. The example below is
@@ -90,12 +95,12 @@ does not dress up:
   relationship is derived before comparing; see
   [docs/reconciliation.md](docs/reconciliation.md)).
 - **Share model against truth.** At SEA, where DB1B carrier shares are observed,
-  the QSI-lite share model lands at **MAE 7.0 share points** across 503
+  the QSI-lite share model lands at **MAE 5.7 share points** across 503
   market-carrier rows, reported by market structure in
   [docs/validation.md](docs/validation.md). The Alaska SEA study exists to run
   the whole chain where demand, share, and fare are all observable: it resolves
-  to **48 PASS / 1 MONITOR**, a negative check that the engine does not invent
-  opportunity at a mature hub.
+  to **45 PASS**, a negative check that the engine does not invent opportunity
+  at a mature hub.
 - **Transfer factor.** Anchored to the discontinued 2018 StatCan transborder
   city-pair survey: **median 0.80, IQR [0.55, 2.02]** across 87 pairs, with the
   dispersion reported everywhere the factor is used.

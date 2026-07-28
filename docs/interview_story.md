@@ -29,11 +29,12 @@ explainability is the requirement here, and every number traces to a source
 or a labeled assumption in one YAML file.
 
 ## Numbers I lead with
-- The recommendations: Porter YYZ surfaces five LAUNCH markets (Washington,
-  Chicago, Boston, Philadelphia, Atlanta), each a large anchor-backed market
-  entered at single-digit-to-low-double-digit share against real incumbents -
-  the low-cost entry logic of taking a slice of a big market, and each market
-  right-sized across 3x/7x/14x weekly. WestJet YYC comes back all-PASS, and I
+- The recommendations: Porter YYZ surfaces one LAUNCH market (Boston), a large
+  anchor-backed market entered at 16% share against real incumbents - the
+  low-cost entry logic of taking a slice of a big market, right-sized across
+  3x/7x/14x weekly. An earlier version reported five LAUNCHes and did not
+  survive correctness review; the two defects and the before and after are in
+  INTEGRITY_REPORT.md. WestJet YYC comes back all-PASS, and I
   lead with that too: it stays PASS at every service level, because WestJet
   already flies its viable YYC transborder markets and what is left is either
   below the 2018 survey's 4,000-passenger floor or held by a US hub carrier
@@ -41,7 +42,7 @@ or a labeled assumption in one YAML file.
   cheerleader; one that can say "you have already picked the fruit here, go
   build breadth at Edmonton" - which is what WestJet actually did - is a
   planner.
-- Share model: MAE 7.0 share points against observed DB1B carrier shares at
+- Share model: MAE 5.7 share points against observed DB1B carrier shares at
   SEA, split by market structure, using the identical machinery that scores
   unserved Canadian candidates.
 - Reconciliation: computed T-100 transborder totals match StatCan published
