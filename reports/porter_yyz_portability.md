@@ -6,7 +6,7 @@ Ranked table only by design; no full business cases.
 
 Each market is right-sized: the engine picks the frequency (3x/7x/14x weekly)
 that maximizes annual contribution at a feasible load factor, then judges that
-schedule. Verdicts: **5 LAUNCH / 3 MONITOR / 71 PASS**. Every LAUNCH is an anchor-backed large market
+schedule. Verdicts: **1 LAUNCH / 1 MONITOR / 77 PASS**. Every LAUNCH is an anchor-backed large market
 entered at modest share against real incumbents - the low-cost entry logic of
 taking a slice of a big market, not owning a small one.
 
@@ -26,23 +26,23 @@ filter can be audited independently of the T-100 join.
 
 | metro_name                                     | verdict   |   chosen_freq_wk |   margin_pct |     belf |   proposed_share | demand_method   |   demand_pax_yr |   n_nonstop_incumbents | top_competitor   |
 |:-----------------------------------------------|:----------|-----------------:|-------------:|---------:|-----------------:|:----------------|----------------:|-----------------------:|:-----------------|
-| Hartford-West Hartford-East Hartford, CT       | MONITOR   |                3 |    37.5183   | 0.583304 |        0.789555  | anchor_x_growth |         31129.6 |                      0 | OH               |
-| Milwaukee-Waukesha, WI                         | MONITOR   |                3 |    33.1576   | 0.606853 |        0.856723  | anchor_x_growth |         26048.5 |                      0 | OO               |
-| Washington-Arlington-Alexandria, DC-VA-MD-WV   | LAUNCH    |                3 |    32.0158   | 0.570402 |        0.078066  | anchor_x_growth |        239424   |                      4 | YX               |
-| Chicago-Naperville-Elgin, IL-IN                | LAUNCH    |                3 |    31.2874   | 0.615053 |        0.0536489 | anchor_x_growth |        399883   |                      6 | YX               |
-| Boston-Cambridge-Newton, MA-NH                 | LAUNCH    |               14 |    24.887    | 0.619638 |        0.290962  | anchor_x_growth |        291197   |                      2 | YX               |
-| Philadelphia-Camden-Wilmington, PA-NJ-DE-MD    | LAUNCH    |                3 |    23.2206   | 0.570367 |        0.112191  | anchor_x_growth |        139500   |                      5 | PT               |
-| Atlanta-Sandy Springs-Roswell, GA              | LAUNCH    |                3 |    20.0433   | 0.747856 |        0.110463  | anchor_x_growth |        224256   |                      3 | DL               |
-| Cincinnati, OH-KY-IN                           | MONITOR   |                3 |     5.95182  | 0.603998 |        0.282438  | anchor_x_growth |         47006.6 |                      1 | 9E               |
-| Dallas-Fort Worth-Arlington, TX                | PASS      |                3 |    -0.130071 | 0.901999 |        0.121249  | anchor_x_growth |        179990   |                      3 | DL               |
-| Indianapolis-Carmel-Greenwood, IN              | PASS      |                3 |    -3.52681  | 0.61695  |        0.366188  | anchor_x_growth |         33553.5 |                      1 | 9E               |
-| Nashville-Davidson--Murfreesboro--Franklin, TN | PASS      |                3 |    -9.49425  | 0.707967 |        0.138032  | anchor_x_growth |         96873.6 |                      4 | YX               |
-| Raleigh-Cary, NC                               | PASS      |                3 |    -9.59828  | 0.664361 |        0.216727  | anchor_x_growth |         57690.8 |                      2 | YX               |
-| New Orleans-Metairie, LA                       | PASS      |                3 |   -15.9783   | 0.876055 |        0.2507    | anchor_x_growth |         63760.1 |                      2 | DL               |
-| Houston-Pasadena-The Woodlands, TX             | PASS      |                3 |   -19.6063   | 0.925183 |        0.132652  | anchor_x_growth |        124343   |                      2 | DL               |
-| Minneapolis-St. Paul-Bloomington, MN-WI        | PASS      |                3 |   -19.6973   | 0.722618 |        0.109845  | anchor_x_growth |        113349   |                      6 | MQ               |
-| Denver-Aurora-Centennial, CO                   | PASS      |                3 |   -26.8962   | 0.93393  |        0.155436  | anchor_x_growth |         99538.1 |                      2 | DL               |
-| Kansas City, MO-KS                             | PASS      |                3 |   -27.9378   | 0.783928 |        0.395577  | anchor_x_growth |         31959.3 |                      0 | DL               |
-| Portland-Vancouver-Hillsboro, OR-WA            | PASS      |                3 |   -31.0869   | 1.10674  |        0.514731  | anchor_x_growth |         36723.4 |                      0 | UA               |
-| Austin-Round Rock-San Marcos, TX               | PASS      |                3 |   -33.8247   | 0.946221 |        0.222223  | anchor_x_growth |         66389.2 |                      2 | DL               |
-| Seattle-Tacoma-Bellevue, WA                    | PASS      |                3 |   -36.8082   | 1.10005  |        0.20022   | anchor_x_growth |         87077   |                      2 | UA               |
+| Boston-Cambridge-Newton, MA-NH                 | LAUNCH    |                3 |     32.5731  | 0.619638 |        0.159255  | anchor_x_growth |        291197   |                      1 | DL               |
+| Hartford-West Hartford-East Hartford, CT       | MONITOR   |                3 |      4.85303 | 0.583304 |        0.812673  | anchor_x_growth |         31129.6 |                      0 | AA               |
+| Chicago-Naperville-Elgin, IL-IN                | PASS      |                3 |    -11.0759  | 0.615053 |        0.0570471 | anchor_x_growth |        399883   |                      5 | AC               |
+| Atlanta-Sandy Springs-Roswell, GA              | PASS      |                3 |    -22.7986  | 0.747856 |        0.112043  | anchor_x_growth |        224256   |                      2 | DL               |
+| Milwaukee-Waukesha, WI                         | PASS      |                3 |    -26.1694  | 0.606853 |        0.760467  | anchor_x_growth |         26048.5 |                      0 | DL               |
+| Washington-Arlington-Alexandria, DC-VA-MD-WV   | PASS      |                3 |    -27.4769  | 0.570402 |        0.076968  | anchor_x_growth |        239424   |                      4 | DL               |
+| Philadelphia-Camden-Wilmington, PA-NJ-DE-MD    | PASS      |                3 |    -30.1686  | 0.570367 |        0.12936   | anchor_x_growth |        139500   |                      3 | DL               |
+| Cincinnati, OH-KY-IN                           | PASS      |                3 |    -71.2147  | 0.603998 |        0.309075  | anchor_x_growth |         47006.6 |                      1 | DL               |
+| Nashville-Davidson--Murfreesboro--Franklin, TN | PASS      |                3 |    -79.3853  | 0.707967 |        0.167783  | anchor_x_growth |         96873.6 |                      2 | DL               |
+| Indianapolis-Carmel-Greenwood, IN              | PASS      |                3 |    -82.4607  | 0.61695  |        0.415022  | anchor_x_growth |         33553.5 |                      1 | DL               |
+| Dallas-Fort Worth-Arlington, TX                | PASS      |                3 |    -91.0351  | 0.901999 |        0.108038  | anchor_x_growth |        179990   |                      2 | DL               |
+| Raleigh-Cary, NC                               | PASS      |                3 |   -103.107   | 0.664361 |        0.233508  | anchor_x_growth |         57690.8 |                      1 | DL               |
+| Minneapolis-St. Paul-Bloomington, MN-WI        | PASS      |                3 |   -114.794   | 0.722618 |        0.122235  | anchor_x_growth |        113349   |                      4 | DL               |
+| New Orleans-Metairie, LA                       | PASS      |                3 |   -152.4     | 0.876055 |        0.224192  | anchor_x_growth |         63760.1 |                      1 | DL               |
+| Houston-Pasadena-The Woodlands, TX             | PASS      |                3 |   -171.907   | 0.925183 |        0.112698  | anchor_x_growth |        124343   |                      2 | DL               |
+| Kansas City, MO-KS                             | PASS      |                3 |   -173.286   | 0.783928 |        0.369649  | anchor_x_growth |         31959.3 |                      0 | DL               |
+| Columbus, OH                                   | PASS      |                3 |   -176.939   | 0.548022 |        0.342939  | anchor_x_growth |         23764.4 |                      1 | DL               |
+| Charlotte-Concord-Gastonia, NC-SC              | PASS      |                3 |   -181.644   | 0.685671 |        0.126225  | anchor_x_growth |         79432.1 |                      2 | DL               |
+| St. Louis, MO-IL                               | PASS      |                3 |   -192.398   | 0.712918 |        0.230091  | anchor_x_growth |         43641   |                      1 | DL               |
+| Denver-Aurora-Centennial, CO                   | PASS      |                3 |   -204.344   | 0.93393  |        0.126966  | anchor_x_growth |         99538.1 |                      2 | DL               |

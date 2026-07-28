@@ -5,12 +5,21 @@ metro pair we reconstruct what passengers can already fly:
 
 - Incumbent nonstops: T-100 latest 12 reported months, any carrier, hub
   airport to any airport in the destination metro.
-- Incumbent one-stops: same-carrier segment pairs hub->X and X->dest with a
+- Incumbent one-stops: same-BRAND segment pairs hub->X and X->dest with a
   plausible corridor (total <= min(nonstop+700mi, 2.0x nonstop)), weekly frequency =
   min of the two legs, elapsed = leg blocks + connect allowance. This is a
   reconstruction from segment frequencies, not observed itineraries - MIDT
   would be the real source and is priced out of a portfolio project; the
   approximation and its direction of error are documented in LIMITATIONS.
+
+Brand, not operating certificate. T-100 reports who flew the metal; a passenger
+buys a brand. Joining one-stops on the operating carrier made every
+mainline-plus-regional itinerary invisible (American mainline to a hub, Envoy
+onward, is one AA connection that a same-certificate join cannot see) and split
+Air Canada at YYZ across AC, Jazz and Rouge. Segments are therefore mapped to
+their marketing brand by models.carriers before anything is joined, and a
+brand's frequency on a segment is the sum over the certificates that fly it.
+See models/carriers.py for how the mapping is sourced and resolved.
 
 QSI-lite preference per itinerary:
   weight(type) x weekly_freq^freq_exponent x (elapsed/fastest)^time_exponent
@@ -21,11 +30,13 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
+from . import carriers
 from .common import OUTPUTS, assumptions, connect, study
 
 DETOUR_MAX = 2.0             # ratio bound (protects short markets)
 DETOUR_ABS_MI = 700          # absolute detour allowance (hub-connect circuity)
 MPH_CRUISE_FACTOR = 1.15078   # kts -> mph
+MIN_SEGMENT_DEPS_YR = 26      # at least ~weekly over the 12-month window
 
 
 def _block_hours(dist_mi: np.ndarray | float) -> np.ndarray | float:
@@ -50,16 +61,33 @@ def build_competition(study_id: str) -> pd.DataFrame:
         WHERE service_class IN ('F','L')
     """).fetchone()[0]
 
+    # Operating certificate -> marketing brand, per segment (models.carriers).
+    carriers.register_segment_brands(con, MIN_SEGMENT_DEPS_YR)
+
+    # Segments collapsed to the brand a passenger can buy. A brand's frequency
+    # on a pair is the sum over every certificate flying it, so AA mainline
+    # plus Envoy on the same segment is one AA frequency, not two smaller
+    # competitors. op_carriers is carried through for auditability.
     con.execute(f"""
         CREATE OR REPLACE TEMP VIEW seg12 AS
-        SELECT s.carrier, s.origin, s.dest, s.distance_mi,
-               sum(s.departures) / 52.0 AS freq_wk
+        SELECT coalesce(b.brand, s.carrier) AS carrier,
+               s.origin, s.dest, max(s.distance_mi) AS distance_mi,
+               sum(s.departures) / 52.0 AS freq_wk,
+               -- ORDER BY is required: string_agg has no guaranteed ordering,
+               -- so the same certificate set alternated between 'AA+MQ' and
+               -- 'MQ+AA' across rebuilds. Cosmetic, but it makes the artifact
+               -- unreproducible and hides real diffs behind noise.
+               string_agg(DISTINCT s.carrier, '+' ORDER BY s.carrier)
+                 AS op_carriers
         FROM fact_segment s
+        LEFT JOIN map_segment_brand b
+               ON b.op_carrier = s.carrier
+              AND b.origin = s.origin AND b.dest = s.dest
         WHERE s.service_class IN ('F','L')
           AND (s.year::INT*100+s.month) > {win} - 100
           AND s.departures > 0 AND s.seats > 0
-        GROUP BY 1,2,3,4
-        HAVING sum(s.departures) >= 26   -- at least ~weekly over the window
+        GROUP BY 1,2,3
+        HAVING sum(s.departures) >= {MIN_SEGMENT_DEPS_YR}
     """)
 
     # airports belonging to each candidate destination metro
@@ -74,7 +102,7 @@ def build_competition(study_id: str) -> pd.DataFrame:
     nonstop = con.execute(f"""
         SELECT c.cbsa, s.carrier, 'nonstop' AS itin_type,
                s.freq_wk, s.distance_mi AS total_dist,
-               NULL AS connect_ap
+               NULL AS connect_ap, s.op_carriers
         FROM seg12 s
         JOIN dest_airports d ON d.dest_ap = s.dest
         JOIN cand_dest c ON c.cbsa = d.cbsa
@@ -85,8 +113,11 @@ def build_competition(study_id: str) -> pd.DataFrame:
         SELECT c.cbsa, l1.carrier, 'onestop' AS itin_type,
                least(l1.freq_wk, l2.freq_wk) AS freq_wk,
                l1.distance_mi + l2.distance_mi AS total_dist,
-               l1.dest AS connect_ap
+               l1.dest AS connect_ap,
+               l1.op_carriers || '/' || l2.op_carriers AS op_carriers
         FROM seg12 l1
+        -- seg12.carrier is the marketing BRAND, so this connects a mainline
+        -- leg to a regional-operated leg whenever both sell under one brand.
         JOIN seg12 l2 ON l2.carrier = l1.carrier AND l2.origin = l1.dest
         JOIN dest_airports d ON d.dest_ap = l2.dest
         JOIN cand_dest c ON c.cbsa = d.cbsa

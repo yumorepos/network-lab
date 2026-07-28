@@ -3,6 +3,16 @@ for every carrier reporting to BTS. One download per year -> slim Parquet.
 
 2020 is deliberately excluded everywhere: COVID operations are not usable for
 calibration, current-state capacity, or the backtest.
+
+History runs from 1990, the earliest year TranStats offers for this table. The
+window was 2018 onward through Round 4, which made every route launch and exit
+before 2018 invisible and forced the backtest onto a 74-row hand-compiled
+register. The full panel is small (about 5 MB per year) and contains every
+route start and stop ever filed, which is what PHASE_5_6_PLAN.md W1.2 turns
+into a mechanical route-spell register. Probed at the far end before
+backfilling: 1990 returns the same 14 columns, 219 carriers and a system load
+factor of 0.570, with foreign origins present, so the schema and the existing
+assertions hold across the span.
 """
 from __future__ import annotations
 
@@ -11,7 +21,9 @@ import duckdb
 from .common import DATA_PARQUET, DATA_RAW, log
 from .transtats import T100_SEGMENT_ALL, download_table_year, data_csv
 
-YEARS = [2018, 2019, 2021, 2022, 2023, 2024, 2025, 2026]
+EARLIEST_YEAR = 1990        # earliest year TranStats offers for table 293
+COVID_EXCLUDED = {2020}
+YEARS = [y for y in range(EARLIEST_YEAR, 2027) if y not in COVID_EXCLUDED]
 
 FIELDS = ["YEAR", "QUARTER", "MONTH", "UNIQUE_CARRIER", "ORIGIN",
           "ORIGIN_COUNTRY", "DEST", "DEST_COUNTRY", "SEATS", "PASSENGERS",

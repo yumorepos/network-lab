@@ -46,11 +46,13 @@ def score() -> pd.DataFrame:
     launches = pd.read_csv(LAUNCHES)
     tb = launches[launches["market_type"] == "transborder"].copy()
 
-    hub_pop = dict(con.execute("""
-        SELECT c.iata_code, m.population
-        FROM ca_airport_cma c
-        JOIN dim_metro_ca m ON m.cma LIKE c.cma_name || '%'
-    """).fetchall())
+    # map_ca_airport_metro resolves the CMA prefix join once, in the warehouse,
+    # with provincial parts excluded and uniqueness asserted. This was a raw
+    # LIKE join collapsed by dict(), so YOW took whichever of the three
+    # Ottawa-Gatineau records came last and its modeled demand moved 2.8x
+    # between rebuilds.
+    hub_pop = dict(con.execute(
+        "SELECT iata_code, population FROM map_ca_airport_metro").fetchall())
     hub_pt = dict((r[0], (r[1], r[2])) for r in con.execute(
         "SELECT iata_code, lat, lon FROM dim_airport").fetchall())
     ap_cbsa = dict(con.execute("""

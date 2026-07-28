@@ -30,14 +30,20 @@
 
 ## Share model vs observed DB1B shares (SEA, 2024)
 
-- market-carrier rows: 503, MAE 7.0 share points
+- market-carrier rows: 503, MAE 5.7 share points
 
 | market structure | n | MAE (pts) |
 |---|---|---|
-| 0 nonstop | 17 | 3.4 |
-| 1 nonstop | 120 | 7.5 |
-| 2 nonstop | 132 | 6.3 |
-| 3+ nonstop | 234 | 7.3 |
+| 0 nonstop | 17 | 3.7 |
+| 1 nonstop | 173 | 6.9 |
+| 2 nonstop | 132 | 5.7 |
+| 3+ nonstop | 181 | 4.8 |
+
+Two figures the unweighted MAE hides. Most rows are tiny carriers in a market, so the
+passenger-weighted error is the one a planner should read: **10.9 share points**. And modeled shares sum to
+0.996 per market, which is the invariant that exposed the
+operating-versus-marketing carrier defect in Round 4 (it summed to 0.790 before).
+
 
 ## Alaska SEA end-to-end note
 

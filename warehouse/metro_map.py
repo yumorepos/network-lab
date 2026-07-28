@@ -26,7 +26,9 @@ OVERRIDES = {
     "West Palm Beach/Palm Beach, FL": "Miami-Fort Lauderdale-West Palm Beach",
     "Sarasota/Bradenton, FL": "North Port-Bradenton-Sarasota",
     "Greensboro/High Point, NC": "Greensboro-High Point",
-    "Bloomington/Normal, IL": "Bloomington",
+    # "Bloomington" alone also prefix-matches Bloomington, IN (BMG), a
+    # different metro in a different state. The pin must be unambiguous.
+    "Bloomington/Normal, IL": "Bloomington, IL",
     "Champaign/Urbana, IL": "Champaign-Urbana",
     "Dallas/Fort Worth, TX": "Dallas-Fort Worth",
     "Houston, TX": "Houston",
@@ -83,6 +85,17 @@ def build_map(con: duckdb.DuckDBPyConnection) -> None:
         name = cm["cm_name"]
         if name in OVERRIDES:
             hit = metros[metros["name"].str.startswith(OVERRIDES[name])]
+            # A manual pin exists to remove ambiguity, so it must actually be
+            # unambiguous. Taking .iloc[0] off a multi-row prefix match is the
+            # defect that put the Quebec part of Ottawa-Gatineau into the
+            # gravity model (see models/transfer.py::_cma_population); the pin
+            # for Bloomington/Normal matched Bloomington, IN just as happily as
+            # Bloomington, IL and picked on row order.
+            if len(hit) > 1:
+                raise ValueError(
+                    f"override {name!r} -> {OVERRIDES[name]!r} matches "
+                    f"{len(hit)} CBSAs ({hit['name'].tolist()}); pin it to a "
+                    "unique CBSA title prefix")
             if len(hit):
                 rows.append((cm["city_market_id"], name,
                              hit.iloc[0]["cbsa"], hit.iloc[0]["name"], "override"))

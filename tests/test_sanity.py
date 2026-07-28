@@ -39,9 +39,11 @@ def test_gravity_predict_refuses_missing_columns():
 def test_no_screened_market_is_already_served():
     """A LAUNCH/MONITOR/PASS row must never name a metro the study carrier
     already serves nonstop from the hub. Cross-checks the screen against the
-    hand-auditable incumbent-network reference file. This would have caught the
-    original candidate-filter leak (New York appeared as a Porter LAUNCH before
-    the metro-level fix)."""
+    incumbent-network reference file, which since Round 4 is rebuilt from
+    sources independent of the candidate filter (DB1B ticket sales for the US
+    domestic study, the inbound T-100 record set for the transborder ones; see
+    warehouse/incumbent_reference.py). Before that it was a dump of the
+    candidate query itself and could not fail."""
     from pathlib import Path
     import pandas as pd
     inc_path = Path("data/reference/incumbent_network_202604.csv")

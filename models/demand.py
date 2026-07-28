@@ -44,10 +44,17 @@ def resolve(study_id: str) -> pd.DataFrame:
 
     if cfg["market_scope"] == "us_domestic":
         obs = _observed_us(con, cfg["hub"])
-        cm_of = dict(con.execute("""
-            SELECT m.cbsa, a.city_market_id
+        # A CBSA can hold more than one BTS city market: Charlotte contains
+        # both CLT (31057) and Concord (32544), and 43 CBSAs are like this.
+        # This was a dict() over a multi-row-per-CBSA query, so the last
+        # arbitrary row won and a metro's demand silently flipped between
+        # observed and modeled depending on the order DuckDB returned. A
+        # metro's O&D is the sum over its city markets, not one of them, so
+        # every market is mapped and aggregated rather than picked.
+        cm_map = con.execute("""
+            SELECT DISTINCT m.cbsa, a.city_market_id AS cm
             FROM map_citymarket_cbsa m JOIN dim_airport a USING (city_market_id)
-        """).fetchall())
+        """).df()
         hub_metro = con.execute("""
             SELECT d.population, d.income FROM dim_airport a
             JOIN map_citymarket_cbsa m USING (city_market_id)
@@ -56,8 +63,20 @@ def resolve(study_id: str) -> pd.DataFrame:
         """, [cfg["hub"]]).fetchone()
         cand["pop_a"], cand["inc_a"] = hub_metro
         cand["pop_b"], cand["inc_b"] = cand["pop"], cand["income"]
-        cand["cm"] = pd.to_numeric(cand["cbsa"].map(cm_of), errors="coerce")
-        merged = cand.merge(obs, left_on="cm", right_on="other_cm", how="left")
+        cm_map["cm"] = pd.to_numeric(cm_map["cm"], errors="coerce")
+        obs_by_cbsa = (cm_map.dropna(subset=["cm"])
+                       .merge(obs, left_on="cm", right_on="other_cm")
+                       .groupby("cbsa")
+                       .apply(lambda g: pd.Series({
+                           "pax_yr": g["pax_yr"].sum(),
+                           # fare is a passenger-weighted average across the
+                           # metro's markets, not a pick from one of them
+                           "avg_fare": (g["avg_fare"] * g["pax_yr"]).sum()
+                                       / g["pax_yr"].sum()
+                                       if g["pax_yr"].sum() else np.nan}),
+                              include_groups=False)
+                       .reset_index())
+        merged = cand.merge(obs_by_cbsa, on="cbsa", how="left")
         thin = merged["pax_yr"].isna() | (merged["pax_yr"] < 4000)
         merged["demand_pax_yr"] = merged["pax_yr"]
         merged.loc[thin, "demand_pax_yr"] = gravity.predict(
@@ -70,10 +89,10 @@ def resolve(study_id: str) -> pd.DataFrame:
         hub = cfg["hub"]
         factor = tf["per_hub_median"].get(hub, tf["median"])
         growth = tf["growth_t100_2018_to_2024"].get(hub) or 1.0
+        # map_ca_airport_metro resolves the CMA prefix join once, in the
+        # warehouse, with provincial parts excluded and uniqueness asserted.
         hub_pop = con.execute("""
-            SELECT m.population FROM ca_airport_cma c
-            JOIN dim_metro_ca m ON m.cma LIKE c.cma_name || '%'
-            WHERE c.iata_code = ?
+            SELECT population FROM map_ca_airport_metro WHERE iata_code = ?
         """, [hub]).fetchone()[0]
         cand["pop_a"] = hub_pop
         cand["pop_b"] = cand["pop"]

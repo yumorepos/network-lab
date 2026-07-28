@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import pandas as pd
 
+from . import carriers
 from .catchment import metro_anchor_points
 from .common import assumptions, connect, haversine_mi, study
 
@@ -30,23 +31,35 @@ def generate(study_id: str) -> pd.DataFrame:
     # airport still counts as the metro being served. Airport-level rollup was
     # the leak: WS flies YYC-IAD ~1x weekly, but the DC metro's busiest airport
     # is BWI, so an airport match missed it.
+    #
+    # Rolled up to the marketing BRAND as well as the metro. T-100 names the
+    # operating certificate, so a metro flown by a wholly owned regional read
+    # as unserved by its own mainline: Horizon flies SEA to El Paso, Wichita,
+    # Monterey and Tulsa as Alaska, and all four leaked into the Alaska
+    # candidate set as unserved markets. Resolved per segment by
+    # models.carriers; min_deps=1 so that a metro reached by several thin
+    # segments still resolves each of them.
+    carriers.register_segment_brands(con, min_deps=1)
     served = con.execute("""
-        WITH latest AS (
-          SELECT max(year::INT*100+month) AS ym FROM fact_segment
-          WHERE service_class IN ('F','L')
-        )
-        SELECT m.cbsa AS cbsa, s.carrier,
-               sum(s.departures) AS deps
-        FROM fact_segment s, latest
+        SELECT m.cbsa AS cbsa, coalesce(b.brand, s.carrier) AS brand,
+               sum(s.departures) AS deps,
+               string_agg(DISTINCT s.carrier, '+' ORDER BY s.carrier)
+                 AS op_carriers
+        FROM fact_segment s
         JOIN dim_airport a2 ON a2.iata_code = s.dest
         JOIN map_citymarket_cbsa m ON m.city_market_id = a2.city_market_id
+        LEFT JOIN map_segment_brand b
+               ON b.op_carrier = s.carrier
+              AND b.origin = s.origin AND b.dest = s.dest
         WHERE s.origin = ? AND s.service_class IN ('F','L')
           AND s.dest_country = 'US'
-          AND (s.year::INT*100+s.month) > latest.ym - 100
+          AND (s.year::INT*100+s.month) > (
+                SELECT max(year::INT*100+month) - 100 FROM fact_segment
+                WHERE service_class IN ('F','L'))
         GROUP BY 1, 2
     """, [hub]).df()
     served_by_study = set(
-        served[(served["carrier"] == carrier) & (served["deps"] >= min_deps)]
+        served[(served["brand"] == carrier) & (served["deps"] >= min_deps)]
         ["cbsa"])
     served_by_any = set(served[served["deps"] >= min_deps]["cbsa"])
 

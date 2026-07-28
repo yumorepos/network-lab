@@ -6,8 +6,8 @@ was 3x weekly x 174 seats, and it
 did not clear at any service level.
 
 ## The two numbers that drive this
-1. base margin -92.1% vs hurdle 8.0%
-2. modeled share 50% of 21k pax/yr (anchor_x_growth)
+1. base margin -266.7% vs hurdle 8.0%
+2. modeled share 52% of 21k pax/yr (anchor_x_growth)
 
 ## Market
 - Distance 2003 mi. Best-fit schedule
@@ -29,20 +29,19 @@ did not clear at any service level.
 | UA        | onestop     |  15.2692  |     7.29792 |
 | DL        | onestop     |  10.9231  |     6.468   |
 | UA        | onestop     |   9.26923 |     6.52853 |
-| AA        | onestop     |   5.09615 |     6.52853 |
-| DL        | onestop     |   4.44231 |     6.46604 |
+| AA        | onestop     |   8.25    |     6.52853 |
 
 Modeled share for the proposed service at the chosen frequency:
-50%.
+52%.
 
 ## Economics at the chosen service level (fully-allocated proxy)
 | fuel \ fare | -15% | base | +10% |
 |---|---|---|---|
-| -30% fuel | -101.9% | -71.6% | -56.0% |
-| +0% fuel | -126.0% | -92.1% | -74.6% |
-| +30% fuel | -150.2% | -112.6% | -93.3% |
+| -30% fuel | -285.3% | -227.5% | -197.7% |
+| +0% fuel | -331.4% | -266.7% | -233.4% |
+| +30% fuel | -377.5% | -305.9% | -269.0% |
 
-Break-even load factor 0.75 vs achieved 0.39.
+Break-even load factor 0.75 vs achieved 0.20.
 Fare from distance-matched US markets x 1.10
 premium (assumption, sensitivity in grid). Costs from Southwest P-5.2 filings
 with fuel rebuilt at EIA scenario prices, carrying the comparator's own

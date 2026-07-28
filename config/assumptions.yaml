@@ -203,3 +203,21 @@ served_market_min_deps_yr:
     BWI."
   confidence: medium
   sensitivity: {low: 12, high: 52}
+
+route_spell_min_deps_month:
+  value: 4
+  source: "Measured from the T-100 monthly route panel, not asserted. 24.3% of
+    (carrier, airport pair, month) cells carry a single departure while the
+    median is 26, so the low tail is diversions, ferries and one-off charters
+    rather than thin scheduled service. Spell counts flatten past this floor:
+    the derived register loses 44% of spells from floor 2 to 3 and only 2.3%
+    from floor 6 to 9, placing the elbow at 4 to 6."
+  rationale: "Activity floor deciding whether a carrier is operating a route in
+    a given month, used by warehouse/route_spells.py to derive launch and exit
+    events for the backtest (PHASE_5_6_PLAN.md W1.2). Roughly weekly service,
+    consistent with served_market_min_deps_yr (~every other week over a year)
+    and the >= 3 weekly leg frequency floor in models/competition.py. Set low
+    enough to keep genuine thin launches: Flair and Lynx entered markets at 3x
+    to 4x weekly, or 13 to 17 departures a month."
+  confidence: medium
+  sensitivity: {low: 3, high: 6}

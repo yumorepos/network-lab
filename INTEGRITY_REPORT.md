@@ -224,3 +224,292 @@ interview_story, and validation.md, with an explicit guard against the stale
 6,002 / 6,092 are unchanged. Two route post-mortems were added (YYC-LAS: Flair
 route cut vs Lynx corporate shutdown, same market), and deploy/demo docs
 complete the package.
+
+---
+
+# Round 4: three P0 defects from the independent audit (2026-07-28)
+
+An independent re-audit (`AUDIT_2026-07-27_VERIFIED.md`) found three defects
+that had survived every prior round and the full test suite. All three were
+real. All three changed the headline result. This round fixes them, adds
+regression tests that fail when each defect is reintroduced, and records the
+before and after honestly, including the places where the audit's own predicted
+magnitudes turned out to be wrong.
+
+The three share one root cause: a modeling assumption that was never checked
+against a number the project already had in hand.
+
+## 1. Bidirectional demand divided by one-directional departures
+
+`models/economics.py` computed `deps_yr = freq_wk * 52`. But `demand_pax_yr` is
+BIDIRECTIONAL (DB1B O&D and the StatCan anchor both count A to B plus B to A)
+while `freq_wk` is ONE-WAY departures from the hub. A route is flown in both
+directions, so annual departures are `freq_wk * 52 * 2`. Every route in every
+study was scored at roughly twice its true load.
+
+Ground truth, from a market that was in the Alaska candidate set at the time:
+
+| quantity | value |
+|---|---|
+| DB1B 2024 O&D Seattle to Wichita, both directions | 45,680 |
+| Horizon departures SEA to ICT, trailing 12 months | 341 |
+| Horizon departures ICT to SEA, trailing 12 months | 338 |
+| onboard passengers, both directions | 43,529 |
+| observed passengers per departure | 64.1 |
+
+The shipped formula gave 134.6 passengers per departure. The corrected formula
+gives 67.3, within 5% of observed.
+
+Checked at network scale rather than on one route. On the 46 Seattle routes
+where the Alaska brand flies more than 90% of departures, modeled local O&D per
+departure exceeded the total passengers the route actually carried on **25 of 46
+routes (54%)** under the old convention, by up to **3.03x**. Local traffic
+cannot exceed total onboard traffic, since onboard is local plus connecting
+flow, so those rows were not a calibration disagreement but an arithmetic
+impossibility. Under the corrected convention that falls to 4 of 46, and the
+residual cases are markets where a real share of the O&D routes one-stop on
+another carrier rather than on the nonstop. On the long-haul spokes where local
+traffic dominates, the corrected numbers land on top of observed:
+
+| route | observed onboard/dep | old formula | corrected |
+|---|---|---|---|
+| SEA-MSY | 147.4 | 304.5 | 152.2 |
+| SEA-CMH | 148.2 | 295.2 | 147.6 |
+| SEA-OKC | 144.5 | 279.7 | 139.9 |
+| SEA-IND | 152.2 | 291.7 | 145.8 |
+| SEA-CLE | 146.6 | 276.1 | 138.0 |
+
+This was findable from day one. The Alaska SEA study exists to be the
+ground-truth check, and it was used to validate demand levels and share but
+never pointed at the economics arithmetic.
+
+## 2. One-stop competitors joined on operating certificate, not marketing brand
+
+`models/competition.py` joined connecting itineraries with
+`l2.carrier = l1.carrier`, the OPERATING carrier. T-100 reports who flew the
+metal; a passenger buys a brand. The two disagree for every regional affiliate,
+and not marginally: over the current T-100 window SkyWest operates 884,171
+departures, Republic 369,160 and Envoy 334,585, while **none of those codes
+appears even once as a DB1B ticketing carrier**. Every one of those departures
+is sold as American, Delta, United or Alaska.
+
+Two consequences, both now fixed. A mainline leg connecting to a regional leg
+was structurally invisible, so competition was understated. And Air Canada, the
+incumbent the Porter study is entirely about, was split across three codes at
+YYZ: AC mainline (11,970 departures), Jazz as Air Canada Express (11,693) and
+Rouge (4,929).
+
+`models/carriers.py` now resolves certificate to brand in two tiers, recorded
+per row in `data/reference/carrier_families.csv`:
+
+- **static**, where the operator flies for exactly one brand (wholly owned or a
+  single capacity purchase agreement). Corroborated in data rather than trusted:
+  the permitted brand sells nonstop on 95.9% to 100% of each single-brand
+  operator's DB1B-covered segments.
+- **db1b_per_segment**, where the operator flies for several brands (SkyWest,
+  Republic, GoJet, Air Wisconsin). The brand is resolved for each segment by
+  asking which permitted brand actually sells nonstop tickets on that airport
+  pair. 85% to 94% of segments resolve, and the winning brand takes a median
+  1.00 of within-set nonstop passengers, so the resolution is close to
+  unambiguous where it fires. Unresolved segments keep their operating code,
+  which never invents a competitor.
+
+After the fix, 74% to 80% of reconstructed one-stops connect legs flown by
+different certificates under one brand. Those itineraries could not previously
+be seen at all.
+
+**Where the audit overstated the effect.** The audit predicted this fix would
+move Porter's median modeled share from 0.586 to 0.345. It moved to 0.573. The
+audit's simulation was wrong in two ways, and the corrected implementation is
+the more conservative one. It mapped each regional to every mainline it has ever
+flown for, which manufactures phantom competitors on segments SkyWest actually
+flies for only one brand; per-segment DB1B resolution does not. And it did not
+sum frequencies within a brand, so American mainline and Envoy on the same
+segment stayed two competitors rather than becoming one larger one. Under a
+concave frequency exponent, splitting a brand in two inflates its total QSI
+preference, so the audit's version overstated competition in the opposite
+direction. Correct QSI treats a brand as one choice with one frequency.
+
+Measured at the 7x reference frequency:
+
+| study | median share before | after | markets above 0.70 before | after |
+|---|---|---|---|---|
+| WestJet YYC | 0.800 | 0.712 | 55 | 43 |
+| Alaska SEA | 0.613 | 0.429 | 17 | 0 |
+| Porter YYZ | 0.586 | 0.573 | 20 | 14 |
+
+Alaska is the study where truth is observable, and it is the one that moves
+most: no market now models above a 70% share, against 17 before.
+
+### The same defect lived in a second place
+
+`models/share_validation.py` reimplements the competition reconstruction
+independently, with its own operating-carrier one-stop join. The exhibit built
+to validate the share model was therefore measuring a different model from the
+one that ships verdicts, and it was comparing a certificate-denominated model
+against DB1B truth denominated in ticketing carriers. Resolving both sides to
+the brand is not a refinement; it is the only way the comparison means anything.
+
+The invariant that makes this undeniable, and that required no prior knowledge
+of the answer: **modeled carrier shares summed to 0.790 per market.** A fifth of
+Seattle's traffic was credited to codes DB1B never reports as a ticketing
+carrier. After the fix they sum to 0.996.
+
+| measure | before | after |
+|---|---|---|
+| MAE | 6.95 pts | 5.73 pts |
+| passenger-weighted MAE | 16.30 pts | 10.85 pts |
+| MAE on markets with observed share >= 5% | 15.07 pts | 11.44 pts |
+| modeled shares summed per market | 0.790 | 0.996 |
+
+The audit separately noted that the headline MAE of 7.0 was flattered by
+composition: 62% of the 503 rows are carriers holding under 5% of a market, and
+predicting near zero for those is easy. The passenger-weighted figure and the
+share sum are now computed, written into `docs/validation.md`, and pinned by a
+test. The passenger-weighted 10.9 is the number a planner should read.
+
+This is the one place where a reader-facing document was updated in this round,
+because leaving it would have meant shipping a validation number computed from
+code that no longer exists. Only the MAE figure changed, in README,
+`docs/validation.md`, `docs/interview_story.md` and `docs/resume_material.md`.
+Every other claim in those documents is still stale and listed below.
+
+`docs/LIMITATIONS.md` item 3 stated the direction of this error backwards,
+claiming the reconstruction was optimistic about competition. It was
+pessimistic. That entry is corrected, and a new item 14 records that Air Canada
+connecting itineraries out of Canadian hubs remain invisible because T-100
+carries no Canadian domestic segments, so leg one of a YYZ over YUL connection
+does not exist in any open source.
+
+## 3. The incumbent cross-check was a dump of the code it was checking
+
+`data/reference/incumbent_network_202604.csv` was described as an independently
+auditable record. It was the output of the same T-100 query that
+`models/candidates.py` runs to decide which metros are already served: all 99
+rows matched on CBSA with a maximum departure delta of 0.0. Both sides shared
+one query, one table and one carrier concept, so both shared the
+operating-carrier bug above, and `test_no_screened_market_is_already_served`
+could not fail. A cross-check that cannot disagree is not a cross-check.
+
+Four Seattle metros that Horizon flies as Alaska leaked into the Alaska
+candidate set and were screened as unserved markets:
+
+| metro | operator | departures, trailing 12 months | Alaska nonstop tickets sold, DB1B 2024 |
+|---|---|---|---|
+| El Paso, TX | QX | 351 | 17,600 |
+| Wichita, KS | QX | 341 | 13,400 |
+| Salinas, CA (MRY) | QX and OO | 331 | 10,980 |
+| Tulsa, OK | QX | 44 | none: launched March 2026 |
+
+`warehouse/incumbent_reference.py` now rebuilds the file from sources
+independent of the candidate filter, and every row records which source produced
+it and how independent that source actually is:
+
+- **alaska_sea, fully independent.** DB1B nonstop ticket sales. A different
+  survey from T-100 (a 10% ticket sample, not the segment census), a different
+  grain (origin and destination, not segment) and a different carrier concept
+  (who sold the ticket, not who flew the metal). It found 81 served metros
+  against the old file's 62, including 19 the operating-carrier view could not
+  see, among them El Paso, Wichita and Salinas.
+- **westjet_yyc and porter_yyz, partially independent.** DB1B does not cover
+  Canadian origins and no open source gives carrier-level Canadian transborder
+  service. Those rows read the inbound T-100 record set, which the candidate
+  filter never touches, resolved to the marketing brand. That catches query,
+  brand and rollup errors; it cannot catch T-100 itself being wrong, and the
+  `independent_of_candidate_filter` column says `partial` rather than
+  pretending otherwise.
+
+DB1B's blind spot is time: it cannot see Tulsa, launched after the 2024 sample.
+The brand-aware T-100 filter catches that one. The two sources have
+complementary blind spots, which is the argument for having two.
+
+## Verdicts that moved
+
+| study | before | after |
+|---|---|---|
+| WestJet YYC | 0 LAUNCH / 0 MONITOR / 76 PASS | 0 LAUNCH / 0 MONITOR / 76 PASS |
+| Alaska SEA | 0 LAUNCH / 1 MONITOR / 48 PASS | 0 LAUNCH / 0 MONITOR / 45 PASS |
+| Porter YYZ | 5 LAUNCH / 3 MONITOR / 71 PASS | 1 LAUNCH / 1 MONITOR / 77 PASS |
+
+Alaska's candidate count falls 49 to 45 as the four Horizon metros are excluded,
+and its lone MONITOR (Fayetteville-Springdale-Rogers, best-fit margin +0.2%
+before) goes negative once loads are halved. The validation study now returns a
+clean all-PASS, which is the correct answer for a mature hub.
+
+Four of the five Porter LAUNCHes demote to PASS. They were not marginal calls;
+they were carrying twice their real load:
+
+| market | verdict | base margin | modeled share | nonstop incumbents |
+|---|---|---|---|---|
+| Washington | PASS | -27.5% | 0.077 | 4 |
+| Chicago | PASS | -11.1% | 0.057 | 5 |
+| Philadelphia | PASS | -30.2% | 0.129 | 3 |
+| Atlanta | PASS | -22.8% | 0.112 | 2 |
+| Boston | LAUNCH | +32.6% | 0.159 | 1 |
+
+Boston survives, and there is an out-of-sample postscript. The model
+right-sizes it to 3x weekly at a 0.92 load factor. Porter began flying Toronto
+Pearson to Boston on 2026-05-14, after the close of this data window, at 14x
+weekly. The model picked the right market and sized it far too small, which is
+a real and separate finding: at a modeled 15.9% share the market supports about
+4x weekly, so Porter is either expecting a much larger share than the QSI model
+gives it or is buying position. Right-sizing scope is a known limitation
+(item 11) and this is the first external evidence about its calibration.
+
+WestJet is unchanged at all-PASS, but for better reasons than before: median
+modeled share falls from 0.800 to 0.712 and the share-uncertainty guard fires on
+19 markets rather than 38, so fewer of the PASS verdicts now rest on a share
+estimate the model itself flags as untrustworthy.
+
+## Regression tests
+
+`tests/test_p0_regressions.py`, 19 tests. Suite goes from 13 to 32.
+
+These were verified to fail when the defects are present, not merely to pass
+now. Run against the pre-fix artifacts, 13 of the 18 fail, covering all three
+defects; the golden units test fails when `DIRECTIONS_PER_ROUTE` is reverted to
+1 (134.6 against an expected 64.1); and the circularity guard fails with an
+empty set when pointed at the old reference file.
+
+A test that has never been shown to fail is a test of nothing. That is the
+lesson of P0-3 and it is why this step was done explicitly.
+
+## Notes and residual issues
+
+- **`top_competitor` ranks by raw frequency and ignores itinerary type.** Air
+  Canada is a nonstop competitor in 23 of 79 Porter markets at a median 10.4
+  weekly frequencies, but reports as top competitor in only one, because
+  high-frequency US hub one-stops outrank it on the raw number. The share model
+  itself weights nonstop against connecting correctly, so no verdict is
+  affected; the reporting field is misleading and should be ranked on QSI
+  preference instead. Not fixed here to keep this round scoped to the P0s.
+- **Run-to-run float noise of about 1e-15 relative** exists in the pipeline,
+  from parallel float summation in DuckDB. Verdicts, chosen frequencies,
+  demand and share are bit-identical across runs; only late-decimal digits of
+  margin and contribution move. This predates this round (measured at 6.8e-13
+  absolute on margin before the changes, 9.1e-13 after) and is immaterial, but
+  it means artifact byte-equality is not a valid reproducibility check.
+- **README verdict counts are not covered by the consistency tests.** Those
+  tests pin the generated reports, the transfer median, share MAE, backtest N
+  and gravity counts, but nothing asserts README's verdict counts against the
+  screen. That is why README could carry 5 LAUNCH while the artifacts said
+  otherwise. Extending the consistency test to README is the natural next fix,
+  and it will then force the rewrite.
+
+## Documents now stale and deliberately not updated
+
+The corrected outputs are verified: `make all` is green, `make test` is 32 for
+32, and each fix has a test proven to fail without it. Apart from the single
+share-MAE figure discussed above, reader-facing documents were left alone
+pending review, and the following now contradict the artifacts:
+
+- `README.md`: the Porter 5 LAUNCH / 3 MONITOR / 71 PASS headline and its named
+  LAUNCH list, the Alaska "48 PASS / 1 MONITOR" line, the "204 candidate
+  markets" total (now 200), and the claim that BELF 0.85 lives in
+  assumptions.yaml.
+- `PROGRESS.md`: headline verdict counts.
+- `docs/interview_story.md`, `docs/resume_material.md`, `docs/demo_script.md`:
+  any verdict counts and the share-model framing.
+
+The generated reports under `reports/` regenerate from artifacts and are already
+correct.

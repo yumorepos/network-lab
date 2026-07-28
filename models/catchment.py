@@ -70,9 +70,13 @@ def catchment_for_airport(con, iata: str) -> dict:
               SELECT c.cma_name, a.lat, a.lon, m.population,
                      row_number() OVER (PARTITION BY c.cma_name
                                         ORDER BY a.iata_code) AS rn
+              -- map_ca_airport_metro resolves the CMA prefix join once, in
+              -- the warehouse, with provincial parts excluded and uniqueness
+              -- asserted. The raw LIKE join here matched all three
+              -- Ottawa-Gatineau records.
               FROM ca_airport_cma c
               JOIN dim_airport a USING (iata_code)
-              JOIN dim_metro_ca m ON m.cma LIKE c.cma_name || '%'
+              JOIN map_ca_airport_metro m ON m.iata_code = c.iata_code
             )
             SELECT cma_name, lat, lon, population FROM ranked WHERE rn = 1
         """).fetchall()

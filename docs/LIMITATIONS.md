@@ -16,14 +16,24 @@ after the fact.
    the factor's IQR is reported everywhere it is used.
 
 3. **No MIDT/OAG.** Competitor connecting itineraries are reconstructed
-   from T-100 segment frequencies (same carrier, corridor within
+   from T-100 segment frequencies (same marketing brand, corridor within
    min(nonstop+700mi, 2.0x nonstop), min leg frequency). The wide absolute
    allowance exists because hub connects run far off great-circle
    (YYC-Sacramento via Denver is 1.77x). It overstates connectivity where
-   banks don't align and misses interline/codeshare paths. Residual risk on
-   thin markets is handled downstream: any market with modeled share above
+   banks don't align and misses interline paths. Residual risk on thin
+   markets is handled downstream: any market with modeled share above
    70% and zero nonstop incumbents is flagged high-uncertainty and capped
    at MONITOR, never LAUNCH.
+
+   Direction of error, measured rather than assumed. Through Round 3 this
+   entry claimed the reconstruction overstated connectivity and so was
+   conservative about the proposed service's share. That was backwards. The
+   join matched on the OPERATING carrier, so no mainline-plus-regional
+   itinerary was visible at all and competition was understated. Correcting
+   the join to the marketing brand moved the median modeled share down by
+   24 points at Porter (0.586 to 0.345) and 35 points at Alaska (0.613 to
+   0.268), and cut the share-uncertainty guard from 38 to 19 markets at
+   WestJet. See INTEGRITY_REPORT.md Round 4.
 
 4. **DB1B has no transborder fares.** Transborder fares are distance-matched
    US fares times a documented premium assumption (sensitivity-tested in
@@ -73,13 +83,34 @@ after the fact.
     or upgauge an existing route". The exclusion is metro-level to stop the
     leak where a carrier serves a secondary airport (WS flies YYC-IAD, so the
     Washington metro is excluded even though its busiest airport is BWI). The
-    exclusion trusts the T-100 join, which for a Canadian carrier depends on
-    foreign-carrier reporting to T-100 International; it is cross-checked by the
-    committed `data/reference/incumbent_network_202604.csv` (spot-verified against
-    published schedules), and `tests/test_sanity.py` fails if any screened metro
-    appears in the carrier's incumbent list. One documented edge case: Porter's
-    Chicago and Boston history is Billy Bishop (YTZ) turboprop service, a
-    different airport and gauge outside this YYZ mainline-jet study.
+    exclusion is resolved to the marketing brand, so a metro flown by a wholly
+    owned regional counts as served by its mainline; before Round 4 it matched
+    the operating carrier and four Horizon-flown Seattle metros leaked into the
+    Alaska candidate set. It is cross-checked by the committed
+    `data/reference/incumbent_network_202604.csv`, which since Round 4 is built
+    from sources independent of the candidate filter
+    (`warehouse/incumbent_reference.py`), and `tests/test_sanity.py` fails if
+    any screened metro appears in the carrier's incumbent list. One documented
+    edge case: Porter's Chicago and Boston history is Billy Bishop (YTZ)
+    turboprop service, a different airport and gauge outside this YYZ
+    mainline-jet study.
+
+    For the transborder hubs the cross-check is only partially independent.
+    DB1B does not cover Canadian origins and no open source gives
+    carrier-level Canadian transborder service, so those rows fall back to
+    T-100 read along a different axis (the inbound record set, hub as
+    destination) rather than a different source. That catches query, brand and
+    rollup errors; it cannot catch T-100 itself being wrong.
+
+14. **Air Canada connecting itineraries out of Canadian hubs are invisible.**
+    T-100 carries no Canadian domestic segments, so an Air Canada one-stop
+    from YYZ over YUL or YVR cannot be reconstructed: leg two is in the data
+    and leg one never is. Air Canada appears in the Porter competitive set
+    only where it flies a US nonstop from YYZ (23 of 79 candidate metros,
+    median 10.4 weekly frequencies once AC, Jazz and Rouge are rolled into one
+    brand) and never as a connecting competitor. This understates the real
+    incumbent at exactly the hub the portability study is about, and there is
+    no open source that fixes it.
 
 13. **Unanchored transborder demand is capped at the survey ceiling.** A
     Canada-US market absent from the 2018 StatCan >4,000 city-pair table had

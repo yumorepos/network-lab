@@ -20,6 +20,22 @@ sensitivity band and noted in LIMITATIONS.
 
 Fares: US domestic markets use observed DB1B fares. Transborder markets use a
 distance-matched fare curve fit on DB1B x the documented transborder premium.
+
+UNITS CONTRACT (the source of a corrected 2x error, see INTEGRITY_REPORT.md
+Round 4). Three quantities in this module have easily-confused directionality:
+
+  demand_pax_yr  BIDIRECTIONAL. DB1B O&D and the StatCan anchor both count
+                 passengers travelling A to B plus B to A in a year.
+  freq_wk        ONE-WAY departures per week FROM the hub. This is the T-100
+                 segment convention (segments are directional) and the
+                 convention of `initial_weekly_freq` in the launch register.
+  deps_yr        BOTH directions, freq_wk * 52 * DIRECTIONS_PER_ROUTE. This is
+                 the correct denominator for bidirectional demand and the
+                 correct multiplier for per-departure revenue and cost.
+
+Dividing bidirectional demand by one-way departures overstates loads by 2x.
+tests/test_p0_regressions.py pins the corrected arithmetic to the observed
+T-100 load on a real route.
 """
 from __future__ import annotations
 
@@ -31,6 +47,12 @@ from . import spill
 from .common import OUTPUTS, assumptions, connect, study
 
 E2_FUEL_IMPROVEMENT = 0.12   # E195-E2 vs E190, Embraer public claims; assumption
+
+# Definitional, not an assumption: a route is operated in both directions, so a
+# schedule of freq_wk weekly departures FROM the hub also flies freq_wk weekly
+# departures back TO it. Annual departures on the route are therefore
+# freq_wk * 52 * 2. See the units contract in the module docstring.
+DIRECTIONS_PER_ROUTE = 2
 
 CREW_COLS = ["PILOT_FLY_OPS", "OTH_FLT_FLY_OPS", "TRAIN_FLY_OPS",
              "PERS_EXP_FLY_OPS", "BENEFITS_FLY_OPS", "PAY_TAX_FLY_OPS"]
@@ -179,7 +201,10 @@ def scenario_grid(study_id: str) -> pd.DataFrame:
                                     r["fastest_elapsed_h"], r["comp_pref_sum"],
                                     w, f_exp, t_exp)
                 carried = r["demand_pax_yr"] * shr
-                deps_yr = freq_wk * 52
+                # carried is BIDIRECTIONAL pax/yr; freq_wk is ONE-WAY weekly
+                # departures from the hub. The route flies both directions, so
+                # annual departures are doubled. See the units contract above.
+                deps_yr = freq_wk * 52 * DIRECTIONS_PER_ROUTE
                 pax_per_dep = spill.expected_boardings(carried / deps_yr, seats)
                 for f_pct in a["fare_scenario_grid_pct"]["value"]:
                     for g_pct in a["fuel_scenario_grid"]["value"]:

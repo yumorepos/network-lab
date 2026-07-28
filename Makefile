@@ -53,3 +53,15 @@ clean-data:
 deploy-prep:
 	git add -f data/parquet/outputs/*.parquet data/parquet/outputs/*.yaml data/parquet/outputs/*.csv
 	@echo "outputs staged. commit, push, then deploy per docs/deploy.md"
+
+# Milestone A integrity gate: rebuild the warehouse from cached Parquet and
+# assert no model output moves. Both defects found during the T-100 backfill
+# only fire on a rebuild, so re-running models against a fixed warehouse (which
+# is what `make all` does) cannot catch them.
+reproducibility:
+	@rm -rf /tmp/nl_repro && mkdir -p /tmp/nl_repro
+	@cp -R data/parquet/outputs /tmp/nl_repro/
+	$(PY) -m warehouse.build_marts
+	$(PY) -m models.run_all
+	$(PY) -m backtest.run_backtest
+	@$(PY) scripts/check_reproducible.py /tmp/nl_repro/outputs data/parquet/outputs

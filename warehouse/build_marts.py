@@ -165,6 +165,36 @@ def build() -> None:
                            for k, v in CA_AIRPORT_CMA.items())
                 + ") t(iata_code, cma_name)")
 
+    # Resolved Canadian hub airport -> metro population, built once.
+    #
+    # Four call sites each ran `dim_metro_ca m ON m.cma LIKE c.cma_name||'%'`
+    # independently and collapsed the result with dict() or iloc[0]. That prefix
+    # join is not unique: StatCan splits the one interprovincial CMA into three
+    # records, so YOW matched the Quebec part (355,203), the Ontario part
+    # (1,143,407) and the full CMA (1,498,610), and which one won depended on
+    # row order. It silently swapped Ottawa's population by a factor of 4.2
+    # between rebuilds and moved backtest demand estimates by 2.8x.
+    #
+    # Provincial parts are excluded because a hub airport serves the whole CMA,
+    # and the result is asserted unique so a future ambiguity fails loudly
+    # instead of being picked.
+    con.execute("""
+        CREATE OR REPLACE TABLE map_ca_airport_metro AS
+        SELECT c.iata_code, m.cma, m.population
+        FROM ca_airport_cma c
+        JOIN dim_metro_ca m ON m.cma LIKE c.cma_name || '%'
+        WHERE m.cma NOT LIKE '% part,%'
+    """)
+    dupes = con.execute("""
+        SELECT iata_code, count(*) n, string_agg(cma, ' | ' ORDER BY cma) hits
+        FROM map_ca_airport_metro GROUP BY 1 HAVING count(*) > 1
+    """).df()
+    assert not len(dupes), (
+        "Canadian airport to CMA mapping is ambiguous, the defect class that "
+        f"mis-populated Ottawa:\n{dupes.to_string(index=False)}")
+    log("map_ca_airport_metro: " + str(con.execute(
+        "SELECT count(*) FROM map_ca_airport_metro").fetchone()[0]) + " airports")
+
     from warehouse.metro_map import build_map
     build_map(con)
 

@@ -62,6 +62,16 @@ def main() -> int:
     for k, v in sv["by_structure"].items():
         lines.append(f"| {k} | {v['n']} | {v['mae_pts']:.1f} |")
     lines += ["",
+              "Two figures the unweighted MAE hides. Most rows are tiny "
+              "carriers in a market, so the",
+              "passenger-weighted error is the one a planner should read: "
+              f"**{sv['pax_weighted_mae_share_points']:.1f} share points**. "
+              "And modeled shares sum to",
+              f"{sv['mean_modeled_share_sum_per_market']:.3f} per market, "
+              "which is the invariant that exposed the",
+              "operating-versus-marketing carrier defect in Round 4 (it summed "
+              "to 0.790 before).", ""]
+    lines += ["",
               "## Alaska SEA end-to-end note",
               "",
               "The alaska_sea study runs the identical chain with demand and",

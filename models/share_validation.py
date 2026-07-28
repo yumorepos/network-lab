@@ -6,17 +6,28 @@ itineraries with the same QSI-lite used for proposals, convert preferences to
 carrier shares, and report mean absolute error in share points, split by
 market structure. This is the honesty check on the exact machinery that
 scores unserved candidates.
+
+Both sides of the comparison must be denominated in the same carrier concept.
+DB1B reports the TICKETING carrier, so the modeled side has to be resolved to
+the marketing brand too (models.carriers). Through Round 3 it was not: the
+model attributed traffic to operating certificates that DB1B never reports as
+ticketing carriers, so modeled shares summed to only 0.790 per market. The
+missing 21% was regional flying credited to certificates instead of the brands
+that sold it. Resolving both sides to the brand brings the sum to 0.996 and
+cuts passenger-weighted error from 16.3 to 10.9 share points.
 """
 from __future__ import annotations
 
 import numpy as np
 import pandas as pd
 
+from .carriers import segment_brands
 from .common import OUTPUTS, assumptions, connect
 
 HUB = "SEA"
 YEAR = 2024
 MIN_PAX = 50_000
+MIN_SEGMENT_DEPS_YR = 26   # matches models/competition.py
 
 
 def validate() -> dict:
@@ -50,14 +61,21 @@ def validate() -> dict:
     win = con.execute("""
         SELECT max(year::INT*100+month) FROM fact_segment
         WHERE service_class IN ('F','L')""").fetchone()[0]
+    # Segments collapsed to the marketing brand, matching DB1B's tk_carrier.
+    # A brand's frequency on a pair is the sum over the certificates flying it.
+    con.register("map_segment_brand", segment_brands(con, MIN_SEGMENT_DEPS_YR))
     seg = con.execute(f"""
-        SELECT s.carrier, s.origin, s.dest, s.distance_mi,
+        SELECT coalesce(b.brand, s.carrier) AS carrier, s.origin, s.dest,
+               max(s.distance_mi) AS distance_mi,
                sum(s.departures)/52.0 AS freq_wk
         FROM fact_segment s
+        LEFT JOIN map_segment_brand b
+               ON b.op_carrier = s.carrier
+              AND b.origin = s.origin AND b.dest = s.dest
         WHERE s.service_class IN ('F','L')
           AND (s.year::INT*100+s.month) > {win} - 100
           AND s.origin_country='US' AND s.dest_country='US'
-        GROUP BY 1,2,3,4 HAVING sum(s.departures) >= 26
+        GROUP BY 1,2,3 HAVING sum(s.departures) >= {MIN_SEGMENT_DEPS_YR}
     """).df()
     cm_of = {k: int(v) for k, v in con.execute(
         "SELECT iata_code, city_market_id FROM dim_airport "
@@ -113,6 +131,7 @@ def validate() -> dict:
                 "other_cm": other_cm, "carrier": o["tk_carrier"],
                 "obs_share": o["pax"] / o["mkt_pax"],
                 "model_share": model_share.get(o["tk_carrier"], 0.0),
+                "pax": float(o["pax"]),
                 "n_nonstop_carriers": n_ns_carriers,
             })
     df = pd.DataFrame(rows)
@@ -125,6 +144,13 @@ def validate() -> dict:
     out = {
         "hub": HUB, "year": YEAR, "n_market_carrier_rows": int(len(df)),
         "mae_share_points": float(100 * df["abs_err"].mean()),
+        "pax_weighted_mae_share_points": float(
+            100 * (df["abs_err"] * df["pax"]).sum() / df["pax"].sum()),
+        # a share model whose shares do not sum to 1 is attributing traffic to
+        # carriers the truth source does not report; this is the invariant that
+        # exposed the operating-versus-marketing carrier defect
+        "mean_modeled_share_sum_per_market": float(
+            df.groupby("other_cm")["model_share"].sum().mean()),
         "by_structure": {str(k): {"mae_pts": float(100 * v["mean"]),
                                   "n": int(v["count"])}
                          for k, v in by_struct.iterrows()},

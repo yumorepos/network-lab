@@ -93,6 +93,37 @@ def _match_us_metro(metros: pd.DataFrame, city: str, state_code: str):
     return cand.sort_values("population", ascending=False).iloc[0]
 
 
+def _cma_population(cma: dict, cma_key: str) -> float | None:
+    """Population of the census metropolitan area a hub airport serves.
+
+    StatCan splits the one interprovincial CMA into three records:
+
+        Ottawa - Gatineau (CMA), Quebec part, Quebec        355,203
+        Ottawa - Gatineau (CMA), Ontario part, Ontario    1,143,407
+        Ottawa - Gatineau (CMA), Ontario/Quebec           1,498,610
+
+    This was a prefix match resolved by `next()`, so which of the three it
+    returned depended on dict iteration order, which follows the order DuckDB
+    happened to return rows and is not stable across a warehouse rebuild. One
+    rebuild silently swapped Ottawa's 1,498,610 for the Quebec part's 355,203,
+    a factor of 4.2 in the population term of the gravity model, and moved the
+    transfer factor that every Canadian demand estimate is built on.
+
+    YOW serves the whole CMA across both provinces, so the provincial parts are
+    excluded and the match must then be unique. Ambiguity raises rather than
+    picking, because picking is how this went wrong the first time.
+    """
+    hits = {k: v for k, v in cma.items()
+            if k.startswith(cma_key) and " part," not in k}
+    if not hits:
+        return None
+    if len(hits) > 1:
+        raise ValueError(
+            f"CMA key {cma_key!r} matches {len(hits)} records "
+            f"({sorted(hits)}); the population lookup must be unambiguous")
+    return next(iter(hits.values()))
+
+
 def estimate() -> dict:
     con = connect(read_only=True)
     metros = metro_anchor_points(con)
@@ -120,8 +151,7 @@ def estimate() -> dict:
             skipped.append(r["GEO"])
             continue
         cma_key, hub = CA_CITY_HUB[ca_city]
-        ca_pop = next((v for k, v in cma.items()
-                       if k.startswith(cma_key)), None)
+        ca_pop = _cma_population(cma, cma_key)
         m = _match_us_metro(metros, us_city, US_STATE_CODE[us_state])
         if ca_pop is None or m is None or hub not in airports:
             skipped.append(r["GEO"])
