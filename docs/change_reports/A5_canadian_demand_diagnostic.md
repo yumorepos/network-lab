@@ -33,6 +33,49 @@ shift, which is what it is designed to do.
 
 ---
 
+---
+
+## CORRECTION issued 2026-07-28, after this document was committed
+
+The evidence table below bins gravity error by **observed** demand. That
+conditions on the outcome: binning by the observed value sorts negative
+residuals into the low bands and positive residuals into the high bands, so a
+perfectly calibrated model with noise reproduces the monotonic pattern on its
+own. The correct calibration test bins by **predicted** value.
+
+Rebinned, same model and data:
+
+| band | by observed (below) | by predicted (correct) |
+|---|---|---|
+| under 10k | 1.97 | 0.89 |
+| 10k to 25k | 1.29 | 1.52 |
+| 25k to 50k | 0.83 | 1.29 |
+| 50k to 100k | 0.54 | 0.78 |
+| over 100k | 0.30 | 0.42 |
+
+**The conclusion of this document is unchanged**: the defect is specification,
+not the transfer factor. The US and transborder columns were binned identically,
+so the roughly constant offset between them still shows the transfer acting as a
+level shift, and bias in the US column with no transfer applied is still
+decisive.
+
+**What changes** is the characterisation of the defect. On the conditional mean,
+which is what a demand forecast must get right, it is worse than reported here:
+`sum(predicted)/sum(observed) = 0.439`, so the model predicts 44% of the traffic
+that actually flew. The median log residual is near zero, meaning the model
+recovers the conditional median and not the mean. That is retransformation bias,
+and this document under-stated it while over-stating the slope.
+
+The same caveat applies to the "gravity exceeds the censoring bound on 100% of
+capped markets" finding below: capped markets are selected by having low true
+demand, so that comparison is also outcome-conditioned and some of the 4.5x
+excess is expected from noise alone.
+
+Full corrected analysis and the resulting migration plan:
+`docs/phase6_demand_model_redesign.md` section 1.
+
+---
+
 ## Evidence
 
 ### The decisive test: gravity bias where truth exists
