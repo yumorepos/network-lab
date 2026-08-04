@@ -1,0 +1,71 @@
+vintage: pre2022
+years:
+- 2018
+- 2019
+n_markets: 6002
+n_train: 4797
+n_test: 1205
+predict:
+  params:
+    const: -62.14060222441766
+    ln_pop_product: 0.9578125459212448
+    ln_income_product: 1.5036032333830027
+    ln_dist: 3.8373485089972847
+    ln_dist_sq: -0.30734834098845876
+  robust_se:
+    const: 4.837945389132331
+    ln_pop_product: 0.020043417366505542
+    ln_income_product: 0.16573478995594357
+    ln_dist: 0.9036648979005321
+    ln_dist_sq: 0.06650470164704267
+  cov_type: HC1
+  dispersion_pearson_chi2_over_df: 163418.19924747042
+  converged: true
+  n_iter: 9
+  quasi_deviance: 310355467.5999406
+  quasi_llf: -155205902.56909472
+diagnostic:
+  params:
+    const: -29.019554165583063
+    ln_pop_product: 0.4144517503455525
+    ln_income_product: 0.7905316452492446
+    ln_dist: 2.468762328177484
+    ln_dist_sq: -0.16932264825293059
+    has_nonstop: -2.590411792459182
+    ln_seats1p: 0.3899121240887455
+  robust_se:
+    const: 3.6076636967375912
+    ln_pop_product: 0.019281416941467122
+    ln_income_product: 0.14091743083931976
+    ln_dist: 0.5958497805243621
+    ln_dist_sq: 0.04310075535671336
+    has_nonstop: 0.16183577993969817
+    ln_seats1p: 0.013466144954672766
+  cov_type: HC1
+  dispersion_pearson_chi2_over_df: 36552.31741960195
+  converged: true
+  n_iter: 21
+  quasi_deviance: 125201629.5808163
+  quasi_llf: -62628983.55953251
+holdout:
+  median_ape: 0.7221371224264167
+  mean_ape: 1.4873113873165702
+  by_band:
+  - band: 4,000-25,000
+    n: 764
+    median_ape: 0.9547720238506292
+    mean_ape: 1.8093972275962529
+  - band: 25,000-100,000
+    n: 261
+    median_ape: 0.608120230706136
+    mean_ape: 1.1401224182715946
+  - band: 100,000-500,000
+    n: 142
+    median_ape: 0.5436967749313834
+    mean_ape: 0.6627336127870173
+  - band: 500,000-inf
+    n: 38
+    median_ape: 0.528891456239596
+    mean_ape: 0.47764778021808424
+  aggregate_pred_over_obs: 1.045746637910927
+estimator: poisson_qmle

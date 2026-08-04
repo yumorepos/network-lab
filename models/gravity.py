@@ -1,4 +1,4 @@
-"""Gravity model: log-log OLS on observed US domestic city-market pairs.
+"""Gravity model: public interface and estimator dispatch.
 
 Two variants per vintage:
   - "predict": ln(pax) ~ ln(pop product) + ln(income product) + ln(distance).
@@ -11,15 +11,54 @@ Two variants per vintage:
 Vintages: "current" fits on 2023-2024; "pre2022" fits on 2018-2019 and is the
 only model the backtest is allowed to use (single fixed vintage, lookahead
 disclosed in docs/validation.md).
+
+## Estimators (Phase 6A)
+
+The functional form above is shared; how its coefficients are estimated is now
+selectable, because the two answer different questions:
+
+  log_ols       models/gravity_log_ols.py. Fits ln(pax) by OLS and predicts
+                exp(Xb), which recovers the conditional MEDIAN. The Version 1
+                frozen baseline. Artifact: gravity_{vintage}.yaml
+  poisson_qmle  models/gravity_poisson.py. Fits passenger levels by Poisson
+                pseudo-ML with a log link and robust covariance, which targets
+                the conditional MEAN. Artifact:
+                gravity_{vintage}_poisson.yaml
+
+`DEFAULT_ESTIMATOR` decides what `predict()` uses when a caller does not say.
+It is deliberately still `log_ols`: Phase 6A implements and measures the
+Poisson estimator without moving the frozen baseline, so that the switch is an
+evidence-gated decision with its own change report rather than a side effect of
+landing the code. See docs/phase6a_implementation_report.md.
+
+Every downstream consumer (models/demand.py, models/transfer.py,
+backtest/run_backtest.py) is unchanged and keeps calling
+`gravity.predict(pairs, vintage)`.
 """
 from __future__ import annotations
+
+import os
 
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 import yaml
 
+from . import gravity_log_ols, gravity_poisson
 from .common import OUTPUTS, connect
+
+ESTIMATORS = {gravity_log_ols.NAME: gravity_log_ols,
+              gravity_poisson.NAME: gravity_poisson}
+
+# Model version selection. The default is the frozen Version 1 baseline; the
+# environment override exists so the Phase 6A counterfactual (what would the
+# verdicts be if ONLY the demand estimator changed?) can be run through the real
+# pipeline instead of a reimplementation of it. Set to a key of ESTIMATORS.
+DEFAULT_ESTIMATOR = os.environ.get("NETWORK_LAB_GRAVITY_ESTIMATOR",
+                                   gravity_log_ols.NAME)
+if DEFAULT_ESTIMATOR not in ESTIMATORS:
+    raise ValueError(f"NETWORK_LAB_GRAVITY_ESTIMATOR={DEFAULT_ESTIMATOR!r} is "
+                     f"not one of {sorted(ESTIMATORS)}")
 
 VINTAGE_YEARS = {"current": (2023, 2024), "pre2022": (2018, 2019)}
 MIN_ANNUAL_PAX = 4000          # mirrors the StatCan >4000 city-pair threshold
@@ -89,76 +128,89 @@ def _design(df: pd.DataFrame, diagnostic: bool) -> pd.DataFrame:
     return sm.add_constant(x)
 
 
-def fit(vintage: str, seed: int = 7) -> dict:
+def artifact_path(vintage: str, estimator: str = DEFAULT_ESTIMATOR):
+    """The log_ols artifact keeps its original unsuffixed name so the frozen
+    baseline stays byte-identical; other estimators are suffixed."""
+    suffix = "" if estimator == gravity_log_ols.NAME else f"_{estimator.split('_')[0]}"
+    return OUTPUTS / f"gravity_{vintage}{suffix}.yaml"
+
+
+def holdout_split(df: pd.DataFrame, seed: int = 7) -> np.ndarray:
+    """Shared 20% holdout mask. Every estimator must be scored on the SAME
+    split or the comparison is meaningless, so this is computed once here from
+    the stable row order guaranteed by build_market_frame's ORDER BY."""
+    return np.random.default_rng(seed).random(len(df)) < 0.2
+
+
+def fit(vintage: str, seed: int = 7,
+        estimator: str = DEFAULT_ESTIMATOR) -> dict:
+    est = ESTIMATORS[estimator]
     con = connect(read_only=True)
     df = build_market_frame(con, VINTAGE_YEARS[vintage])
-    rng = np.random.default_rng(seed)
-    holdout = rng.random(len(df)) < 0.2
+    holdout = holdout_split(df, seed)
     train, test = df[~holdout], df[holdout]
-    y_tr = np.log(train["pax_yr"])
 
-    models = {}
-    for name, diag in (("predict", False), ("diagnostic", True)):
-        res = sm.OLS(y_tr, _design(train, diag)).fit()
-        models[name] = res
+    models = {name: est.fit_one(train, _design(train, diag))
+              for name, diag in (("predict", False), ("diagnostic", True))}
 
     res = models["predict"]
-    pred = np.exp(res.predict(_design(test, False)))
-    ape = np.abs(pred - test["pax_yr"]) / test["pax_yr"]
+    pred = est.predict_from_fit(res, _design(test, False))
+    obs = test["pax_yr"].to_numpy(dtype=float)
+    ape = np.abs(pred - obs) / obs
     bands = []
     for lo, hi in SIZE_BANDS:
-        m = (test["pax_yr"] >= lo) & (test["pax_yr"] < hi)
+        m = (obs >= lo) & (obs < hi)
         if m.sum() >= 5:
             bands.append({"band": f"{lo:,}-{'inf' if hi == float('inf') else f'{hi:,.0f}'}",
                           "n": int(m.sum()),
-                          "median_ape": float(ape[m].median()),
+                          "median_ape": float(np.median(ape[m])),
                           "mean_ape": float(ape[m].mean())})
     out = {
         "vintage": vintage,
         "years": list(VINTAGE_YEARS[vintage]),
         "n_markets": int(len(df)),
         "n_train": int(len(train)), "n_test": int(len(test)),
-        "predict": {
-            "params": {k: float(v) for k, v in res.params.items()},
-            "r2": float(res.rsquared),
-        },
-        "diagnostic": {
-            "params": {k: float(v) for k, v in models["diagnostic"].params.items()},
-            "r2": float(models["diagnostic"].rsquared),
-        },
+        "predict": est.summarize(res),
+        "diagnostic": est.summarize(models["diagnostic"]),
         "holdout": {
-            "median_ape": float(ape.median()),
+            "median_ape": float(np.median(ape)),
             "mean_ape": float(ape.mean()),
             "by_band": bands,
         },
     }
-    path = OUTPUTS / f"gravity_{vintage}.yaml"
+    if estimator != gravity_log_ols.NAME:
+        # Level-scale calibration, which is the whole point of the change and
+        # is not visible in APE. Only emitted for non-baseline estimators so
+        # the frozen gravity_{vintage}.yaml is unchanged.
+        out["estimator"] = estimator
+        out["holdout"]["aggregate_pred_over_obs"] = float(pred.sum() / obs.sum())
+    path = artifact_path(vintage, estimator)
     path.write_text(yaml.safe_dump(out, sort_keys=False))
     con.close()
     return out
 
 
-def load(vintage: str) -> dict:
-    return yaml.safe_load((OUTPUTS / f"gravity_{vintage}.yaml").read_text())
+def load(vintage: str, estimator: str = DEFAULT_ESTIMATOR) -> dict:
+    return yaml.safe_load(artifact_path(vintage, estimator).read_text())
 
 
-def predict(pairs: pd.DataFrame, vintage: str) -> np.ndarray:
+def predict(pairs: pd.DataFrame, vintage: str,
+            estimator: str | None = None) -> np.ndarray:
     """Score pairs with the no-service model. Requires columns pop_a, pop_b,
     inc_a, inc_b, dist_mi."""
-    params = load(vintage)["predict"]["params"]
-    ln_d = np.log(pairs["dist_mi"])
-    ln = (params["const"]
-          + params["ln_pop_product"] * np.log(pairs["pop_a"] * pairs["pop_b"])
-          + params["ln_income_product"] * np.log(pairs["inc_a"] * pairs["inc_b"])
-          + params["ln_dist"] * ln_d + params["ln_dist_sq"] * ln_d ** 2)
-    return np.exp(ln)
+    estimator = estimator or DEFAULT_ESTIMATOR
+    params = load(vintage, estimator)["predict"]["params"]
+    return ESTIMATORS[estimator].predict_from_params(params, pairs)
 
 
 if __name__ == "__main__":
-    for v in ("current", "pre2022"):
-        try:
-            out = fit(v)
-            print(f"{v}: n={out['n_markets']} r2={out['predict']['r2']:.3f} "
-                  f"holdout median APE={out['holdout']['median_ape']:.3f}")
-        except Exception as e:  # noqa: BLE001
-            print(f"{v}: not fit ({e})")
+    for est in (gravity_log_ols.NAME, gravity_poisson.NAME):
+        for v in ("current", "pre2022"):
+            try:
+                out = fit(v, estimator=est)
+                extra = out["holdout"].get("aggregate_pred_over_obs")
+                print(f"{est:14s} {v:8s} n={out['n_markets']} "
+                      f"holdout median APE={out['holdout']['median_ape']:.3f}"
+                      + (f" agg pred/obs={extra:.3f}" if extra else ""))
+            except Exception as e:  # noqa: BLE001
+                print(f"{est} {v}: not fit ({e})")

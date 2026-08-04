@@ -1,5 +1,25 @@
 # Progress log
 
+## Phase 6A (2026-07-28): Poisson QMLE gravity implemented, adoption deferred
+
+The log-linear gravity model recovers the conditional median, not the mean:
+`sum(predicted)/sum(observed) = 0.439` on the US calibration frame. A Poisson
+QMLE estimator with robust HC1 covariance now exists alongside it
+(`models/gravity_poisson.py`) and fixes that: aggregate 0.44 to 0.95, RMSE down
+28%, calibration flat across seven predicted deciles where log-OLS is off by up
+to 3.4x on the largest markets.
+
+**It is implemented and measured but is NOT the default**, and the canonical
+numbers below are unchanged. A counterfactual through the real pipeline moved
+**zero of 200 verdicts**, because the transfer factor is estimated as
+`observed / gravity_pred` and therefore absorbs any uniform rescaling of gravity
+by construction. Adoption is recommended together with Phase 6B, which is what
+lets the gravity path actually drive transborder demand instead of being
+bypassed by the survey cap.
+
+Evidence: `docs/phase6a_poisson_comparison.md`.
+Decision and reasoning: `docs/phase6a_implementation_report.md`.
+
 ## Canonical numbers (current, post round 4 and Phase 5 Milestone A)
 
 The machine-readable source of truth is

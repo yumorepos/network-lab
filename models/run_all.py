@@ -34,8 +34,19 @@ def main() -> int:
     lines = ["# Validation", "",
              "## Gravity model (holdout, prediction variant)", ""]
     for v, g in grav.items():
+        # OLS reports R2; Poisson QMLE has no OLS R2 and reports level-scale
+        # aggregate calibration instead, which is the metric that motivated it.
+        # Keeping the OLS branch character-identical matters: validation.md is
+        # a generated reader-facing doc pinned by the consistency tests.
+        if "r2" in g["predict"]:
+            fit_stat = f"R2 {g['predict']['r2']:.3f}"
+        else:
+            agg = g["holdout"].get("aggregate_pred_over_obs")
+            fit_stat = (f"estimator {g.get('estimator', 'unknown')}, "
+                        f"aggregate pred/obs {agg:.3f}" if agg is not None
+                        else f"estimator {g.get('estimator', 'unknown')}")
         lines += [f"### {v} ({g['years'][0]}-{g['years'][1]})",
-                  f"- markets: {g['n_markets']}, R2 {g['predict']['r2']:.3f}, "
+                  f"- markets: {g['n_markets']}, {fit_stat}, "
                   f"holdout median APE {g['holdout']['median_ape']:.2f}",
                   "",
                   "| size band (pax/yr) | n | median APE | mean APE |",
