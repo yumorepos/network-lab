@@ -39,7 +39,7 @@ block wins.
   previously leaked into the candidate set are gone, and the former lone
   MONITOR (Fayetteville) now screens PASS.
 - Transfer factor: median 0.80, IQR [0.55, 2.02], 87 anchored pairs.
-- Share MAE 5.7 points unweighted, 10.9 passenger-weighted; backtest N = 42
+- Share MAE 5.7 points unweighted, 10.9 passenger-weighted; backtest N = 48
   launched-and-resolved of 61 scored (operating 0.89 vs ceased 0.86);
   gravity 6,002 (2018-19) / 6,092 (2023-24), R2 0.50.
 - T-100 history spans 1990-2026 excluding 2020; 89,502 derived route spells.

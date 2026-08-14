@@ -16,6 +16,9 @@ def _need(p):
         pytest.skip(f"{p.name} not built yet")
 
 
+HISTORICAL_LOG_START = "\n## Phase 0"
+
+
 def _live_text(p: Path) -> str:
     """A doc's LIVE claims, excluding dated historical entries.
 
@@ -24,10 +27,20 @@ def _live_text(p: Path) -> str:
     phase log that gets rewritten every time the model changes is not a log, so
     history is left alone and only the live block is checked. PROGRESS.md says
     this explicitly, and the canonical block wins where they differ.
+
+    The boundary is `## Phase 0`, the fixed first entry of the chronological
+    log, NOT the first `## Phase ` heading. That earlier marker assumed the
+    canonical block was the only thing above the log. When the Phase 6A entry
+    was added at the top of the file it became the first `## Phase ` heading,
+    so every guard below silently truncated PROGRESS.md to its title line and
+    checked nothing. It stayed that way long enough for the canonical block to
+    publish a backtest N of 42 against a computed 48. Anchoring on Phase 0
+    keeps new current-state sections inside the checked region, which is where
+    they need to be.
     """
     text = p.read_text()
     if p.name == "PROGRESS.md":
-        marker = text.find("\n## Phase ")
+        marker = text.find(HISTORICAL_LOG_START)
         if marker > 0:
             return text[:marker]
     return text
@@ -187,8 +200,12 @@ def test_handwritten_docs_match_generated_scalar_metrics():
         for found in re.findall(r"MAE \*{0,2}(\d+\.\d+)", text):
             if abs(float(found) - mae) > 0.05:
                 problems.append(f"{rel} states MAE {found}, computed {mae}")
+        # \s+ rather than a literal space: PROGRESS.md wraps between the count
+        # and the phrase, so a single-space pattern matched nothing there and
+        # the number went unguarded.
         for found in re.findall(
-                r"\*{0,2}(\d+)\*{0,2} launched-and-resolved|Backtested (\d+) real",
+                r"\*{0,2}(\d+)\*{0,2}\s+launched-and-resolved"
+                r"|Backtested\s+(\d+)\s+real",
                 text):
             found = found[0] or found[1] if isinstance(found, tuple) else found
             if int(found) != n_bt:
