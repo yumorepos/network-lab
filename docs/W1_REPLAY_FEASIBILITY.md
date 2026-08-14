@@ -13,6 +13,38 @@ cache. No network call was made and `make data` was not run.
 
 ---
 
+## CORRECTION issued 2026-08-14, after the first version was committed
+
+The first version of this document (commit `3c22797`) began the Alaska cells in
+2019 and the Porter cells in 2022, while its own prose said the Alaska 737-9 was
+anachronistic before 2021 and the Porter YYZ jet network began in 2023-11. Those
+are contradictions and they inflated two studies' feasibility. It also left the
+2021 question open rather than resolving it.
+
+Three policies are now applied, and every count below reflects them:
+
+1. **Literal configuration.** A study is applicable only from the month its
+   **configured gauge** actually flew from its hub to a US destination, verified
+   from T-100 `aircraft_type` rather than asserted. No study is redefined as a
+   generic mainline proxy to preserve sample size.
+2. **2020 and 2021 are both excluded** from the primary baseline, per the
+   precommitment in `PHASE_5_6_PLAN.md` W1.6. This is the stricter of the two
+   conflicting rules in the repository and it is adopted deliberately, **not**
+   reopened because admitting 2021 would have added six positives.
+3. **Snapshot floor 2019-01.** A launch that cannot be scored by the model at
+   its own decision date does not enter a cohort. DB1B starts 2018Q1 and Form 41
+   starts 2018, so with publication lag the earliest full-engine snapshot is
+   2019-01.
+
+**What changed materially.** Alaska Family 1 falls from 4 positives to **1**.
+Porter Family 1 falls from 21 positives over three decision dates to **5 over
+one**. WestJet is unchanged, because its configured gauge was in service from
+2018-03 and its dates were already admissible. The overall verdict survives but
+the scope is materially narrower, and one goal in `PHASE_5_6_PLAN.md` W1.4 is now
+provably unreachable. See section 8.
+
+---
+
 ## 0. Baseline gates, re-verified before any analysis
 
 | gate | command | result | expected |
@@ -43,13 +75,32 @@ to 2025, 2020 absent. Economics cannot be reconstructed before 2018.
 outcome therefore requires a decision date at or before 2024-04; a 36-month
 outcome at or before 2023-04.
 
-**C4. 2020 is excluded everywhere** (LIMITATIONS item 9, and the warehouse has
-no 2020 rows at all). `PHASE_5_6_PLAN.md` W1.6 additionally pre-commits that
-"2020 and 2021 are a structural break and are excluded". **These two documents
-disagree about 2021.** The code excludes 2020 only; 2021 is present in T-100,
-DB1B and Form 41. The disagreement is recorded here rather than resolved
-silently, and the protocol must choose explicitly. Counts below are given both
-ways.
+**C4. 2020 and 2021 are both excluded from the primary baseline. RESOLVED.**
+`LIMITATIONS.md` item 9 excludes 2020 only; `PHASE_5_6_PLAN.md` W1.6 pre-commits
+that "2020 and 2021 are a structural break and are excluded". The two documents
+disagree, and the **stricter precommitted rule wins**: 2020 and 2021 are
+excluded as decision vintages and as launch-cohort years.
+
+This is adopted as policy, not as a result. Admitting 2021 would have added 3
+WestJet and 3 Alaska positives, and choosing the rule after seeing that would be
+exactly the outcome-aware selection this stage exists to prevent. A
+2021-admitted analysis may later be published as a **labelled sensitivity**. It
+may not replace the primary baseline.
+
+**C5. Configured gauge, verified rather than asserted.** Each study names a
+specific aircraft. A study is not applicable before its gauge flew. From T-100
+`aircraft_type`, restricted to hub to US destinations:
+
+| study | configured gauge | BTS `aircraft_type` | first month | active months | departures |
+|---|---|---|---|---|---|
+| westjet_yyc | 737-8, 174 seats | 838 (B737 MAX 800) | **2018-03** | 74 | 7,690 |
+| alaska_sea | 737-9, 178 seats | 839 (B737 MAX 900) | **2021-03** | 62 | 82,937 |
+| porter_yyz | E195-E2, 132 seats | 748 (EMBRAER EMB195) | **2023-11** | 30 | 9,088 |
+
+The test is applied to all three studies, not only the two under challenge.
+WestJet's configured gauge was in service before the snapshot floor, so
+WestJet's window is unaffected. That is a result of the test, not an exemption
+from it.
 
 **What is not a constraint, contrary to expectation.** The StatCan transborder
 anchor turns out to be a 22-year annual panel covering 1997 to 2018, not a
@@ -58,9 +109,18 @@ transborder anchors are therefore available offline throughout the feasible
 window. This removes the blocker that would have made the two transborder
 studies unreplayable.
 
-**Resulting decision dates.** Annual, on 1 January: **2019, 2022, 2023, 2024**
-(four dates), or five with 2021 admitted. Porter contributes only 2022, 2023 and
-2024 for the reason in section 2.
+**Resulting decision dates**, annual on 1 January, after C1 to C5:
+
+| study | admissible decision dates | n |
+|---|---|---|
+| westjet_yyc | 2019, 2022, 2023, 2024 | **4** |
+| alaska_sea | 2022, 2023, 2024 | **3** |
+| porter_yyz | 2024 | **1** |
+
+**Cohort start** for the survival and right-sizing families is
+`max(snapshot floor 2019-01, gauge first month)`, with 2020 and 2021 launch
+years removed: WestJet 2019-01, Alaska 2021-03 (so effectively 2022-01 once 2021
+is excluded), Porter 2023-11.
 
 ---
 
@@ -80,41 +140,67 @@ exist.
   the configuration is not anachronistic anywhere in the feasible window.
 - **Applicable for a full-engine replay: 2019-01 to 2024-04.**
 
-### 2.2 Alaska SEA, US domestic, 737-9
+### 2.2 Alaska SEA, US domestic, 737-9. CORRECTED
 
 - **Alaska at SEA predates the T-100 panel**; the first spell in the data is
   1990-01. 256 US spells from SEA, 142 in-scope, reaching 55 distinct in-scope
-  metros.
-- One anachronism to disclose rather than ignore: the configured gauge is the
-  737 MAX 9, which Alaska did not operate before 2021. The gauge is a study
-  parameter rather than observed data, so a 2019 replay is asking "what would
-  this fleet decision have been", not "what did Alaska fly". That is a legitimate
-  question and it must be labelled as such.
-- **Applicable for a full-engine replay: 2019-01 to 2024-04.**
+  metros. **None of that history is usable**, for the reason below.
+- **The configured 737-9 first flew SEA to US in 2021-03** (T-100
+  `aircraft_type` 839, 62 active months, 82,937 departures). Alaska did not
+  operate this gauge before then.
+- The earlier version of this document called that an anachronism to disclose
+  and then used 2019 anyway. Under the literal-configuration rule it is not a
+  disclosure item, it is an applicability boundary.
+- 2021 is excluded as a structural break, so the first admissible decision date
+  is 2022-01.
+- **Applicable for a full-engine replay: 2022-01 to 2024-04. Three decision
+  dates.** Cohort start 2021-03, effectively 2022-01 after the exclusion.
 
-### 2.3 Porter YYZ, transborder, E195-E2, and this is the important one
+The study was **not** redefined as a generic Alaska mainline-gauge proxy to
+preserve sample size. That option was available and was rejected.
 
-- **Porter's YYZ jet network to the US begins 2023-11.** The first three spells
-  are Orlando, Fort Myers and Tampa, all 2023-11, followed by Miami and Fort
-  Lauderdale 2023-12, Los Angeles and San Francisco 2024-01, Las Vegas 2024-03,
-  Phoenix 2024-10, West Palm Beach 2024-11, Palm Springs and San Diego 2024-12,
-  LaGuardia 2025-05.
-- **There is exactly one earlier spell and it must be excluded:** PD, YYZ to
-  Newark, 2008-05 to 2008-07, three months, 2.76 weekly frequency, ceased. It
-  precedes the E195-E2 and the YYZ jet hub by fifteen years and is not the
-  operation the study describes. Including it would be back-projecting the
-  current strategy onto a carrier that did not have it.
-- **The defensible decision-vintage start is 2022-01**, not 2023-11. Porter
-  ordered and took delivery of the E195-E2 before flying it, so a January 2022
-  decision date asks a real and answerable question: planning a YYZ E195-E2 US
-  network from a standing start, which markets? All required inputs exist at that
-  date.
-- **Applicable for a full-engine replay: 2022-01 to 2024-04.** Three decision
-  dates.
+### 2.3 Porter YYZ, transborder, E195-E2. CORRECTED
 
-**Porter is the only genuine greenfield network build in the project**, and that
-is what makes it the most informative study for launch agreement and the least
-informative for survival.
+- **Porter's YYZ jet network to the US begins 2023-11**, confirmed twice over:
+  the first in-scope route spells are Orlando, Fort Myers and Tampa in 2023-11,
+  and T-100 `aircraft_type` 748 first appears on YYZ to US in the same month.
+  Then Miami and Fort Lauderdale 2023-12, Los Angeles and San Francisco 2024-01,
+  Las Vegas 2024-03, Phoenix 2024-10, West Palm Beach 2024-11, Palm Springs and
+  San Diego 2024-12, LaGuardia 2025-05.
+- **There is exactly one earlier spell and it is excluded:** PD, YYZ to Newark,
+  2008-05 to 2008-07, three months, 2.76 weekly frequency, ceased. It precedes
+  the E195-E2 and the YYZ jet hub by fifteen years and is not the operation the
+  study describes.
+- **Applicable for a full-engine replay: 2023-11 to 2024-04.** With annual
+  decision dates that is **one date, 2024-01**.
+
+#### The cost of the literal rule here, stated plainly
+
+Family 1 asks which markets a carrier **should launch**. It is inherently
+prospective: the decision date must precede the launches being scored. Porter's
+configuration became applicable in the same month the network opened, so under
+the literal rule the only admissible decision date sits **after** six of the
+thirteen launches have already happened, and those six are excluded as
+already-served rather than scored.
+
+The consequence is that the literal rule does not merely shrink Porter, it
+removes the greenfield question the Porter study is best placed to answer. That
+is a real cost and it is accepted here rather than argued around, because the
+alternative requires a rule that lets a decision date precede any operation, and
+such a rule is harder to bound than it looks.
+
+**Labelled alternative, computed but NOT primary.** A fleet-commitment rule
+would set applicability at Porter's public E195-E2 order rather than at first
+flight, making 2022-01 the first admissible non-excluded date. Under that rule
+Porter yields 3 decision dates, about 237 decision rows and **21** positives
+instead of 1 date, 79 rows and **5**. The two are reported side by side in
+section 7 so the cost of the choice is visible. **The primary baseline uses the
+literal rule.**
+
+Sub-annual decision dates (2023-11, 2024-01, 2024-04) were considered and
+rejected: their 24-month outcome windows overlap so heavily that they observe
+substantially the same launches, so bootstrapping across them would understate
+uncertainty rather than measure it.
 
 ---
 
@@ -136,38 +222,50 @@ reported without that caveat attached.
 Positive events per decision date, where a positive is an in-scope metro that
 the study carrier was not serving at `t` and did serve within 24 months:
 
+Dates marked "not applicable" are outside the study's configured-gauge window
+and are **not** counted as zero positives. A blank is not a zero.
+
 | decision date | WestJet YYC | Alaska SEA | Porter YYZ |
 |---|---|---|---|
-| 2019-01 | 3 | 3 | 0 (no operation) |
-| 2021-01 (disputed) | 3 | 3 | 0 (no operation) |
-| 2022-01 | 7 | 1 | 6 |
-| 2023-01 | 5 | 0 | 10 |
+| 2019-01 | 3 | not applicable (gauge from 2021-03) | not applicable (gauge from 2023-11) |
+| 2020-01, 2021-01 | excluded | excluded | excluded |
+| 2022-01 | 7 | 1 | not applicable |
+| 2023-01 | 5 | 0 | not applicable |
 | 2024-01 | 3 | 0 | 5 |
-| **total, 2020 and 2021 excluded** | **18** | **4** | **21** |
-| **total, 2021 admitted** | **21** | **7** | **21** |
+| **decision dates** | **4** | **3** | **1** |
+| **decision rows (approx)** | **304** | **135** | **79** |
+| **total positives** | **18** | **1** | **5** |
 
-**Alaska is close to degenerate on this family and the reason is structural.**
-Alaska launched 31 in-scope spells into 21 distinct metros between 2019-01 and
-2024-04, but only 4 of those count as positives at a decision date, because the
-rest are re-entries into metros Alaska was already serving. The study's own
-candidate rule excludes already-served metros by construction, so a new *spell*
-is not a new *market*. Alaska's SEA network is mature and it stopped adding
-in-scope new markets: the 2023 and 2024 decision dates yield zero positives.
+**Alaska is degenerate on this family, and more so than first reported.** Under
+the corrected window there is exactly **one** positive across three decision
+dates. Two causes compound. First, the 737-9 window starts in 2021 and 2021 is
+excluded, so only 2022 onward survives. Second, and structural: Alaska launched
+31 in-scope spells into 21 distinct metros over the wider window, but nearly all
+are re-entries into metros Alaska already serves, and the candidate rule excludes
+already-served metros by construction. A new *spell* is not a new *market*.
+Alaska's SEA network is mature and has stopped adding in-scope new markets: the
+2023 and 2024 decision dates yield zero positives.
+
+**Porter has 5 positives at a single decision date.** With one date there is no
+variation across dates to bootstrap, so an interval cannot be computed by
+resampling decision vintages. Agreement at k is computable for that one date and
+the five named markets can be reported with their model ranks. That is a finding,
+not a test.
 
 ### 3.2 Family 2: survival, 24 and 36 month cohorts
 
-Cohorts restricted to launches from 2019-01, which is the window in which the
-model's own verdict could be computed at the decision date.
+Cohort start is `max(snapshot floor 2019-01, gauge first month)` with 2020 and
+2021 launch years removed: WestJet 2019-01, Alaska 2021-03, Porter 2023-11.
 
-| study | horizon | eligible | events | censored | of which seasonal |
-|---|---|---|---|---|---|
-| westjet_yyc | 24m | 12 | **1** | 11 | 9 |
-| westjet_yyc | 36m | 7 | **1** | 6 | 4 |
-| alaska_sea | 24m | 31 | **13** | 18 | 22 |
-| alaska_sea | 36m | 21 | **8** | 13 | 14 |
-| porter_yyz | 24m | 8 | **0** | 8 | 3 |
-| porter_yyz | 36m | 0 | **0** | 0 | 0 |
-| **pooled** | **24m** | **51** | **14** | **37** | **34** |
+| study | horizon | eligible | events | censored | of which seasonal | unique markets |
+|---|---|---|---|---|---|---|
+| westjet_yyc | 24m | 10 | **1** | 9 | 9 | 9 |
+| westjet_yyc | 36m | 5 | **1** | 4 | 4 | 5 |
+| alaska_sea | 24m | 17 | **11** | 6 | 9 | 11 |
+| alaska_sea | 36m | 7 | **3** | 4 | 1 | 7 |
+| porter_yyz | 24m | 8 | **0** | 8 | 3 | 7 |
+| porter_yyz | 36m | 0 | **0** | 0 | 0 | 0 |
+| **pooled** | **24m** | **35** | **12** | **23** | **21** | **27** |
 
 **Corporate-shutdown cessations: zero, in all three studies.** This is a clean
 improvement on the existing backtest, whose 21 ceased routes include 9 Lynx
@@ -180,28 +278,34 @@ replay is scoped to the study carriers.
 
 **Two findings that matter more than the counts.**
 
-**Seasonality dominates the cohort.** 34 of 51 eligible launches are seasonal.
-Across full history the proportion is similar: 26 of 37 WestJet, 90 of 136
-Alaska. WestJet's Calgary transborder network and much of Alaska's Seattle spoke
-network are seasonal sun and leisure service. A seasonal route stopping is not a
-failure, and the study configurations (year-round service at 3, 7 or 14 weekly)
-do not describe these routes at all. Any survival analysis that treats a
-seasonal stop as an event is measuring the calendar.
+**Seasonality dominates the cohort.** 21 of 35 eligible launches are seasonal,
+and 9 of WestJet's 10 eligible are. Across full history the proportion is
+similar: 26 of 37 WestJet, 90 of 136 Alaska. WestJet's Calgary transborder
+network and much of Alaska's Seattle spoke network are seasonal sun and leisure
+service. A seasonal route stopping is not a failure, and the study
+configurations (year-round service at 3, 7 or 14 weekly) do not describe these
+routes at all. Any survival analysis that treats a seasonal stop as an event is
+measuring the calendar.
 
-**The event count forbids formal modelling.** Fourteen events pooled, against a
-Cox model that would want distance, carrier, competitive structure and
-seasonality, is roughly one covariate's worth of information under any
-conventional events-per-variable rule. **Cox and Fine-Gray were not chosen in
-advance and are not justified by these counts.**
+**The event count forbids formal modelling, more firmly than before.** Twelve
+events pooled, of which eleven are Alaska, against a Cox model that would want
+distance, carrier, competitive structure and seasonality. That is under one
+covariate's worth of information by any conventional events-per-variable rule,
+and the events are concentrated in the one study whose Family 1 cell is
+degenerate. **Cox and Fine-Gray were not chosen in advance and are not justified
+by these counts.** WestJet contributes 1 event and Porter 0.
 
-A longer-history alternative exists and should be understood before it is
-proposed: dropping the 2019 restriction gives 182 eligible and 57 events across
-the three studies. But pre-2018 launches cannot be scored with the model's
-verdict, because DB1B and Form 41 do not reach them. Such an analysis could
-regress survival on crude covariates or on a gravity demand percentile only,
-which is exactly what the existing backtest already does, and it found no
-separation (0.89 operating against 0.86 ceased). It would add sample size
-without adding the thing the family exists to test.
+A longer-history alternative exists and should be understood before anyone
+proposes it as a rescue. Dropping both the applicability and snapshot floors
+gives 182 eligible and 57 events across the three studies, which would carry a
+modest Cox model. **It would not answer the question.** Pre-2018 launches cannot
+be scored with the model's verdict, because DB1B and Form 41 do not reach them,
+and pre-gauge launches were flown by an aircraft the study does not configure.
+Such an analysis could regress survival on crude covariates or on a gravity
+demand percentile only, which is exactly what the existing backtest already
+does, and it found no separation (0.89 operating against 0.86 ceased). It would
+add sample size without adding the thing the family exists to test, and it would
+reintroduce the back-projection this correction pass removed.
 
 ### 3.3 Family 3: right-sizing
 
@@ -209,7 +313,9 @@ without adding the thing the family exists to test.
 over the first three active months**. It is a proxy for the opening schedule,
 not the literal opening-day schedule. Three proxies were computed and compared.
 
-Availability and disagreement, over all in-scope spells:
+Availability and disagreement, over all in-scope spells (the wider sample is
+retained here because proxy disagreement is a property of the measurement, not
+of the replay cohort):
 
 | study | n | full 3 months available | m1 median freq/wk | 3mo-max median | 3mo-median median | rows where m1 differs from 3mo-max | median ratio 3mo-max to m1 |
 |---|---|---|---|---|---|---|---|
@@ -221,6 +327,18 @@ The three proxies disagree on roughly three quarters of spells and the choice
 moves the target by 28% to 46% at the median. **Which proxy the protocol picks
 must be frozen before results are seen**, because it materially changes the
 measured bias.
+
+**Corrected replay cohort** (applicability window, 2020 and 2021 excluded):
+
+| study | cohort n | unique markets | observed opening median, 3mo-max |
+|---|---|---|---|
+| westjet_yyc | 13 | 12 | 6.0 |
+| alaska_sea | 23 | 16 | 11.5 |
+| porter_yyz | 13 | 11 | 14.3 |
+| **pooled** | **49** | **39** | |
+
+Family 3 is the one family the corrections barely touch, because it needs
+launches rather than decision dates.
 
 **There is already a decisive falsifying signal, and it is stronger than the
 single Boston observation.** The model right-sizes **200 of 200 current
@@ -254,8 +372,8 @@ should be constructed.
 | study | decision dates | candidates per date | matched decision rows | positives, 24m |
 |---|---|---|---|---|
 | westjet_yyc | 4 (2019, 2022, 2023, 2024) | about 76 | **about 304** | 18 |
-| alaska_sea | 4 | about 45 | **about 180** | 4 |
-| porter_yyz | 3 (2022, 2023, 2024) | about 79 | **about 237** | 21 |
+| alaska_sea | 3 (2022, 2023, 2024) | about 45 | **about 135** | **1** |
+| porter_yyz | 1 (2024) | about 79 | **about 79** | **5** |
 
 Candidate counts per date are the current-vintage values and will move once the
 candidate set is generated point-in-time, particularly through the served-market
@@ -263,6 +381,14 @@ exclusion, which is why they are given as approximate. **No predictive
 performance was computed here**, because W1.3 does not exist yet and computing it
 against current-vintage covariates would produce exactly the contaminated number
 this stage is meant to prevent.
+
+**Only WestJet supports the comparison this family exists to make.** With one
+positive, Alaska cannot distinguish the full verdict from a demand percentile at
+any confidence. With five positives at a single decision date, Porter can rank
+them under both methods and report the difference, but cannot attach an
+interval. The question "does the full model beat demand rank" therefore has one
+real test in this project, on the flagship study, with 18 positives across four
+decision dates.
 
 ---
 
@@ -319,6 +445,35 @@ snapshot.
 
 ---
 
+## 5b. The StatCan survey floor: a defect to record, not to fix
+
+Stage 0 established two facts about the transborder anchor: it is a 1997 to 2018
+annual panel, and **its publication floor moves by vintage** (minimum published
+value 280 to 3,090 across years; 1st percentile 2,650 to 3,920). The frozen
+model applies a single `SURVEY_THRESHOLD = 4000.0` in `models/demand.py`.
+
+**This is a newly discovered defect in the frozen baseline.** It is recorded as
+one and it is **not fixed during Milestone A.** Stage 1 measures the frozen
+model; changing the model while measuring it produces a baseline that moved
+while it was being built, which is not a baseline.
+
+The policy for Stage 1, to be carried verbatim into the replay protocol:
+
+| aspect | policy |
+|---|---|
+| point-in-time anchor value | **use the historically appropriate vintage** where the pair has one; this is snapshot reconstruction, not a model change |
+| the cap threshold | **retain the frozen `SURVEY_THRESHOLD = 4000.0`** and the frozen cap behaviour, unchanged, in the primary baseline |
+| the mismatch | **flag it** on every affected row and in the V2 baseline document as a known limitation |
+| vintage-specific floor | **may be computed as a labelled sensitivity only**; it must not replace frozen behaviour |
+| resolution | carried to **W3.4 / the Canadian thin-market calibration**, where it is decided on evidence with a change report |
+
+Using the vintaged anchor value while retaining the frozen threshold is not
+inconsistent. The anchor is **data at a date**, which point-in-time
+reconstruction is obliged to get right. The threshold is a **model parameter**,
+which Milestone A is obliged to leave alone.
+
+---
+
 ## 6. Known-before disclosure (0H)
 
 **This protocol is a prospective analysis plan. It is not a blind
@@ -358,7 +513,16 @@ before any replay was designed, and each item could have influenced the design.
     to 2018, and its publication floor varies by vintage (minimum published
     values 280 to 3,090) rather than being a constant 4,000.
 12. **Newly known from this stage**: Alaska has zero Family 1 positives at the
-    2023 and 2024 decision dates.
+    2023 and 2024 decision dates, and exactly one across its whole admissible
+    window.
+13. **Newly known from the correction pass**: the configured gauge of each study
+    first flew hub to US in 2018-03 (WestJet), 2021-03 (Alaska) and 2023-11
+    (Porter), which is what sets the applicability windows.
+14. **Newly known from the correction pass**: under the literal rule Porter has
+    exactly one admissible decision date, and the fleet-commitment alternative
+    would give three. The difference is 5 positives against 21. **The choice was
+    made on methodology before the protocol was frozen, and both numbers are
+    published so the choice can be audited.**
 
 ---
 
@@ -369,65 +533,135 @@ before any replay was designed, and each item could have influenced the design.
 Feasibility is one of **FULL**, **DESCRIPTIVE_ONLY**, **NOT_ESTIMABLE**. Blank
 means not applicable, never a fabricated zero.
 
+Primary baseline: literal configuration, 2020 and 2021 excluded, snapshot floor
+2019-01.
+
 | study | metric_family | horizon | applicable_start | applicable_end | decision_rows | unique_markets | launches | events | censored | corporate_shutdown_events | required_data_complete | offline_cache_complete | major_lookahead | recommended_analysis | feasibility |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| westjet_yyc | 1 launch agreement | 24m | 2019-01 | 2024-04 | ~304 | 76 | 18 | | | 0 | yes | yes | 2023 CBSA geography; carrier brand map not effective-dated | agreement at k with PU caveat; bootstrap CI over decision dates | **FULL** |
-| alaska_sea | 1 launch agreement | 24m | 2019-01 | 2024-04 | ~180 | 45 | **4** | | | 0 | yes | yes | 2023 CBSA geography; 737-9 gauge anachronistic at 2019 | report counts and named markets only; no PR curve | **DESCRIPTIVE_ONLY** |
-| porter_yyz | 1 launch agreement | 24m | 2022-01 | 2024-04 | ~237 | 79 | 21 | | | 0 | yes | yes | 2023 CBSA geography; greenfield network, no served-market history | agreement at k with PU caveat; bootstrap CI | **FULL** |
-| westjet_yyc | 2 survival | 24m | 2019-01 | 2024-04 | | 11 | 12 | **1** | 11 | 0 | yes | yes | seasonal stops indistinguishable from failure | descriptive: KM curve, no covariates | **DESCRIPTIVE_ONLY** |
-| westjet_yyc | 2 survival | 36m | 2019-01 | 2023-04 | | 7 | 7 | **1** | 6 | 0 | yes | yes | as above | none; report N | **NOT_ESTIMABLE** |
-| alaska_sea | 2 survival | 24m | 2019-01 | 2024-04 | | 21 | 31 | **13** | 18 | 0 | yes | yes | 22 of 31 seasonal | descriptive: KM, at most one covariate | **DESCRIPTIVE_ONLY** |
-| alaska_sea | 2 survival | 36m | 2019-01 | 2023-04 | | 15 | 21 | **8** | 13 | 0 | yes | yes | 14 of 21 seasonal | descriptive only | **DESCRIPTIVE_ONLY** |
-| porter_yyz | 2 survival | 24m | 2023-11 | 2024-04 | | 7 | 8 | **0** | 8 | 0 | yes | yes | no variation to explain | none; report zero events | **NOT_ESTIMABLE** |
-| porter_yyz | 2 survival | 36m | 2023-11 | 2023-04 | | 0 | **0** | **0** | 0 | 0 | no: window empty | yes | window closes before it opens | none | **NOT_ESTIMABLE** |
-| westjet_yyc | 3 right-sizing | opening | 2019-01 | 2024-04 | | 11 | 12 | | | 0 | yes | yes | proxy choice moves target 28% | bias and MAE against frozen proxy; report all three proxies | **FULL** |
-| alaska_sea | 3 right-sizing | opening | 2019-01 | 2024-04 | | 21 | 31 | | | 0 | yes | yes | proxy choice moves target 46% | bias and MAE; split by seasonal flag | **FULL** |
-| porter_yyz | 3 right-sizing | opening | 2023-11 | 2024-04 | | 7 | 8 | | | 0 | yes | yes | proxy choice moves target 41% | bias and MAE; small N stated | **FULL** |
+| westjet_yyc | 1 launch agreement | 24m | 2019-01 | 2024-04 | ~304 | 76 | 18 | | | 0 | yes | yes | 2023 CBSA geography; carrier brand map not effective-dated | agreement at k with PU caveat; bootstrap CI over 4 decision dates | **FULL** |
+| alaska_sea | 1 launch agreement | 24m | 2022-01 | 2024-04 | ~135 | 45 | **1** | | | 0 | yes | yes | 2023 CBSA geography | report the single named market; no rate, no curve | **NOT_ESTIMABLE** |
+| porter_yyz | 1 launch agreement | 24m | 2023-11 | 2024-04 | ~79 | 79 | **5** | | | 0 | yes | yes | 2023 CBSA geography; one decision date, no cross-date variation | agreement at k for one date; 5 named markets with model rank; no interval | **DESCRIPTIVE_ONLY** |
+| westjet_yyc | 2 survival | 24m | 2019-01 | 2024-04 | | 9 | 10 | **1** | 9 | 0 | yes | yes | 9 of 10 seasonal; a seasonal stop is not a failure | none; report N and the single event | **NOT_ESTIMABLE** |
+| westjet_yyc | 2 survival | 36m | 2019-01 | 2023-04 | | 5 | 5 | **1** | 4 | 0 | yes | yes | as above | none; report N | **NOT_ESTIMABLE** |
+| alaska_sea | 2 survival | 24m | 2022-01 | 2024-04 | | 11 | 17 | **11** | 6 | 0 | yes | yes | 9 of 17 seasonal | descriptive KM; no covariates | **DESCRIPTIVE_ONLY** |
+| alaska_sea | 2 survival | 36m | 2022-01 | 2023-04 | | 7 | 7 | **3** | 4 | 0 | yes | yes | as above | none; report N | **NOT_ESTIMABLE** |
+| porter_yyz | 2 survival | 24m | 2023-11 | 2024-04 | | 7 | 8 | **0** | 8 | 0 | yes | yes | zero events, no variation to explain | none; report zero events | **NOT_ESTIMABLE** |
+| porter_yyz | 2 survival | 36m | | | | | | | | 0 | no: window empty | yes | window closes before it opens | none | **NOT_ESTIMABLE** |
+| westjet_yyc | 3 right-sizing | opening | 2019-01 | 2024-04 | | 12 | 13 | | | 0 | yes | yes | proxy choice moves target 28% | bias and MAE against frozen proxy; report all three proxies | **FULL** |
+| alaska_sea | 3 right-sizing | opening | 2022-01 | 2024-04 | | 16 | 23 | | | 0 | yes | yes | proxy choice moves target 46% | bias and MAE; split by seasonal flag | **FULL** |
+| porter_yyz | 3 right-sizing | opening | 2023-11 | 2024-04 | | 11 | 13 | | | 0 | yes | yes | proxy choice moves target 41% | bias and MAE; small N stated | **FULL** |
 | westjet_yyc | 4 incremental value | 24m | 2019-01 | 2024-04 | ~304 | 76 | 18 | | | 0 | yes | yes | same as family 1 | full verdict against demand percentile, identical rows | **FULL** |
-| alaska_sea | 4 incremental value | 24m | 2019-01 | 2024-04 | ~180 | 45 | **4** | | | 0 | yes | yes | same as family 1 | report, do not test | **DESCRIPTIVE_ONLY** |
-| porter_yyz | 4 incremental value | 24m | 2022-01 | 2024-04 | ~237 | 79 | 21 | | | 0 | yes | yes | same as family 1 | full verdict against demand percentile, identical rows | **FULL** |
+| alaska_sea | 4 incremental value | 24m | 2022-01 | 2024-04 | ~135 | 45 | **1** | | | 0 | yes | yes | same as family 1 | none | **NOT_ESTIMABLE** |
+| porter_yyz | 4 incremental value | 24m | 2023-11 | 2024-04 | ~79 | 79 | **5** | | | 0 | yes | yes | same as family 1 | rank the 5 under both methods; report difference, no interval | **DESCRIPTIVE_ONLY** |
 
-Pooled across studies, 24-month survival: **51 eligible, 14 events, 34 of the
-eligible seasonal.** Pooling does not change the verdict; it remains
-DESCRIPTIVE_ONLY.
+Pooled 24-month survival: **35 eligible, 12 events, 21 of the eligible
+seasonal**, and 11 of the 12 events are Alaska. Pooling does not rescue the
+family; it remains DESCRIPTIVE_ONLY at best.
+
+### 7.1 Labelled alternative, not primary
+
+Recorded so the effect of the applicability rule is auditable rather than
+buried. Under a fleet-commitment rule for Porter (applicability at the public
+E195-E2 order rather than at first flight, first admissible non-excluded date
+2022-01):
+
+| study | metric_family | decision_rows | launches | feasibility under alternative | feasibility under primary |
+|---|---|---|---|---|---|
+| porter_yyz | 1 launch agreement | ~237 (3 dates) | 21 | FULL | **DESCRIPTIVE_ONLY** |
+| porter_yyz | 4 incremental value | ~237 (3 dates) | 21 | FULL | **DESCRIPTIVE_ONLY** |
+
+No survival or right-sizing cell changes, because those depend on launches
+rather than decision dates. **The primary baseline uses the literal rule.**
 
 ---
 
 ## 8. Stage 0 verdict
 
-The empirical counts support a replay, but a **narrower** one than
-`PHASE_5_6_PLAN.md` W1.4 assumed. Three of the four metric families have at
-least one cell that is genuinely estimable, the largest anticipated blocker
-(historical transborder anchors) turned out not to exist, and the two genuine
-blockers (DB1B start date, historical geography) are bounded and disclosable
-rather than fatal. Family 2 is underpowered and must be reported descriptively;
-that is a result, not a failure of the plan.
+Reassessed after the correction pass. The verdict survives, and the reasoning
+for it has changed.
+
+**What survives as a real test.** Five cells are FULL: WestJet Family 1, WestJet
+Family 4, and right-sizing in all three studies. That is 18 positive events
+across 4 decision dates on the flagship study, plus 49 observed openings across
+39 distinct markets for the family that already carries the project's strongest
+falsifying signal. Both of the two genuine blockers (DB1B start date, historical
+geography) are bounded and disclosable, and the largest anticipated blocker
+(historical transborder anchors) turned out not to exist.
+
+**What does not survive, stated without softening.** Alaska is
+**NOT_ESTIMABLE** on Families 1 and 4: one positive. Porter is
+**DESCRIPTIVE_ONLY** on Families 1 and 4: five positives at a single decision
+date, so no interval. Family 2 is **NOT_ESTIMABLE** in five of six cells and
+**DESCRIPTIVE_ONLY** in the sixth.
 
 **SAFE TO IMPLEMENT SCOPED W1.3/W1.4**
 
+The word "scoped" is now carrying considerably more weight, and one goal in the
+approved plan is provably unreachable. See section 8.1.
+
 Scope, and nothing beyond it:
 
-1. **Build `snapshot(t)` for four annual decision dates only** (2019, 2022, 2023,
-   2024; Porter 2022 to 2024), not a general historical engine. Persist only the
-   plumbing those dates need.
+1. **Build `snapshot(t)` for eight study-date pairs only**: WestJet at 2019,
+   2022, 2023 and 2024; Alaska at 2022, 2023 and 2024; Porter at 2024. Not a
+   general historical engine. Persist only the plumbing those dates need.
 2. **Vintage what can be vintaged offline**: BEA income, population and GDP from
    the cached full-year columns; StatCan CMA population 2001 to 2022; the StatCan
-   transborder anchor at its own reference year; T-100 and DB1B windows ending at
-   the cutoff; Form 41 and EIA at vintage.
-3. **Disclose what cannot**: 2023 CBSA geography everywhere, and carrier brand
-   resolution that is not effective-dated. Record both on every snapshot row.
-4. **Freeze the frequency proxy and the 2021 decision in the protocol before
-   running anything**, since both move the answer.
-5. **Run Families 1, 3 and 4 as primary. Run Family 2 as descriptive only**, with
-   the seasonal-stop ambiguity stated in the same table as the numbers.
-6. **Do not fix any defect found while measuring.** Record it for Stage 2 or 3.
+   transborder anchor **at its own reference year**; T-100 and DB1B windows
+   ending at the cutoff; Form 41 and EIA at vintage.
+3. **Retain the frozen `SURVEY_THRESHOLD = 4000.0`** and all frozen cap
+   behaviour. Vintage the anchor *value*, never the model *parameter*. Flag the
+   mismatch; do not fix it. See section 5b.
+4. **Disclose what cannot be vintaged**: 2023 CBSA geography everywhere, and
+   carrier brand resolution that is not effective-dated. Record both on every
+   snapshot row.
+5. **Freeze the frequency proxy in the protocol before running anything**, since
+   the three proxies move the target by 28% to 46%.
+6. **Run WestJet Families 1 and 4, and right-sizing in all three studies, as
+   primary.** Report every other cell at its stated feasibility and no higher.
+7. **Do not fix any defect found while measuring.** Record it for Stage 2 or 3.
 
-Two items to settle before Stage 1 writes code, both flagged rather than
-decided here because they change results:
+### 8.1 One approved goal is now provably unreachable
 
-- **The 2021 question.** `LIMITATIONS.md` excludes 2020 only; `PHASE_5_6_PLAN.md`
-  W1.6 excludes 2020 and 2021. Admitting 2021 adds 3 WestJet and 3 Alaska
-  positives and changes no Porter cell.
-- **The per-vintage survey floor.** The negative-space cap assumes a constant
-  4,000. The published floor moves by vintage. A replay applying the 2018
-  constant to a 2019 snapshot is using the wrong bound.
+`PHASE_5_6_PLAN.md` W1.4 sets as its success criterion that "`docs/backtest.md`
+reports all four metric families below, with confidence intervals, and states
+plainly where the model has no signal."
+
+**The first half cannot be met and the second half can.** Confidence intervals
+are computable for exactly two cells (WestJet Families 1 and 4, by bootstrap over
+four decision dates) and for right-sizing bias. They are not computable for any
+survival cell, for Alaska Family 1 or 4, or for Porter Family 1 or 4.
+
+This is flagged rather than worked around, per the plan's own instruction not to
+reorder it silently: **the W1.4 success criterion should be amended in writing
+before Stage 1 begins**, to require intervals where estimable and an explicit
+feasibility label everywhere else. The alternative, which is to widen windows or
+pool studies until an interval appears, would manufacture the certainty this
+whole stage exists to prevent.
+
+### 8.2 What the V2 predictive baseline can and cannot claim
+
+Recorded now so Stage 1F does not overreach when it freezes the baseline.
+
+**Can claim:** a point-in-time predictive baseline for the **WestJet flagship
+study** on launch agreement and incremental value over demand rank; a
+right-sizing bias measurement across all three studies; a descriptive survival
+picture dominated by seasonality.
+
+**Cannot claim:** a cross-study predictive baseline; any survival result with an
+interval; any Alaska predictive result; any Porter result with an interval.
+
+A later change that improves a WestJet Family 1 or 4 metric can be scored against
+this baseline. A change whose only evidence is an Alaska or Porter predictive
+metric cannot, and must not be adopted on that basis.
+
+### 8.3 Settled during the correction pass
+
+Both items previously left open are now closed, and both were closed on
+methodology rather than on the counts they produce:
+
+- **2021.** Excluded from the primary baseline, with 2020, per the
+  `PHASE_5_6_PLAN.md` W1.6 precommitment. A 2021-admitted analysis may be
+  published later as a labelled sensitivity only.
+- **The per-vintage survey floor.** Recorded as a newly discovered defect in the
+  frozen baseline; the frozen 4,000 threshold is retained for Stage 1; the fix is
+  carried to W3.4 under a change report. See section 5b.

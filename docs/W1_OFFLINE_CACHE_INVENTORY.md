@@ -87,11 +87,21 @@ otherwise have been the hardest blocker for the two transborder studies, and it
 means the transfer factor can in principle be estimated at vintage rather than
 once. It does not require new ingestion.
 
-**Caveat that must be carried into Stage 1.** The survey publication floor is
+**Caveat, and the policy that follows from it.** The survey publication floor is
 not a constant 4,000. Minimum published values by vintage run from 280 to 3,090
 and the 1st percentile runs 2,650 to 3,920. The negative-space cap in
-`models/demand.py` uses a single `SURVEY_THRESHOLD = 4000.0`. A vintaged replay
-needs a per-vintage empirical floor, not the 2018 constant projected backward.
+`models/demand.py` uses a single `SURVEY_THRESHOLD = 4000.0`.
+
+This is a **newly discovered defect in the frozen baseline** and it is **not
+fixed during Milestone A.** Stage 1 measures the frozen model; changing it while
+measuring it would produce a baseline that moved while it was being built.
+
+The split adopted, stated fully in `docs/W1_REPLAY_FEASIBILITY.md` section 5b:
+point-in-time reconstruction **uses the historically appropriate anchor value**,
+because that is data at a date; the **frozen `SURVEY_THRESHOLD = 4000.0` and all
+frozen cap behaviour are retained**, because that is a model parameter. A
+vintage-specific floor may be computed as a labelled sensitivity only, and the
+resolution is carried to W3.4 under a change report.
 
 ### 2.2 BEA history survives in raw but not in Parquet, exactly as the W1.3 audit predicted
 
