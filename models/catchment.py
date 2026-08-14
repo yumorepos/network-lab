@@ -20,13 +20,31 @@ from .common import assumptions, connect, haversine_mi
 KM_PER_MI = 1.609344
 
 
-def metro_anchor_points(con) -> pd.DataFrame:
-    """One anchor coordinate per CBSA: its busiest mapped airport."""
-    return con.execute("""
+ANCHOR_SEATS_YEAR = 2024   # current-vintage default; W1.3 audit vector L10
+
+
+def metro_anchor_points(con, seats_year: int = ANCHOR_SEATS_YEAR,
+                        metro_override: pd.DataFrame | None = None
+                        ) -> pd.DataFrame:
+    """One anchor coordinate per CBSA: its busiest mapped airport.
+
+    `seats_year` and `metro_override` exist for the W1.3 point-in-time replay
+    (`replay/snapshot.py`) and default to exactly the production behaviour:
+    2024 seats and the current-vintage `dim_metro_us`. `metro_override`, when
+    given, is a DataFrame with columns cbsa, population, income, gdp_kusd
+    supplying covariates at a historical reference year in place of that table.
+    """
+    if metro_override is not None:
+        con.register("metro_pit_override", metro_override[
+            ["cbsa", "population", "income", "gdp_kusd"]])
+        metro_src = "metro_pit_override"
+    else:
+        metro_src = "dim_metro_us"
+    return con.execute(f"""
         WITH seats AS (
           SELECT origin AS iata, sum(seats) AS seats
           FROM fact_segment
-          WHERE year = 2024 AND service_class IN ('F','L')
+          WHERE year = {int(seats_year)} AND service_class IN ('F','L')
           GROUP BY origin
         ),
         us AS (
@@ -43,7 +61,7 @@ def metro_anchor_points(con) -> pd.DataFrame:
                u.lat, u.lon, u.seats AS anchor_seats_yr,
                d.population, d.income, d.gdp_kusd
         FROM us u
-        JOIN dim_metro_us d USING (cbsa)
+        JOIN {metro_src} d USING (cbsa)
         WHERE u.rn = 1 AND d.population IS NOT NULL
     """).df()
 

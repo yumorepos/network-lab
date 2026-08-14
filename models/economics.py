@@ -116,11 +116,22 @@ def comparator_rates(carrier: str, year: int = 2024,
             "burn_gph": float(burn_gph), "indirect_mult": float(mult)}
 
 
-def fuel_price_base(con) -> float:
+def fuel_price_base(con, as_of: str | None = None) -> float:
+    """Trailing-365-day average jet spot price.
+
+    `as_of` (an ISO date string) exists for the W1.3 point-in-time replay and
+    defaults to None, which reproduces production behaviour exactly: the window
+    ends at the latest observation in the table.
+    """
+    if as_of is None:
+        return con.execute("""
+            SELECT avg(usd_per_gal) FROM fact_fuel
+            WHERE date >= (SELECT max(date) FROM fact_fuel) - INTERVAL 365 DAY
+        """).fetchone()[0]
     return con.execute("""
         SELECT avg(usd_per_gal) FROM fact_fuel
-        WHERE date >= (SELECT max(date) FROM fact_fuel) - INTERVAL 365 DAY
-    """).fetchone()[0]
+        WHERE date <= ?::DATE AND date >= ?::DATE - INTERVAL 365 DAY
+    """, [as_of, as_of]).fetchone()[0]
 
 
 def fare_curve(con, year: int = 2024) -> np.poly1d:

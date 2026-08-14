@@ -37,6 +37,63 @@ def _observed_us(con, hub: str, year: int = 2024) -> pd.DataFrame:
     """, [hub, year]).df()
 
 
+ANCHOR_YEAR = "2018"
+
+
+def anchor_finder(con, hub: str, year: str = ANCHOR_YEAR):
+    """metro_name -> observed transborder O&D pax for `hub` at `year`.
+
+    Parse anchor pairs properly (city tokens AND state), not by raw substring:
+    "Columbia, SC" must not match "District of Columbia", Portland ME must not
+    match Portland OR, and StatCan's compound names ("Dallas-Fort Worth,
+    Texas", "Washington/Baltimore") must still match their metros. City names
+    are split into tokens on both sides and compared exactly, gated on state.
+
+    `year` defaults to the frozen 2018 anchor, which is production behaviour.
+    The W1.3 replay passes an earlier reference year; the table holds 1997 to
+    2018 and the GEO format is unchanged across that span.
+    """
+    import re as _re
+    from .transfer import CA_CITY_HUB, US_STATE_CODE, _parse_geo
+
+    anchor = con.execute("""
+        SELECT GEO, try_cast(VALUE AS DOUBLE) AS pax
+        FROM fact_od_transborder_2018
+        WHERE REF_DATE = ?
+          AND Estimates='Number of outbound and inbound passengers'
+    """, [str(year)]).df()
+
+    hub_city = {v[1]: k for k, v in CA_CITY_HUB.items()}.get(hub, "")
+
+    def _tokens(city_str):
+        return [t.strip().lower() for t in _re.split(r"[-/]", city_str)
+                if t.strip()]
+
+    by_token_state: dict[tuple[str, str], float] = {}
+    for _, ar in anchor.iterrows():
+        parsed = _parse_geo(ar["GEO"])
+        if not parsed:
+            continue
+        (us_city, us_state), (ca_city, _) = parsed
+        if ca_city != hub_city or pd.isna(ar["pax"]):
+            continue
+        for tok in _tokens(us_city):
+            key = (tok, US_STATE_CODE[us_state])
+            by_token_state[key] = max(by_token_state.get(key, 0.0),
+                                      float(ar["pax"]))
+
+    def find_anchor(name):
+        city_part, _, state_part = name.rpartition(",")
+        states = [s.strip() for s in state_part.split("-")]
+        for tok in _tokens(city_part):
+            for st in states:
+                if (tok, st) in by_token_state:
+                    return by_token_state[(tok, st)]
+        return np.nan
+
+    return find_anchor
+
+
 def resolve(study_id: str) -> pd.DataFrame:
     cfg = study(study_id)
     cand = candidates.generate(study_id)
@@ -99,45 +156,8 @@ def resolve(study_id: str) -> pd.DataFrame:
         cand["inc_a"] = cand["income"]     # destination-income proxy, see doc
         cand["inc_b"] = cand["income"]
         gravity_est = gravity.predict(cand, "current") * factor * growth
-        anchor = con.execute("""
-            SELECT GEO, try_cast(VALUE AS DOUBLE) AS pax
-            FROM fact_od_transborder_2018
-            WHERE REF_DATE='2018'
-              AND Estimates='Number of outbound and inbound passengers'
-        """).df()
-        # Parse anchor pairs properly (city tokens AND state), not by raw
-        # substring: "Columbia, SC" must not match "District of Columbia",
-        # Portland ME must not match Portland OR, and StatCan's compound
-        # names ("Dallas-Fort Worth, Texas", "Washington/Baltimore") must
-        # still match their metros. City names are split into tokens on
-        # both sides and compared exactly, gated on state.
-        import re as _re
-        from .transfer import CA_CITY_HUB, US_STATE_CODE, _parse_geo
-        hub_city = {v[1]: k for k, v in CA_CITY_HUB.items()}.get(hub, "")
-        def _tokens(city_str):
-            return [t.strip().lower() for t in _re.split(r"[-/]", city_str)
-                    if t.strip()]
-        by_token_state: dict[tuple[str, str], float] = {}
-        for _, ar in anchor.iterrows():
-            parsed = _parse_geo(ar["GEO"])
-            if not parsed:
-                continue
-            (us_city, us_state), (ca_city, _) = parsed
-            if ca_city != hub_city or pd.isna(ar["pax"]):
-                continue
-            for tok in _tokens(us_city):
-                key = (tok, US_STATE_CODE[us_state])
-                by_token_state[key] = max(by_token_state.get(key, 0.0),
-                                          float(ar["pax"]))
-        def find_anchor(name):
-            city_part, _, state_part = name.rpartition(",")
-            states = [s.strip() for s in state_part.split("-")]
-            for tok in _tokens(city_part):
-                for st in states:
-                    if (tok, st) in by_token_state:
-                        return by_token_state[(tok, st)]
-            return np.nan
-        cand["anchor_2018_pax"] = cand["metro_name"].map(find_anchor)
+        cand["anchor_2018_pax"] = cand["metro_name"].map(
+            anchor_finder(con, hub))
 
         # Market-specific evidence beats the hub median: where the pair has
         # its own 2018 anchor, demand = anchor x T-100 corridor growth.

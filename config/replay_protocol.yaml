@@ -1,0 +1,117 @@
+# Replay protocol constants (W1.3 / W1.4).
+#
+# DELIBERATELY SEPARATE FROM config/assumptions.yaml. Nothing here is a model
+# parameter. These are properties of the SOURCES (how long each publisher takes
+# to release a reference period) and of the replay design. Keeping them out of
+# assumptions.yaml means the W1.4 baseline freeze's sha256 of that file, and
+# every frozen model default, are untouched by Milestone A.
+#
+# Every value carries a source. Rule 1 applies here as it does everywhere.
+
+publication_lag:
+
+  t100_months:
+    value: 3
+    source: "Derived from the frozen cache, not asserted. The T-100 panel ends
+      2026-04 and the cache was downloaded 2026-07-20, so the latest month
+      available to a user at download time was 3 months old."
+    rationale: "At cutoff t, permitted T-100 months are those <= t minus this
+      lag. Governs the trailing-12-month served-market and competition windows."
+    confidence: medium
+    sensitivity: "A 1-month error shifts the trailing window by one month and
+      cannot move a metro across the >=26 departures/yr served threshold except
+      for routes within one month of that boundary."
+
+  db1b_quarter_months:
+    value: 6
+    source: "BTS publishes the Airline Origin and Destination Survey roughly two
+      quarters after the reference quarter. Consistent with the frozen cache,
+      which holds through 2025Q2 and records 2025Q3/Q4 as unpublished at the
+      2026-07-20 download."
+    rationale: "A calendar year of DB1B is treated as available at a cutoff only
+      when its Q4 plus this lag precedes the cutoff."
+    confidence: medium
+    sensitivity: "Raising it to 9 months does not change any approved decision
+      date, because the binding constraint is the 2018 cache start, not the lag."
+
+  form41_annual_months:
+    value: 6
+    source: "BTS Form 41 P-5.2 and P-1.2 are quarterly filings; a complete
+      calendar year is available roughly two quarters after Q4. Same basis as
+      DB1B."
+    rationale: "comparator_rates() consumes a full calendar year, so the year is
+      admissible only when complete and published."
+    confidence: medium
+    sensitivity: "As DB1B: the cache start binds before the lag does."
+
+  bea_annual_months:
+    value: 11
+    source: "BEA releases CAINC1 and CAGDP2 county estimates for reference year
+      Y in November of Y+1."
+    rationale: "Sets which BEA reference year a snapshot may read."
+    confidence: high
+    sensitivity: "None at the approved cutoffs; all three are January, so a
+      plus or minus 2 month error does not change the selected year."
+
+  statcan_cma_pop_months:
+    value: 12
+    source: "StatCan 17-10-0135 annual CMA population estimates are released
+      about a year after the reference date."
+    confidence: medium
+    sensitivity: "None at the approved cutoffs."
+
+  statcan_transborder_months:
+    value: 12
+    source: "StatCan 23-10-0256 annual transborder city-pair counts were
+      released about a year after the reference year while the table was live."
+    rationale: "Academic at every approved cutoff: the table stopped at
+      reference year 2018, so all three cutoffs resolve to the same stale 2018
+      anchor. Recorded for completeness and for any future earlier cutoff."
+    confidence: medium
+    sensitivity: "None at the approved cutoffs."
+
+exclusions:
+
+  excluded_data_years:
+    value: [2020]
+    source: "docs/LIMITATIONS.md item 9. The warehouse contains no 2020 rows at
+      all, so this is enforced by the data as well as by policy."
+    rationale: "COVID operations are not informative for calibration, current
+      state or backtest."
+
+  excluded_decision_vintages:
+    value: [2020, 2021]
+    source: "PHASE_5_6_PLAN.md W1.6, which pre-commits that 2020 and 2021 are a
+      structural break and are excluded. Adopted as the primary baseline policy
+      on 2026-08-14, resolving the conflict with LIMITATIONS item 9 in favour of
+      the stricter precommitted rule."
+    rationale: "Excluded as DECISION VINTAGES and as LAUNCH-COHORT years. 2021
+      remains admissible as INPUT DATA where it is genuinely the latest
+      published vintage at a later cutoff, because a planner at 2023-01 did in
+      fact hold 2021 data and knew it was COVID-affected. Excluding a year from
+      the analysis window and pretending a planner could not see it are
+      different claims; only the first is supported."
+
+outcome:
+
+  horizon_months:
+    value: [24, 36]
+    source: "PHASE_5_6_PLAN.md W1.4 metric families 1 and 2."
+
+  panel_end_ym:
+    value: 202604
+    source: "Latest reported T-100 month in the frozen warehouse. Sets outcome
+      maturity: a 24-month outcome requires a decision at or before 2024-04."
+
+frequency_proxy:
+
+  primary:
+    value: "first3_max"
+    source: "Frozen by docs/W1.4_REPLAY_PROTOCOL.md before any primary replay
+      output was viewed. Matches warehouse/route_spells.py initial_freq_wk, so
+      the replay measures the same quantity the register already publishes."
+    rationale: "A route starting mid-month files a partial first month, so the
+      first-month figure understates the intended schedule. The three proxies
+      disagree on 72% to 79% of spells and move the target by 28% to 46%, so the
+      choice is frozen rather than selected after seeing results."
+    alternatives_reported: ["first_month", "first3_median"]
