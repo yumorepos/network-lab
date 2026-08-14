@@ -123,6 +123,27 @@ uninformative" from "48 rows is too few to tell".
   explained in writing rather than tuned away. `launches.csv` is retained as the
   cross-check, not replaced by the derived table.
 
+#### W1.2 scope clarification, 2026-08-14 (Stage 1A)
+
+**The 89,502-spell register is a historical event and outcome resource. It is
+not 89,502 historical model decisions, and it must never be described as one.**
+
+A spell records that a carrier flew a pair between two months. Scoring a
+*decision* additionally requires a candidate set, demand, competition, economics
+and a verdict at that date, and those need DB1B (2018Q1 onward), Form 41 (2018
+onward), and the study's configured gauge to have existed. After those
+constraints the approved replay is **eight study-by-date pairs**, not tens of
+thousands.
+
+The register's role in Milestone A is to supply **outcomes**: launch events,
+cessations, and observed opening frequencies. It is not the decision universe.
+
+**Persist only the replay plumbing the approved studies need.** No universal
+historical airline platform, no general-purpose snapshot service, and no
+persisted `dim_route_spell` table beyond what the approved cells consume. The
+register continues to be derived on demand by `warehouse.route_spells.build()`
+in about ten seconds.
+
 ### W1.3 Point-in-time snapshot machinery
 
 - **Problem.** The model reads current-vintage covariates. Replaying a decision
@@ -148,9 +169,48 @@ uninformative" from "48 rows is too few to tell".
   0.50 are asserted, never fitted.
 - **Expected impact.** Very high. This is the deliverable the phase exists for.
 - **Effort.** 5 days once W1.1 to W1.3 land.
-- **Success criteria.** `docs/backtest.md` reports all four metric families
-  below, with confidence intervals, and states plainly where the model has no
-  signal.
+- **Success criteria.** **AMENDED 2026-08-14; see the amendment note below.**
+  Original text, retained so the change is auditable: "`docs/backtest.md` reports
+  all four metric families below, with confidence intervals, and states plainly
+  where the model has no signal."
+
+#### AMENDMENT to the W1.4 success criterion, 2026-08-14
+
+**When this was made.** After the Stage 0 feasibility gate
+(`docs/W1_REPLAY_FEASIBILITY.md`, commits `3c22797` and `a20a9a0`) and
+**before any primary historical replay output was computed or viewed.** No
+replay had been implemented at the time of writing. Nothing about model
+performance was known.
+
+**Why.** The feasibility gate established, from real counts, that several
+study-by-family cells cannot support inferential estimation at any sample size
+available offline: Alaska Family 1 has one positive event, Porter Family 1 has
+five at a single decision date, and pooled 24-month survival has twelve events
+across three studies with twenty-one of thirty-five eligible launches seasonal.
+Requiring confidence intervals everywhere would force one of two bad outcomes:
+fitting underpowered models and reporting their intervals as if meaningful, or
+widening applicability windows and pooling studies until an interval appears.
+Both manufacture power that the data does not contain.
+
+**This is a change to the analysis contract based on a pre-results assessment of
+sample size and data structure. It is not a change based on whether the model
+performed well**, and it must not be re-opened later on the basis of results.
+
+**Amended criterion.** All four precommitted metric families must still be
+attempted and reported. Then, per cell:
+
+| feasibility | what must be reported |
+|---|---|
+| **FULL** | the predeclared inferential analysis, with appropriate uncertainty intervals |
+| **DESCRIPTIVE_ONLY** | descriptive estimates, sample and event counts, and uncertainty only where statistically meaningful; **no underpowered regression or survival model is forced** |
+| **NOT_ESTIMABLE** | the exact reason, the available counts, and the blocking data or sample limitation |
+
+**A metric family is not considered missing merely because the completed
+feasibility gate established that inferential estimation is unsupported.**
+
+The feasibility classification of each cell is frozen at
+`docs/W1_REPLAY_FEASIBILITY.md` section 7 and **may not be upgraded by enlarging
+a window or pooling studies.**
 
 **Metric families. These answer different questions and must not be merged.**
 
