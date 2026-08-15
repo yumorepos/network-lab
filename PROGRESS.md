@@ -8,8 +8,11 @@ measured the frozen model and changed no default, assumption or threshold.
 
 `snapshot(t)` reconstructs the full verdict chain at a decision date from
 offline point-in-time data, guarded by 36 leakage tests (all 10 injected leaks
-demonstrated to fire) and 15 parity tests requiring the replay to reproduce
-every committed verdict market by market.
+demonstrated to fire), 13 parity tests requiring the replay to reproduce every
+committed verdict market by market, and 26 historical-chain tests that execute
+all six build layers at the approved cutoffs and assert the vintage each one
+read (added after the Milestone A independent review found finding P1-1: the
+historical chain was reached by no test at all).
 
 The replay ran 7 study-by-date snapshots, 463 decision rows, 22 positives, over
 decision dates 2022-01, 2023-01 and 2024-01 with 2020 and 2021 excluded.

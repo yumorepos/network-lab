@@ -53,7 +53,7 @@ verified by content comparison: 27 artifacts identical.
 
 ## 3. Evidence discipline
 
-**Parity, 15 tests.** A snapshot pinned to production vintages must reproduce
+**Parity, 13 tests.** A snapshot pinned to production vintages must reproduce
 every committed verdict **market by market**, plus chosen frequency, demand
 within 1e-9, and the headline totals. This is the guard that
 `models/share_validation.py` lacked when it silently measured a different model
@@ -172,6 +172,11 @@ Run from the frozen cache. No network, `make data` not run.
 | `make test` | **94 passed** (45 pre-existing, all still green; 49 new) | 0 |
 | `make reproducibility`, run 1 | **27 artifacts identical** across a warehouse rebuild | 0 |
 | `make reproducibility`, run 2 | **27 artifacts identical** across a warehouse rebuild | 0 |
+
+The `make test` row records the gate as measured at `d514ec2`. The independent
+review then found finding P1-1 (the historical chain was executed by no test),
+and `tests/test_replay_historical_chain.py` was added to close it: the suite is
+now **120 passed**. See docs/MILESTONE_A_INDEPENDENT_REVIEW.md addendum A.2.
 
 ### 6.1 Reproducibility, run twice as required
 
