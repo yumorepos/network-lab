@@ -1,5 +1,42 @@
 # Progress log
 
+## Phase 5 Milestone A complete (2026-08-14): W1.3 snapshots and the W1.4 replay
+
+The point-in-time machinery and the decision replay, the two pieces Milestone A
+was missing, are built. **The canonical numbers below are unchanged**: this work
+measured the frozen model and changed no default, assumption or threshold.
+
+`snapshot(t)` reconstructs the full verdict chain at a decision date from
+offline point-in-time data, guarded by 36 leakage tests (all 10 injected leaks
+demonstrated to fire) and 15 parity tests requiring the replay to reproduce
+every committed verdict market by market.
+
+The replay ran 7 study-by-date snapshots, 463 decision rows, 22 positives, over
+decision dates 2022-01, 2023-01 and 2024-01 with 2020 and 2021 excluded.
+
+**The headline, on the only statistically FULL cell in the project.** WestJet
+launch agreement, 244 rows, 15 positives: the model puts two thirds of real
+launches in its top ten of roughly eighty candidates (recall@10 0.679
+[0.325, 0.953]). But against a demand-percentile ranking on identical rows,
+**every one of six difference intervals spans zero**. The full engine shows no
+measurable incremental value over ranking by modeled demand alone. Published as
+the finding, per the protocol's pre-commitment.
+
+**Right-sizing.** The model chose the minimum of its frequency list on 461 of
+463 decision rows and 18 of 18 paired launches. Median chosen-to-observed ratio:
+WestJet 1.003 [0.725, 1.449], Alaska 0.428 [0.421, 0.435], Porter 0.461
+[0.285, 0.864]. This refines the earlier "3x on 200 of 200" diagnostic rather
+than confirming it: the bias is study-specific, and a constant cannot correlate
+with anything.
+
+**Newly discovered defect, recorded not fixed.** Corridor growth is a raw ratio
+of two single T-100 years with no COVID handling. At a 2023-01 cutoff it is
+0.196 at YYC, collapsing median anchored WestJet demand from 13,156 to 2,023.
+
+Protocol: `docs/W1.4_REPLAY_PROTOCOL.md` (frozen before results).
+Results: `docs/W1.4_replay_results.md` (generated).
+Scoreboard: `docs/W1.4_predictive_baseline_v2.md`.
+
 ## Phase 6A (2026-07-28): Poisson QMLE gravity implemented, adoption deferred
 
 The log-linear gravity model recovers the conditional median, not the mean:
