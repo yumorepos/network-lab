@@ -268,22 +268,24 @@ addendum B records the closure.
 | finding | status | note |
 |---|---|---|
 | **P1-1** two high-leverage vintage paths have no guard and no provenance | **CLOSED** | execution coverage at `4f8dbae`, provenance records and guards at the closure commit |
-| **P1-2** the headline is a one-date result and the per-date breakdown was not published | **OPEN** | a reporting addition to unchanged numbers; see 10.3 |
+| **P1-2** the headline is a one-date result and the per-date breakdown was not published | **CLOSED** | reporting only; see 10.3 |
 | P2-1 to P2-4 | open, nonblocking | recorded in the review, section 15 |
 
-### 10.3 P1-2 is open, deliberately, and is a prerequisite for the roadmap
+### 10.3 P1-2, closed as a reporting change
 
-The required resolution is to emit the per-date and leave-one-date-out tables
-from `replay/report.py` into `docs/W1.4_replay_results.md` and the V2 document,
-and to state that the intervals do not represent variation across decision
-vintages. Addendum A.6 verified those numbers reproduce; it did not publish
-them.
+Addendum A.6 verified the per-date decomposition reproduces but did not publish
+it. `replay/report.py` now emits it: per-date and leave-one-date-out tables for
+WestJet inside section 3 of `docs/W1.4_replay_results.md`, with the statement
+that the intervals cluster by metro and not by decision vintage. The V2
+document keeps sections 1 to 6 unchanged and gains a labelled reporting
+addendum pointing at the generated tables.
 
-This is now load-bearing beyond the review. The per-date breakdown is the
-evidence the roadmap redesign rests on: that the pooled agreement@10 advantage
-is one market at one date, that 2022-01 and 2023-01 are zero, and that k=5 is
-negative. Those facts should be cited from a generated artifact rather than
-from a review appendix.
+This was load-bearing beyond the review. The per-date breakdown is the evidence
+the roadmap redesign rests on, and it now lives in a generated artifact rather
+than a review appendix. One refinement came out of publishing it: the top-ten
+sets at 2024-01 differ by three markets in each direction, not one, and exactly
+one of the six is an observed launch. The pooled advantage is attributable to
+one launch, not one market moving.
 
 ### 10.4 Gate status at freeze
 

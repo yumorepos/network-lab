@@ -12,6 +12,11 @@ import json
 import pandas as pd
 
 from ingest.common import DATA_PARQUET, ROOT
+# The frozen metric functions, imported rather than reimplemented. A second
+# implementation of agreement@k here could disagree with the one that produced
+# results.json without anything failing, which is the defect
+# models/share_validation.py shipped with in round 4.
+from replay.run_replay import K_VALUES, _agreement_at_k, _recall_at_k
 
 REPLAY = DATA_PARQUET / "replay"
 DOC = ROOT / "docs" / "W1.4_replay_results.md"
@@ -35,6 +40,156 @@ def _ci(t) -> str:
     if lo != lo or hi != hi:
         return f"{p:.3f} (no interval: fewer than 2 clusters)"
     return f"{p:.3f} [{lo:.3f}, {hi:.3f}]"
+
+
+PER_DATE_STUDY = "westjet_yyc"
+
+
+def _diffs(g: pd.DataFrame, k: int) -> tuple[float, float]:
+    """(agreement difference, recall difference), full model minus demand."""
+    return (_agreement_at_k(g, "score_model", k)
+            - _agreement_at_k(g, "score_demand", k),
+            _recall_at_k(g, "score_model", k)
+            - _recall_at_k(g, "score_demand", k))
+
+
+def _per_date_breakdown(A, rows: pd.DataFrame) -> None:
+    """Finding P1-2. Protocol section 3 item 1 and section 5 both require a
+    per-date breakdown alongside the pooled Family 1 and Family 4 results, and
+    only `positives_by_date` was emitted.
+
+    Every sentence below is derived from `decision_rows.parquet` at generation
+    time rather than written as prose, so a claim here cannot outlive the
+    numbers that justify it.
+    """
+    w = rows[rows["study_id"] == PER_DATE_STUDY]
+    dates = sorted(w["cutoff"].unique())
+
+    A(f"### Per-decision-date breakdown, {PER_DATE_STUDY}")
+    A("")
+    A("Required by protocol section 3 item 1 and section 5, and missing from "
+      "the first version of this report (independent review finding P1-2). "
+      "Pooled Family 1 and Family 4 figures average over these dates.")
+    A("")
+    A("| date | positives | k | agreement, model | agreement, demand | "
+      "difference | recall, model | recall, demand | difference |")
+    A("|---|---|---|---|---|---|---|---|---|")
+    for c in dates:
+        g = w[w["cutoff"] == c]
+        npos = int(g["positive"].sum())
+        for k in K_VALUES:
+            am = _agreement_at_k(g, "score_model", k)
+            ad = _agreement_at_k(g, "score_demand", k)
+            rm = _recall_at_k(g, "score_model", k)
+            rd = _recall_at_k(g, "score_demand", k)
+            A(f"| {c} | {npos} | {k} | {am:.3f} | {ad:.3f} | {am - ad:+.3f} | "
+              f"{rm:.3f} | {rd:.3f} | {rm - rd:+.3f} |")
+    A("")
+    A("**No intervals are reported per date.** A metro-cluster bootstrap "
+      "within a single decision date resamples one block, and three dates "
+      "cannot support a date-level interval either. Reporting one would "
+      "manufacture precision the design does not have.")
+    A("")
+
+    A(f"### Leave-one-decision-date-out, {PER_DATE_STUDY}")
+    A("")
+    A("Each row drops one decision date and recomputes the pooled Family 4 "
+      "difference over the remaining two.")
+    A("")
+    A("| dropped | k | difference in agreement@k | difference in recall@k |")
+    A("|---|---|---|---|")
+    lodo = {}
+    for drop in dates:
+        g = w[w["cutoff"] != drop]
+        for k in K_VALUES:
+            da, dr = _diffs(g, k)
+            lodo[(drop, k)] = (da, dr)
+            A(f"| {drop} | {k} | {da:+.3f} | {dr:+.3f} |")
+    A("")
+
+    # ---------------------------------------------------- derived statements
+    A("### What the breakdown shows")
+    A("")
+    pooled = {k: _diffs(w, k) for k in K_VALUES}
+
+    # where the pooled k=10 advantage comes from
+    per_date_10 = {c: _diffs(w[w["cutoff"] == c], 10) for c in dates}
+    nonzero = [c for c in dates if abs(per_date_10[c][0]) > 1e-12
+               or abs(per_date_10[c][1]) > 1e-12]
+    zero = [c for c in dates if c not in nonzero]
+    if len(nonzero) == 1:
+        c = nonzero[0]
+        g = w[w["cutoff"] == c]
+        tm = set(g.nlargest(10, "score_model")["metro_name"])
+        td = set(g.nlargest(10, "score_demand")["metro_name"])
+        gained = g[g["metro_name"].isin(tm - td) & (g["positive"] == 1)]
+        lost = g[g["metro_name"].isin(td - tm) & (g["positive"] == 1)]
+        A(f"- **At k=10 the entire pooled difference comes from {c}.** "
+          f"The difference is exactly zero at "
+          f"{' and '.join(str(z) for z in zero)}. The two top-ten sets at "
+          f"{c} differ by {len(tm - td)} markets in each direction, and "
+          f"{len(gained)} of those {len(tm - td) + len(td - tm)} is an "
+          f"observed launch: "
+          f"{', '.join(sorted(gained['metro_name']))}. The markets the demand "
+          f"ranking holds instead contribute {len(lost)} launches.")
+    else:
+        A(f"- At k=10 the pooled difference is spread across "
+          f"{len(nonzero)} dates: "
+          + "; ".join(f"{c} {per_date_10[c][0]:+.3f} agreement"
+                      for c in nonzero) + ".")
+
+    # leave-one-out behaviour, stated from the computed table
+    for drop in dates:
+        da, dr = lodo[(drop, 10)]
+        pa, pr = pooled[10]
+        if abs(da) < 1e-12 and abs(dr) < 1e-12:
+            A(f"- **Removing {drop} eliminates the pooled k=10 advantage "
+              f"entirely** ({pa:+.3f} to {da:+.3f} agreement, {pr:+.3f} to "
+              f"{dr:+.3f} recall).")
+        elif (da > 0) == (pa > 0) or abs(pa) < 1e-12:
+            A(f"- Removing {drop} does not reverse the conclusion: the k=10 "
+              f"difference stays {da:+.3f} agreement and {dr:+.3f} recall.")
+        else:
+            A(f"- Removing {drop} reverses the sign at k=10: {pa:+.3f} to "
+              f"{da:+.3f} agreement.")
+
+    # k=20 saturation
+    rm20 = _recall_at_k(w, "score_model", 20)
+    rd20 = _recall_at_k(w, "score_demand", 20)
+    if rm20 == 1.0 and rd20 == 1.0:
+        A(f"- **k=20 is saturated, not tied on merit.** Both rankings reach "
+          f"recall {rm20:.3f}: every positive is inside the top twenty of "
+          f"roughly eighty candidates under either score, so the difference "
+          f"is pinned at zero arithmetically rather than measured.")
+    else:
+        A(f"- At k=20 model recall is {rm20:.3f} and demand recall "
+          f"{rd20:.3f}.")
+
+    # k=5
+    d5 = [(_diffs(w[w["cutoff"] == c], 5)) for c in dates]
+    pos5 = [d for d in d5 if d[0] > 1e-12]
+    if not pos5:
+        A(f"- **k=5 shows no improvement at any date.** The pooled difference "
+          f"is {pooled[5][0]:+.3f} agreement and {pooled[5][1]:+.3f} recall, "
+          f"and no individual date is positive.")
+    else:
+        A(f"- k=5 is positive at {len(pos5)} of {len(dates)} dates; pooled "
+          f"{pooled[5][0]:+.3f} agreement.")
+    A("")
+
+    A("### What the intervals do and do not represent")
+    A("")
+    A("The bootstrap in Family 1 and Family 4 **clusters by metro**, so its "
+      "intervals describe sampling variation across metros with the three "
+      "decision dates held fixed. They are **not** intervals across decision "
+      "vintages, and nothing here supports treating them as such.")
+    A("")
+    A("The practical consequence is that a future change scored against this "
+      "baseline could appear significant on vintage variation alone. The "
+      "leave-one-date-out table above is the honest instrument for that "
+      "question, and with three dates it is a sensitivity check rather than "
+      "an inference.")
+    A("")
 
 
 def main() -> str:
@@ -126,6 +281,8 @@ def main() -> str:
             kk = e["k"][k]
             A(f"| {k} | {_ci(kk['diff_agreement'])} | {_ci(kk['diff_recall'])} |")
         A("")
+
+    _per_date_breakdown(A, rows)
 
     # ------------------------------------------------------------ family 2
     A("## 4. Family 2: survival")

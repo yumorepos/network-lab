@@ -18,10 +18,16 @@ by no test at all, and the corridor-growth year and EIA fuel `as_of` were
 recorded nowhere. **143 tests total.**
 
 **Milestone A is frozen.** Independent review verdict
-**APPROVE WITH NONBLOCKING FINDINGS**; P1-1 closed, P1-2 open (the per-date
-breakdown is verified but still unpublished). Roadmap verdict
+**APPROVE WITH NONBLOCKING FINDINGS**; **P1-1 and P1-2 both closed**, no P0,
+four nonblocking P2 items open. Roadmap verdict
 **REDESIGN THE REMAINING ROADMAP**. See `docs/MILESTONE_A_COMPLETION.md`
 section 10.
+
+The per-date breakdown is now generated into `docs/W1.4_replay_results.md`
+section 3. It is the reason the roadmap was redesigned rather than continued:
+the pooled agreement@10 advantage rests entirely on 2024-01 and disappears when
+that date is dropped, k=20 is saturated at recall 1.000 under both rankings,
+and no date is positive at k=5.
 
 The replay ran 7 study-by-date snapshots, 463 decision rows, 22 positives, over
 decision dates 2022-01, 2023-01 and 2024-01 with 2020 and 2021 excluded.

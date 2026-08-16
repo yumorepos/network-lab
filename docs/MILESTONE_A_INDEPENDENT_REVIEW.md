@@ -1174,3 +1174,79 @@ Milestone A, and **REDESIGN THE REMAINING ROADMAP** for the roadmap.
 - `docs/W1.4_predictive_baseline_v2.md` is untouched. V2 remains the immutable
   baseline describing the frozen pre-calibration engine.
 - No source data. No network call. `make data` was not run.
+
+---
+
+## Addendum, 2026-08-16, entry 3: P1-2 CLOSED
+
+Reporting only. No metric was recomputed, no model touched, and the V2 freeze
+was not rewritten.
+
+### C.1 What was required
+
+Section 15, P1-2: emit the per-date table from `replay/report.py`, add it and
+the leave-one-date-out table, and state explicitly that the intervals do not
+represent variation across decision vintages.
+
+### C.2 What was done
+
+`replay/report.py` gained `_per_date_breakdown`, rendered inside section 3 of
+`docs/W1.4_replay_results.md`. It emits, for WestJet, agreement and recall at
+k=5, 10 and 20 for the model and the demand percentile with their difference,
+per decision date and under each leave-one-date-out view.
+
+The frozen metric functions are **imported** from `replay/run_replay.py` rather
+than reimplemented. A second implementation of `_agreement_at_k` in the
+reporting path could disagree with the one that produced `results.json` and
+nothing would fail, which is the defect `models/share_validation.py` shipped
+with in round 4.
+
+Every interpretive sentence in the new subsections is **derived at generation
+time** from `decision_rows.parquet`, including which date carries the k=10
+difference, which markets swap at the boundary, and whether any date is
+positive at k=5. Under rule 6 a conclusion in a generated report should not be
+able to outlive the numbers that justify it, so the generator branches on the
+computed values rather than asserting a remembered result.
+
+### C.3 The published figures
+
+All six statements the closure required were checked against the artifacts
+before being written, and all six hold:
+
+| statement | status |
+|---|---|
+| the pooled k=10 difference is concentrated in one 2024-01 market | holds; zero at both other dates |
+| removing 2023-01 does not reverse the conclusion | holds; k=10 stays +0.050 agreement, +0.167 recall |
+| removing 2024-01 eliminates the pooled k=10 advantage | holds; +0.033 to +0.000 agreement, +0.111 to +0.000 recall |
+| k=20 is saturated | holds; both rankings reach recall 1.000 |
+| k=5 shows no consistent improvement | holds, and is stronger than stated: no date is positive at k=5 |
+| the bootstrap clusters by metro, not by vintage | stated in the report and in the V2 addendum |
+
+One refinement to the "single market" language used in A.6 and in the review.
+The two top-ten sets at 2024-01 differ by **three markets in each direction**,
+not one. Exactly one of those six, Anchorage AK, is an observed launch, and the
+three markets the demand ranking holds instead contribute none. The pooled
+advantage is therefore attributable to one launch, not to one market moving.
+
+### C.4 The V2 freeze
+
+`docs/W1.4_predictive_baseline_v2.md` sections 1 to 6 are unchanged. A clearly
+labelled section 7, "Reporting addendum", points at the generated breakdown and
+records the two consequences for how section 3 may be read. It adds no number
+and revises none.
+
+### C.5 Parity count
+
+`tests/test_replay_parity.py` collects **13**. `PROGRESS.md` and
+`docs/MILESTONE_A_COMPLETION.md` both say 13. Section 5 of the review body
+still says 15 and is deliberately left as written, per the instruction not to
+rewrite the original review; A.5 and B.8 carry the correction.
+
+### C.6 Status
+
+**P1-1: CLOSED** (addendum B). **P1-2: CLOSED** (this entry).
+
+No P0 was ever open. The remaining findings are the four P2 items in section
+15, all nonblocking. Both section 18 verdicts stand:
+**APPROVE WITH NONBLOCKING FINDINGS** for Milestone A, and
+**REDESIGN THE REMAINING ROADMAP** for the roadmap.
