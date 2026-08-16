@@ -1,5 +1,52 @@
 # Progress log
 
+## Stage 2R.0 complete (2026-08-16): the resolution limit, measured
+
+**Verdict: LIMITED TO LARGE EFFECTS.** The first stage of the redesigned
+roadmap is done. It changed no model behaviour, no assumption and no frozen
+number; it measured what the frozen V2 predictive comparison was ever capable
+of distinguishing. Generated into `docs/STAGE_2R0_RESOLUTION.md` by
+`replay/resolution.py`, guarded by `tests/test_stage2r0_resolution.py`.
+
+**The instrument is five times coarser than its own readings.** Agreement@k
+and recall@k are lattice-valued: pooled over the three decision dates, one
+launch moving in or out of a top-k is worth 0.0667 of agreement@5, 0.0333 of
+agreement@10, and between 0.0476 and 0.1111 of recall depending on the date.
+Every non-zero difference in the V2 Family 4 headline is exactly one such
+event. The k=5 result is one launch, Denver, dropping out of the top five at
+2022-01. The k=10 result is one launch, Anchorage, entering the top ten at
+2024-01. Two label changes carry all six headline numbers.
+
+**Against that, the minimum detectable difference is five events.** Estimated
+by construction rather than by formula, because three temporal blocks do not
+support an asymptotic cluster-robust calculation: rankings that beat the demand
+comparator by exactly N net launch events were built and scored with the frozen
+bootstrap. Four events or fewer never excludes zero. An improvement confined to
+a single decision vintage never excludes zero at any size this sample permits,
+which is precisely the shape of the observed k=10 result. Five events is half
+the ten distinct launch events in the study.
+
+**k=20 measures nothing.** Both scores already place every positive inside the
+top twenty at all three dates, so headroom is zero, recall is pinned at 1.000
+and agreement is pinned at P_d/20. Its 0.000 difference is a property of the
+candidate set, not a comparison that happened to tie.
+
+**The V2 intervals do not cover decision-date uncertainty.** The metro-cluster
+bootstrap captures market-to-market variation and the repeated-market panel
+structure; all three dates appear in all 2,000 resamples by construction. The
+15 positive rows also rest on only 10 distinct launches, five of which are
+scored at two dates.
+
+**The consequence.** The null stands and is now bounded: no incremental value
+larger than the study's detectable resolution was observed, and smaller effects
+remain unresolved. The null is underpowered, not empty. Stage 2R.1 through
+2R.5 proceed as mechanism attribution, which is arithmetic and unaffected by
+this limit; no W2 calibration may be justified by an expected gain in a Family
+4 metric.
+
+**Not started: 2R.1 through 2R.5.** They await authorization under the
+evidence standard this stage establishes.
+
 ## Phase 5 Milestone A complete (2026-08-14): W1.3 snapshots and the W1.4 replay
 
 The point-in-time machinery and the decision replay, the two pieces Milestone A

@@ -13,6 +13,11 @@ validation numbers).
   pre-2022 model; ceased-by-carrier breakdown; three-way separation
 - [LIMITATIONS.md](LIMITATIONS.md) - the thirteen limitations and the design
   decision each one forced
+- [REMAINING_ROADMAP_REDESIGN.md](REMAINING_ROADMAP_REDESIGN.md) - Stage 2R,
+  the diagnostic stage that replaced the automatic W2.1 to W2.5 sequence
+- [STAGE_2R0_RESOLUTION.md](STAGE_2R0_RESOLUTION.md) - generated: what the
+  frozen predictive comparison can and cannot distinguish, and the verdict
+  that binds how the rest of Stage 2R may be read
 - [interview_story.md](interview_story.md) - the narrative, numbers first
 - [resume_material.md](resume_material.md) - bullets and talking points
 - [deploy.md](deploy.md) - one-command GitHub + Streamlit Community Cloud path
