@@ -1,0 +1,360 @@
+# The remaining roadmap, redesigned
+
+**Date.** 2026-08-16
+**Supersedes.** The W2 sequence in `PHASE_5_6_PLAN.md`, which is preserved
+unchanged as the project's research history.
+**Authority.** `docs/MILESTONE_A_INDEPENDENT_REVIEW.md` section 18, roadmap
+verdict **REDESIGN THE REMAINING ROADMAP**.
+
+Milestone A is frozen. P1-1 and P1-2 are closed, no P0 was ever open, and four
+nonblocking P2 findings remain recorded. V2 remains the immutable baseline
+describing the frozen pre-calibration engine.
+
+This document replaces the automatic execution of W2.1 through W2.5 with a
+diagnostic stage, **Stage 2R**, and a decision gate. Nothing here changes the
+model. Stage 2R is not implemented by this document.
+
+---
+
+## 1. Why the old sequence is no longer automatically justified
+
+The old plan was to proceed directly to DB1B Coupon and Ticket ingestion, brand
+mapping, connection validation, QSI fitting and fare segmentation. Every one of
+those calibrates the competition, share or economics layers. The Milestone A
+evidence does not establish that those layers are where the problem is, and in
+one respect it establishes that they cannot be evaluated at the available
+resolution.
+
+Each fact below is verified and citable from a generated artifact.
+
+| # | fact | source |
+|---|---|---|
+| 1 | WestJet YYC is the only cell supporting a primary predictive comparison. Alaska is NOT_ESTIMABLE with 1 positive; Porter is DESCRIPTIVE_ONLY with 1 decision date | results section 1 |
+| 2 | All six WestJet Family 4 difference intervals span zero | results section 3 |
+| 3 | The pooled k=10 advantage rests entirely on 2024-01. The top-ten sets differ by three markets in each direction and exactly one of the six, Anchorage AK, is an observed launch | results section 3, per-date breakdown |
+| 4 | Per-date k=10 differences are 0.000 at 2022-01, 0.000 at 2023-01, +0.100 agreement at 2024-01 | results section 3 |
+| 5 | k=20 is saturated: both rankings reach recall 1.000, so the zero difference is arithmetic, not measured | results section 3 |
+| 6 | k=5 is negative pooled and positive at no date | results section 3 |
+| 7 | `margin_pct` and the demand percentile are strongly rank-correlated: Spearman 0.866, 0.788, 0.771 at the three WestJet dates | `decision_rows.parquet` |
+| 8 | 51, 50 and 49 of 88, 80 and 76 WestJet candidates are capped at the survey ceiling and tied at one demand value | `decision_rows.parquet`, `demand_method` |
+| 9 | Frequency selection is effectively constant: 461 of 463 decisions choose 3x, 2 choose 7x | results section 5 |
+| 10 | D1 changes demand levels and margins materially but cannot change the demand-only comparator ranking: growth enters as a common positive scalar over every ranked row | review addendum A.6 |
+| 11 | 2022-01, the date least affected by the COVID growth vintage, already shows no incremental value: 0.000 at k=10, -0.200 at k=5 | results section 3 |
+
+Facts 2 through 6 all describe the same instrument, and fact 5 shows that
+instrument running out of range. Spending several weeks of ingestion and
+fitting to move a metric whose resolution has not been established is the wrong
+order of operations. Establishing the resolution is Stage 2R.0.
+
+### 1.1 What this is not
+
+This is not a finding that the engine has no value, and the redesign does not
+assume one. Facts 2 through 6 are consistent with a miscalibrated engine and
+with an underpowered test, and Milestone A's own completion report records both
+readings without choosing. Stage 2R exists to choose on evidence.
+
+---
+
+## 2. Stage 2R
+
+**Objective.** Determine where, if anywhere, Network Lab adds decision
+information beyond a demand ranking, and identify which structural defect, if
+any, should be repaired before any expensive calibration or data expansion.
+
+**Constraints.** Use the frozen V2 historical universe. Refit nothing. Change
+no assumption, threshold, default or scoring function during the diagnostic.
+No network, no `make data`.
+
+**Emphasis.** Mechanism attribution over statistical horse-racing. Given the
+resolution limit that 2R.0 will quantify, a second round of underpowered
+significance testing would add cost and no information.
+
+---
+
+### Stage 2R.0: identification and resolution limit
+
+**This runs first, and every later comparison is interpreted against it.**
+
+Quantify what the WestJet predictive comparison can and cannot distinguish.
+Report at minimum:
+
+- total positives, and positives by decision date;
+- candidate rows by date;
+- the bootstrap unit, and the effective number of temporal blocks;
+- the granularity of each metric at each k. Agreement@k moves in steps of 1/k
+  per date; recall@k moves in steps of 1/(positives at that date). At 2024-01
+  with 3 positives, recall@10 cannot move by less than 0.333;
+- the smallest difference the design could distinguish from zero at each k;
+- the consequence of three decision dates for any vintage-level claim.
+
+**Do not** apply asymptotic formulas that assume a large number of independent
+blocks. Three dates do not support them, and a spuriously narrow bound here
+would corrupt every downstream decision.
+
+**Interpretation rule, binding on the rest of Stage 2R and on all downstream
+writing:**
+
+> No detectable incremental value at the available resolution.
+
+not
+
+> The richer model has been proven equivalent to, or worse than, demand.
+
+The two are different claims. Only the first is supported.
+
+---
+
+### Stage 2R.1: score-layer attribution
+
+Identical frozen WestJet rows, dates, candidates, labels, cutoffs and k values
+throughout. Refit nothing.
+
+Evaluate the ranking as it evolves through:
+
+| layer | ranking score |
+|---|---|
+| A | demand only |
+| B | demand and competition/share |
+| C | economics and margin |
+| D | frequency and right-sizing interaction |
+| E | final verdict |
+
+For each transition A to B, B to C, C to D, D to E report:
+
+- Spearman rank correlation with the previous layer and with demand;
+- top-5, top-10 and top-20 overlap;
+- markets promoted and markets demoted, named;
+- whether the promoted and demoted markets subsequently launched;
+- observed launch agreement and recall, **descriptively**, subject to 2R.0;
+- the mechanism responsible for each material rank move.
+
+**The primary question is not whether a layer improves a metric.** It is
+whether the layer materially alters the ordering in a coherent way, and whether
+the change is explicable by the mechanism the layer is supposed to represent. A
+layer that reshuffles markets for reasons its own mechanism does not explain is
+a defect finding regardless of what the metric does.
+
+Fact 7 sets the prior: at Spearman 0.77 to 0.87 against demand, the full engine
+is already close to a demand ranking, so the interesting output of 2R.1 is the
+small set of markets where it is not, and why.
+
+---
+
+### Stage 2R.2: survey-ceiling diagnostic
+
+**D3 is a diagnostic, not a scheduled repair.** A ceiling that represents
+survey censoring is not automatically a correctness error: a market absent from
+the StatCan transborder table is genuinely known to be below the publication
+floor, and capping the gravity estimate there is a defensible inference.
+
+#### Two separable issues, which no single fix addresses
+
+1. **Compression.** All capped rows receive one identical demand value and are
+   tied. This is inherent to censoring and is **not** removed by correcting the
+   floor: a lower floor moves the whole tied block down and leaves it just as
+   tied.
+2. **The floor's value.** `SURVEY_THRESHOLD` is a fixed 4,000 while the true
+   StatCan publication floor moves by vintage from 280 to 3,090. This is a
+   correctness question about level, and it changes where the capped block sits
+   relative to anchored markets and what margins those rows earn. It removes no
+   ties.
+
+Conflating these is the main risk in this stage. Outcome A below must not be
+read as "correct the floor and the compression goes away."
+
+#### Preliminary observation, made while designing this stage
+
+Computed from `decision_rows.parquet` to scope the work, and **to be confirmed
+properly by the diagnostic rather than relied on here**:
+
+- No capped row appears in the demand-percentile top 20 at any WestJet date.
+  The tie block sits entirely in the tail, so the ceiling does not compress the
+  demand baseline's ranking where ranking is scored.
+- No capped row is an observed launch at any WestJet date: all 7, 5 and 3
+  positives are anchored markets. The ceiling never hides a launch.
+- The full engine does pull capped rows into its own top-k: 2 of the top 20 at
+  2023-01, and 1 of the top 10 and 2 of the top 20 at 2024-01. Since capped
+  rows contain no positives, every such promotion can only cost agreement.
+
+If this holds up, the compression question largely answers itself and the live
+question becomes the asymmetry: why the margin score promotes uninformative
+capped markets that the demand score does not. That is a 2R.1 mechanism
+question as much as a 2R.2 one.
+
+#### What to measure
+
+By study and date, for WestJet and Porter. Alaska is `us_domestic` and reads
+observed DB1B, so no row is capped and the study is out of scope here.
+
+- fraction capped, tied-group count and sizes;
+- how many top-k positions are occupied by tied rows, per score;
+- whether competition and economics break those ties, and in which direction;
+- observed launch outcomes among capped versus anchored candidates;
+- sensitivity of the ranking to the censoring mechanism.
+
+#### Classification, and what triggers work
+
+| outcome | meaning | action |
+|---|---|---|
+| **A** | the ceiling materially destroys useful ordering | repair, scheduled immediately |
+| **B** | a limitation, but not a major ranking bottleneck | document; consider the floor correction on its own merits |
+| **C** | functioning acceptably as a censoring assumption | document the limitation and move on |
+
+Only A triggers an automatic repair. The vintage publication-floor mismatch
+stays a separately documented candidate correction under all three outcomes,
+because it is a question about level and not about compression.
+
+**Do not change `SURVEY_THRESHOLD` during the diagnostic.**
+
+---
+
+### Stage 2R.3: frequency degeneracy
+
+**D2 requires resolution before the project may be called portfolio ready.**
+This is the one component whose disposition is not contingent on any predictive
+finding. A right-sizing selector that returns 3x on 461 of 463 historical
+decisions, and on 200 of 200 current production candidates, is not functioning
+as a selector, and the project must not claim frequency optimization while it
+behaves as a constant.
+
+Diagnose the mechanism first. On representative markets, evaluate the frozen
+objective at 3x, 7x and 14x and decompose the change into:
+
+- QSI and share response to frequency;
+- captured demand;
+- spill;
+- revenue;
+- variable operating cost;
+- airport and fixed cost;
+- contribution and margin;
+- load-factor constraint behaviour;
+- feasibility constraints;
+- the objective function itself.
+
+Identify **which term makes 3x dominate**. Candidate mechanisms include a weak
+frequency exponent in QSI, cost scaling that outruns share gain, the spill and
+capacity implementation, fixed-cost treatment, or the selection rule in
+`_select_service`.
+
+Do not implement a repair during the diagnostic.
+
+After diagnosis the project chooses exactly one:
+
+- **REPAIR RIGHT-SIZING**, if the diagnosis identifies a defect with a
+  defensible fix; or
+- **RETIRE OR DE-SCOPE RIGHT-SIZING** as a validated model output, stating
+  plainly in the reader-facing documents that the tool screens markets and does
+  not size schedules.
+
+Both are acceptable. Continuing to present a constant as an optimization is
+not.
+
+---
+
+### Stage 2R.4: D1 blast radius, then a scheduled fix
+
+**D1 is a scheduled correctness repair, not an open hypothesis.** The corridor
+growth ratio is a raw ratio of two single T-100 years with no COVID handling;
+at a 2023-01 cutoff it is 0.196 at YYC, collapsing median anchored WestJet
+demand from 13,156 to 2,023 and median margin to -3,829%.
+
+The question "does fixing D1 restore predictive lift" is already answered and
+the answer is no. Growth enters as a common positive scalar over every ranked
+row within a study and date, so it cannot move the demand-only comparator
+ranking (review addendum A.6, verified from `replay/snapshot.py:352-366`), and
+2022-01, the date least affected, already shows no incremental value.
+
+So the experiment measures **how much the fix moves the model**, not whether to
+make it. Against immutable V2, report rows affected, demand change, margin
+change, verdict change, ranking change, Family 1 impact, Family 4 impact, and
+all of it per date. Then, in a separate change report, correct D1 in isolation
+with no other component touched, re-run the V2 comparison, and preserve the
+before and after.
+
+The decision to fix D1 is not contingent on it improving any predictive metric.
+
+---
+
+### Stage 2R.5: necessity gates for the old Milestone B
+
+Evaluate each old W2 task only after 2R.0 through 2R.4. No task is mandatory
+because it appeared in the earlier plan.
+
+| task | proceeds only if |
+|---|---|
+| **W2.1** DB1B Coupon and Ticket | itinerary, fare or connection information is needed to address a mechanism 2R.1 identified |
+| **W2.2** marketing-brand mapping | historical brand ambiguity is shown to materially move competition or share estimates. D7 is the starting evidence: 4,924 regional triples in the 2022-01 window carry no brand row |
+| **W2.3** connection heuristics | the share decomposition shows material signal lost through connection treatment |
+| **W2.4** QSI fitting | 2R.3 identifies frequency or competitive responsiveness as the bottleneck, and sufficient calibration and holdout evidence exists given 2R.0 |
+| **W2.5** fare segmentation | economics diagnostics show fare structure materially distorting ranking or right-sizing |
+
+---
+
+## 3. The Stage 2R decision gate
+
+Stage 2R ends in exactly one of three outcomes.
+
+### TARGETED CALIBRATION JUSTIFIED
+
+Specific components show a plausible mechanism, sufficient evidence, and a
+defensible validation path given the 2R.0 resolution limit. The future roadmap
+then contains those targeted tasks and nothing else.
+
+### STRUCTURAL REPAIR REQUIRED
+
+A correctness or architecture defect prevents a meaningful calibration
+comparison. Repair only the identified defect, re-run the frozen comparison,
+and reassess.
+
+### NO DETECTABLE INCREMENTAL VALUE AT CURRENT RESOLUTION
+
+The replay does not detect decision value beyond the demand benchmark at
+effects larger than the study's resolution, and no layer carries enough
+mechanistic evidence to justify further calibration.
+
+**This outcome must not be phrased as proof of model equivalence.** The
+supported claim is bounded by 2R.0 and reads: no incremental value larger than
+the study's detectable resolution was observed, and smaller effects remain
+unresolved.
+
+Under this outcome:
+
+- stop broad model expansion;
+- still resolve D1;
+- still resolve or retire D2;
+- treat D3 according to its 2R.2 classification;
+- document the empirical limit;
+- proceed to final packaging.
+
+A bounded negative result is a completed research outcome, and for a project
+built on falsification it is a more credible one than a metric tuned until it
+turned positive.
+
+---
+
+## 4. The finish line
+
+Network Lab is not an open-ended attempt to discover a positive result. After
+Stage 2R, in order:
+
+1. execute only evidence-triggered repairs and calibration;
+2. resolve D1;
+3. resolve or retire D2;
+4. treat D3 per its diagnostic classification;
+5. re-run the V2 comparisons and record what moved;
+6. freeze the final model;
+7. run the final audit;
+8. package the portfolio project.
+
+Out of scope, permanently:
+
+- additional airlines added merely to raise N;
+- ADS-B;
+- new APIs or frontends;
+- AI features;
+- continued tuning until a metric turns positive.
+
+The exclusion of extra carriers deserves one sentence of honesty, because
+2R.0's likely finding is that N is the binding constraint. That is a scope
+decision, not a claim that more data would not help. It would. The project has
+a finish line instead.

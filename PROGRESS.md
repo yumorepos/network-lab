@@ -29,6 +29,14 @@ the pooled agreement@10 advantage rests entirely on 2024-01 and disappears when
 that date is dropped, k=20 is saturated at recall 1.000 under both rankings,
 and no date is positive at k=5.
 
+**Next: Stage 2R**, a diagnostic stage defined in
+`docs/REMAINING_ROADMAP_REDESIGN.md`, which replaces the automatic W2.1 to W2.5
+sequence in `PHASE_5_6_PLAN.md` (preserved, superseded). Stage 2R establishes
+the resolution limit of the predictive comparison first, then attributes the
+score layers, then diagnoses the survey ceiling and the frequency degeneracy,
+then measures D1's blast radius. It ends at a three-way decision gate and
+changes no model behaviour.
+
 The replay ran 7 study-by-date snapshots, 463 decision rows, 22 positives, over
 decision dates 2022-01, 2023-01 and 2024-01 with 2020 and 2021 excluded.
 

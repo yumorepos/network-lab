@@ -1,5 +1,12 @@
 # Phase 5 and 6: from asserted model to measured model
 
+> **Status, 2026-08-16.** Milestone A is complete and frozen. **The W2 sequence
+> in this document is superseded** by `docs/REMAINING_ROADMAP_REDESIGN.md`,
+> following the independent review's roadmap verdict REDESIGN THE REMAINING
+> ROADMAP. This file is preserved unchanged below as the project's research
+> history and is not a current plan. Do not execute W2.1 through W2.5 from
+> here.
+
 Date: 2026-07-28. Written after Round 4 of INTEGRITY_REPORT.md closed the three
 P0 defects found in AUDIT_2026-07-27_VERIFIED.md.
 
