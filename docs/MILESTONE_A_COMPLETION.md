@@ -174,9 +174,11 @@ Run from the frozen cache. No network, `make data` not run.
 | `make reproducibility`, run 2 | **27 artifacts identical** across a warehouse rebuild | 0 |
 
 The `make test` row records the gate as measured at `d514ec2`. The independent
-review then found finding P1-1 (the historical chain was executed by no test),
-and `tests/test_replay_historical_chain.py` was added to close it: the suite is
-now **120 passed**. See docs/MILESTONE_A_INDEPENDENT_REVIEW.md addendum A.2.
+review then found finding P1-1, and closing it took two commits: the execution
+half at `4f8dbae` (the historical chain was executed by no test) and the
+provenance half at the closure commit (two high-leverage vintage paths carried
+no record and no guard). The suite is now **143 passed**. See
+docs/MILESTONE_A_INDEPENDENT_REVIEW.md addenda A.2 and B.
 
 ### 6.1 Reproducibility, run twice as required
 
@@ -242,4 +244,91 @@ frozen, and the gates are green.
 The project now has what it did not have at handoff: a predictive scoreboard,
 and an honest statement of how narrow it is.
 
-**MILESTONE A READY FOR INDEPENDENT REVIEW**
+---
+
+## 10. Independent review and closure
+
+Sections 1 to 9 above are the report as submitted for review, unchanged apart
+from the test count in section 6. This section records what the review returned
+and how it was closed.
+
+### 10.1 Verdicts
+
+| subject | verdict |
+|---|---|
+| Milestone A | **APPROVE WITH NONBLOCKING FINDINGS** |
+| the remaining roadmap | **REDESIGN THE REMAINING ROADMAP** |
+
+No P0. The review is `docs/MILESTONE_A_INDEPENDENT_REVIEW.md`; addendum A is a
+second reviewer session that re-derived P1-1 independently and widened it;
+addendum B records the closure.
+
+### 10.2 Finding status at freeze
+
+| finding | status | note |
+|---|---|---|
+| **P1-1** two high-leverage vintage paths have no guard and no provenance | **CLOSED** | execution coverage at `4f8dbae`, provenance records and guards at the closure commit |
+| **P1-2** the headline is a one-date result and the per-date breakdown was not published | **OPEN** | a reporting addition to unchanged numbers; see 10.3 |
+| P2-1 to P2-4 | open, nonblocking | recorded in the review, section 15 |
+
+### 10.3 P1-2 is open, deliberately, and is a prerequisite for the roadmap
+
+The required resolution is to emit the per-date and leave-one-date-out tables
+from `replay/report.py` into `docs/W1.4_replay_results.md` and the V2 document,
+and to state that the intervals do not represent variation across decision
+vintages. Addendum A.6 verified those numbers reproduce; it did not publish
+them.
+
+This is now load-bearing beyond the review. The per-date breakdown is the
+evidence the roadmap redesign rests on: that the pooled agreement@10 advantage
+is one market at one date, that 2022-01 and 2023-01 are zero, and that k=5 is
+negative. Those facts should be cited from a generated artifact rather than
+from a review appendix.
+
+### 10.4 Gate status at freeze
+
+| gate | result |
+|---|---|
+| `make test` | **143 passed** |
+| `make reproducibility` | **27 artifacts identical** across a warehouse rebuild |
+| replay re-executed end to end | `results.json` **bit-identical**; every family metric and bootstrap interval unchanged |
+
+The replay was re-run in full after the closure change. `outcomes`,
+`rightsizing_pairs`, `vintage_demand_dispersion` and `vintage_transfer_growth`
+are identical row for row. `decision_rows` differs only in `margin_pct`,
+`annual_contribution` and the `score_model` derived from `margin_pct`, at a
+maximum **3.3e-15 relative**, with zero verdict changes, zero frequency
+changes, and identical top-5, top-10 and top-20 sets at every decision date.
+`demand_pax_yr`, the column the corridor-growth path feeds, is bit-identical.
+
+That residual is not attributable to the change. Two runs of **identical**
+code in separate processes reproduce the same noise (`margin_pct` differing on
+79 rows at 9.1e-12 absolute), which is the DuckDB parallel float summation
+already documented in section 6.1.
+
+`provenance.parquet` gains 21 rows, three sources across seven study-by-date
+snapshots. That is the change, not a side effect of it.
+
+### 10.5 No model behaviour changed during closure
+
+- No value in `config/assumptions.yaml`, no study config, no threshold.
+- No model default and no scoring function.
+- `docs/W1.4_predictive_baseline_v2.md` is untouched. V2 remains the immutable
+  baseline describing the frozen pre-calibration engine.
+- No source data, no network call, `make data` not run.
+
+### 10.6 What this baseline still may not be used to claim
+
+Section 7 stands in full and is the most misusable part of this report. Added
+to it, from the review: the Family 4 null is measured on **15 positives across
+three dates on one study**, and the recall@10 difference interval is
+[-0.333, 0.333]. At k=20 both models reach recall 1.000, so the difference
+there is pinned at zero arithmetically rather than measured. A null on an
+instrument this blunt is not the same claim as a demonstrated absence of
+value, and the two should not be collapsed in any downstream write-up.
+
+### 10.7 Freeze
+
+**MILESTONE A FROZEN.** Reviewed, closed on P1-1, gates green, V2 immutable.
+The remaining roadmap is redesigned separately and is not part of this
+milestone.

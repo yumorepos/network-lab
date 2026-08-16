@@ -56,6 +56,7 @@ class Vintages:
     anchor_year: int
     gravity_vintage: str
     seats_year: int
+    growth_year: int
     fuel_as_of: str | None
     geography_vintage: str
     provenance: list[Provenance] = field(default_factory=list)
@@ -83,7 +84,6 @@ def resolve_vintages(cutoff_ym: int, con) -> Vintages:
     c = Cutoff(cutoff_ym)
     cy = cached_years(con)
     t100_max = c.t100_max_ym()
-    seats_year = max(y for y in cy["t100"] if y * 100 + 12 <= t100_max)
     v = Vintages(
         label=c.label,
         t100_max_ym=t100_max,
@@ -93,8 +93,9 @@ def resolve_vintages(cutoff_ym: int, con) -> Vintages:
         ca_year=c.statcan_cma_year(cy["ca"]),
         anchor_year=c.statcan_transborder_year(cy["anchor"]),
         gravity_vintage=c.gravity_vintage(GRAVITY_WINDOWS),
-        seats_year=seats_year,
-        fuel_as_of=f"{cutoff_ym//100}-{cutoff_ym%100:02d}-01",
+        seats_year=c.t100_seats_year(cy["t100"], t100_max),
+        growth_year=c.t100_corridor_growth_year(cy["t100"], t100_max),
+        fuel_as_of=c.eia_fuel_as_of(),
         geography_vintage=c.geography_vintage(),
     )
     c.carrier_brand_vintage()
@@ -113,7 +114,8 @@ def production_vintages() -> Vintages:
     return Vintages(
         label="production", t100_max_ym=0, db1b_year=2024, form41_year=2024,
         bea_year=2024, ca_year=0, anchor_year=2018, gravity_vintage="current",
-        seats_year=2024, fuel_as_of=None, geography_vintage="2023")
+        seats_year=2024, growth_year=0, fuel_as_of=None,
+        geography_vintage="2023")
 
 
 # --------------------------------------------------------------- layer 1
@@ -199,6 +201,19 @@ def build_transfer(con, v: Vintages) -> dict:
     if v.label == "production":
         return yaml.safe_load((OUTPUTS / "transfer_factor.yaml").read_text())
 
+    # The corridor growth year is the largest single lever on transborder
+    # demand: the ratio multiplies every anchored and every capped row. Taking
+    # it from the panel end instead of the permitted window multiplies 2023-01
+    # YYC demand by 5.73. Resolved and recorded in replay/vintage.py; this is
+    # the use-site check, deliberate redundancy against a later edit handing
+    # this layer a year the T-100 window does not permit.
+    if v.growth_year * 100 + 12 > v.t100_max_ym:
+        raise ValueError(
+            f"corridor growth year {v.growth_year} is not a complete year "
+            f"within the permitted T-100 window {v.t100_max_ym} at cutoff "
+            f"{v.label}. The replay fails closed rather than applying a "
+            "growth ratio the decision could not have computed.")
+
     metros = metro_anchor_points(
         con, seats_year=v.seats_year,
         metro_override=pit_metros.us_at(v.bea_year)[
@@ -237,10 +252,11 @@ def build_transfer(con, v: Vintages) -> dict:
     df["gravity_pred"] = gravity.predict(df, v.gravity_vintage)
     df["transfer"] = df["obs"] / df["gravity_pred"]
 
-    latest_full = max(y for y in
-                      {int(r[0]) for r in con.execute(
-                          "SELECT DISTINCT year FROM fact_segment").fetchall()}
-                      if y * 100 + 12 <= v.t100_max_ym)
+    # Resolved and recorded in replay/vintage.py, not recomputed here: this
+    # line used to select the year itself, which is how the lever came to
+    # carry no provenance record at all (P1-1). Same rule, same value, now
+    # declared and guarded above.
+    latest_full = v.growth_year
     growth = {}
     for hub in df["hub"].unique():
         g = con.execute("""
@@ -472,6 +488,14 @@ def build_share(study_id: str, con, v: Vintages,
 def build_economics(study_id: str, con, v: Vintages, dem: pd.DataFrame,
                     shr: pd.DataFrame) -> pd.DataFrame:
     cfg, a = study(study_id), assumptions()
+    # fuel_price_base falls back to the panel end on None, which is future
+    # information at every historical cutoff and moves the 2022-01 price by
+    # +43.0% straight into margin_pct. Refuse the fallback rather than take it
+    # silently. Recorded as a provenance entry in replay/vintage.py.
+    if v.label != "production" and v.fuel_as_of is None:
+        raise ValueError(
+            f"no fuel vintage resolved at cutoff {v.label}; fuel_price_base "
+            "would fall back to the latest observation in the panel.")
     comp_cfg = cfg["economics"]["cost_comparator"]
     if comp_cfg == "from_assumptions":
         if cfg["carrier"] == "PD":

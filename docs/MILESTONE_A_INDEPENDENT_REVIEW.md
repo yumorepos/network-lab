@@ -1002,3 +1002,175 @@ and **REDESIGN THE REMAINING ROADMAP** for the roadmap. P1-1 is confirmed and
 its required resolution is widened, which strengthens the original finding
 rather than contradicting it.
 
+
+---
+
+## Addendum, 2026-08-15, entry 2: P1-1 CLOSED
+
+Added by the project owner's session after the review and after addendum entry
+1. The original review body, its findings, both verdicts in section 18 and
+addendum entry 1 are preserved unchanged. This entry records the resolution of
+P1-1 and nothing else. No model behaviour was changed.
+
+### B.1 What the resolution had to cover
+
+Section 15 required a `Provenance` record and a guard per path. Addendum A.7
+widened that: the historical chain must also **execute** under test, because a
+guard on a path no test runs cannot fire.
+
+The execution half closed at commit `4f8dbae` with
+`tests/test_replay_historical_chain.py`. The provenance half, which is what
+section 15 asked for, closes here.
+
+### B.2 The two records
+
+Both paths now resolve through `replay/vintage.py` and emit a record on the
+same contract as the other eight sources:
+
+| resolver | source string | policy | lookahead exception |
+|---|---|---|---|
+| `Cutoff.t100_corridor_growth_year` | `BTS T-100 Segment (corridor growth year)` | `as_available_by_cutoff` | none |
+| `Cutoff.eia_fuel_as_of` | `EIA jet fuel spot price` | `as_available_by_cutoff` | declared, see B.4 |
+
+Emitted values, read from `provenance.parquet` rather than transcribed:
+
+| cutoff | corridor growth year | first available | fuel window |
+|---|---|---|---|
+| 2022-01 | 2019 | 2020-03 | 365 days ending 2022-01-01 |
+| 2023-01 | 2021 | 2022-03 | 365 days ending 2023-01-01 |
+| 2024-01 | 2022 | 2023-03 | 365 days ending 2024-01-01 |
+
+The 2023-01 value is 2021, which is the year section A.3 identifies as correct
+and against which the 5.73x leak was measured.
+
+`replay/snapshot.py:build_transfer` no longer selects the growth year itself.
+It reads `v.growth_year`, the value the record names. That is the point: a
+provenance record computed separately from the value in use is a claim that can
+drift from the code, which is the defect class P1-1 belongs to.
+
+### B.3 A third gap found while closing this one
+
+`seats_year` was resolved by the same inline `max(...)` expression in
+`resolve_vintages` and was equally unrecorded. The review did not name it and
+it carries far less leverage than the growth year, but the claim in
+`replay/vintage.py`'s docstring is false while any source is missing. It now
+resolves through `Cutoff.t100_seats_year` and emits
+`BTS T-100 Segment (annual seats)`.
+
+The growth year and the seats year are the same selection over the same window.
+They share one private resolver, `_t100_complete_year`, so they cannot drift
+apart, and are recorded separately because they are two distinct claims about
+what the decision was permitted to read.
+
+### B.4 A disclosure the fuel record adds
+
+`fact_fuel` is a weekly series and the window ends on the decision date itself,
+so the final weekly observation in the trailing average would in practice have
+been published a few days after the decision. One observation of roughly 52.
+It is now declared in the record's `lookahead_exception` rather than absorbed
+silently, and appears in section 6 of `docs/W1.4_replay_results.md` alongside
+the BEA, StatCan and Census declarations.
+
+This is a new **disclosure**, not a new leak and not a behaviour change: the
+selected price is unchanged to the last bit. EIA spot prices do not revise, so
+nothing earlier in the window is affected.
+
+### B.5 The guards, and what each kind of test catches
+
+| guard | location | refuses |
+|---|---|---|
+| resolver | `Cutoff._t100_complete_year` | selecting a T-100 year the window does not permit; raises `LookupError` |
+| use site | `build_transfer`, top of the historical branch | a growth year handed in that the window does not permit |
+| use site | `build_economics`, before any work | a historical snapshot with no fuel vintage resolved |
+
+The guards and the chain suite's instrumentation catch different failures and
+neither subsumes the other. A guard catches a vintage resolved wrongly. The
+instrumentation catches a call site that bypasses the resolved vintage
+altogether, which is exactly what this review's second mutation did by calling
+`fuel_price_base(con, None)` directly.
+
+### B.6 Demonstrated by injection
+
+Per the project's round-4 rule, a test never shown to fail is a test of
+nothing. Four mutations were injected into `replay/vintage.py`, each reverted
+and checksum-verified before the next:
+
+| mutation | new provenance tests | leakage + parity |
+|---|---|---|
+| **M6** the corridor-growth record is never recorded | **8 failed**, 14 passed | 49 passed |
+| **M7** the EIA fuel record is never recorded | **8 failed**, 14 passed | 49 passed |
+| **M8** the growth record names a year `build_transfer` did not use | **4 failed**, 18 passed | 49 passed |
+| **M9** the fuel residual lookahead is left undeclared | **4 failed**, 18 passed | 49 passed |
+
+Every pre-existing suite passes under every mutation, which is the same shape
+as the original finding: these defects are invisible to everything that existed
+before.
+
+The two original mutations are now refused rather than merely detected. M4
+cannot be reintroduced through the resolver at all, and is demonstrated in
+suite by injecting the panel-end year through `Vintages`; M5 is refused by the
+`build_economics` guard.
+
+### B.7 Evidence that nothing moved
+
+| gate | result |
+|---|---|
+| `make test` | **143 passed**, up from 120 at `4f8dbae` and 94 at `d514ec2` |
+| `make reproducibility` | **27 artifacts identical** across a warehouse rebuild |
+| replay re-executed end to end | `results.json` **bit-identical**: every Family 1, 2, 3 and 4 metric and every bootstrap interval |
+
+`outcomes.parquet`, `rightsizing_pairs.parquet`,
+`vintage_demand_dispersion.parquet` and `vintage_transfer_growth.parquet` are
+identical row for row. `provenance.parquet` grows from 63 to 84 rows, three
+sources across seven study-by-date snapshots, which is the change rather than a
+side effect of it. `docs/W1.4_replay_results.md` gains 10 lines, all of them in
+section 6.
+
+`decision_rows.parquet` differs in `margin_pct`, `annual_contribution` and the
+`score_model` derived from `margin_pct`, at a maximum of **3.3e-15 relative**.
+Zero verdict changes, zero frequency changes, zero rank changes, and identical
+top-5, top-10 and top-20 sets at every decision date. `demand_pax_yr`, the
+column the corridor-growth path feeds, is bit-identical, which is the direct
+evidence that the growth change is inert.
+
+That residual is not attributable to the change. Two runs of **identical** code
+in separate processes reproduce the same noise: `margin_pct` differing on 79
+rows at 9.1e-12 absolute, `demand_pax_yr` exactly zero. It is the DuckDB
+parallel float summation recorded in section 6.1 of
+`docs/MILESTONE_A_COMPLETION.md`.
+
+### B.8 Addendum A.5 resolved
+
+The parity test count was corrected from 15 to the collected 13 in
+`PROGRESS.md` and `docs/MILESTONE_A_COMPLETION.md` at commit `4f8dbae`. A.5 is
+closed.
+
+### B.9 Status
+
+**P1-1: CLOSED.**
+
+**P1-2 remains OPEN**, and this entry does not touch it. Addendum A.6 *verified*
+that the per-date decomposition reproduces; it did not *publish* it. The
+required resolution in section 15 is a reporting change: emit the per-date and
+leave-one-date-out tables from `replay/report.py` into
+`docs/W1.4_replay_results.md` and the V2 document, and state that the intervals
+do not represent variation across decision vintages. None of that has been
+done.
+
+This matters more now than it did at review time. The per-date breakdown is
+precisely the evidence the roadmap redesign rests on: that the pooled
+agreement@10 advantage is one market at one date, that 2022-01 and 2023-01 are
+zero, and that k=5 is negative. A redesign citing numbers that live only in a
+review appendix is weaker than one citing generated artifacts. P1-2 should be
+closed before or alongside the roadmap document.
+
+Both section 18 verdicts stand: **APPROVE WITH NONBLOCKING FINDINGS** for
+Milestone A, and **REDESIGN THE REMAINING ROADMAP** for the roadmap.
+
+### B.10 What did not change
+
+- No value in `config/assumptions.yaml`, no study config, no threshold.
+- No model default and no scoring function.
+- `docs/W1.4_predictive_baseline_v2.md` is untouched. V2 remains the immutable
+  baseline describing the frozen pre-calibration engine.
+- No source data. No network call. `make data` was not run.

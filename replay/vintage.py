@@ -27,6 +27,11 @@ The three vintage policies are distinct claims and must not be blurred:
                                 than the lag alone would imply. The StatCan
                                 transborder table is the case that matters.
 
+The opening claim was false when written: the corridor-growth year and the EIA
+fuel `as_of` were resolved inside `replay/snapshot.py` and recorded nowhere,
+which is finding P1-1 of the Milestone A independent review. Both are resolved
+and recorded here now, and the T-100 seats year with them.
+
 Nothing in this module reads the network, and nothing writes to the warehouse.
 """
 from __future__ import annotations
@@ -157,6 +162,86 @@ class Cutoff:
             vintage_policy=AS_AVAILABLE,
             lookahead_exception=None))
         return m
+
+    def _t100_complete_year(self, cached: set[int], max_ym: int) -> int:
+        """Latest complete T-100 calendar year inside the permitted window.
+
+        Shared by the two callers below rather than duplicated, because two
+        independent computations of the same selection are precisely how the
+        corridor-growth year came to disagree with nothing and be recorded
+        nowhere. One selection, one rule, two declared uses.
+        """
+        ok = [y for y in cached if y * 100 + 12 <= max_ym]
+        if not ok:
+            raise LookupError(
+                f"no complete T-100 calendar year within {_fmt(max_ym)} at "
+                f"cutoff {self.label}: cached {sorted(cached)}. The replay "
+                "fails closed rather than reaching for a later year.")
+        return max(ok)
+
+    def t100_seats_year(self, cached: set[int], max_ym: int) -> int:
+        """Airport seat totals. Feeds the candidate seat floor and the
+        satellite rule."""
+        y = self._t100_complete_year(cached, max_ym)
+        self._record(Provenance(
+            source="BTS T-100 Segment (annual seats)",
+            reference_period=str(y),
+            original_availability_date=_fmt(
+                _add_months(y * 100 + 12, _lag("t100_months"))),
+            data_vintage_date=self.data_vintage_date,
+            permitted_cutoff=self.label,
+            vintage_policy=AS_AVAILABLE,
+            lookahead_exception=None))
+        return y
+
+    def t100_corridor_growth_year(self, cached: set[int], max_ym: int) -> int:
+        """Numerator year of the corridor growth ratio in `build_transfer`.
+
+        The single largest lever on transborder demand: the ratio is applied
+        to every anchored and every capped row, so taking this year from the
+        panel end rather than the permitted window multiplies 2023-01 YYC
+        demand by 5.73. It resolves to the same year as the seats vintage by
+        construction, and is recorded separately because it is a separate
+        claim about what the decision was allowed to read.
+        """
+        y = self._t100_complete_year(cached, max_ym)
+        self._record(Provenance(
+            source="BTS T-100 Segment (corridor growth year)",
+            reference_period=str(y),
+            original_availability_date=_fmt(
+                _add_months(y * 100 + 12, _lag("t100_months"))),
+            data_vintage_date=self.data_vintage_date,
+            permitted_cutoff=self.label,
+            vintage_policy=AS_AVAILABLE,
+            lookahead_exception=None))
+        return y
+
+    def eia_fuel_as_of(self) -> str:
+        """EIA jet fuel spot, trailing 365 days ending at the decision date.
+
+        `models.economics.fuel_price_base` falls back to the panel end when it
+        receives None, which at a 2022-01 cutoff reads a price 43.0% above the
+        vintaged one and feeds `margin_pct` directly. Resolving the date here
+        rather than at the call site means the fallback cannot be taken
+        silently at a historical cutoff.
+        """
+        as_of = f"{self.year}-{self.ym % 100:02d}-01"
+        self._record(Provenance(
+            source="EIA jet fuel spot price",
+            reference_period=f"365 days ending {as_of}",
+            original_availability_date=as_of,
+            data_vintage_date=self.data_vintage_date,
+            permitted_cutoff=self.label,
+            vintage_policy=AS_AVAILABLE,
+            lookahead_exception=(
+                "fact_fuel is a weekly series and the window ends on the "
+                "decision date itself, so the final weekly observation would "
+                "in practice have been published a few days after it. One "
+                "observation of roughly 52 in a trailing average, in the only "
+                "direction the frozen model can be run offline. EIA spot "
+                "prices do not revise, so nothing earlier in the window is "
+                "affected.")))
+        return as_of
 
     def db1b_year(self, cached: set[int]) -> int:
         y = self._latest_complete_year(

@@ -29,14 +29,26 @@ Both mutations from the review were re-run against this file and both fail it:
         -> test_corridor_growth_year_is_the_latest_permitted_complete_year
     build_economics calling fuel_price_base(con, None)
         -> test_fuel_price_is_requested_at_the_cutoff_vintage
+
+The execution half of P1-1 closed there. The section at the foot of this file
+closes the other half, the one section 15 of the review actually asked for:
+both paths now resolve through `replay/vintage.py` and emit a `Provenance`
+record, and both carry a use-site guard that refuses an inadmissible vintage.
+The distinction the two kinds of test draw is worth keeping in mind. The guards
+catch a vintage that is resolved wrongly; the instrumentation above catches a
+call site that bypasses the resolved vintage altogether, which is what the
+review's second mutation did. Neither subsumes the other.
 """
 from __future__ import annotations
+
+import dataclasses
 
 import pytest
 
 from models.common import connect
 from models.economics import fuel_price_base
 from replay import snapshot as S
+from replay import vintage as V
 
 CUTOFFS = [202201, 202301, 202401]
 
@@ -243,3 +255,150 @@ def test_no_layer_reads_a_vintage_at_or_after_the_cutoff(
     assert hi * 100 + 12 < cutoff, (
         f"{study_id}@{cutoff}: gravity vintage {v.gravity_vintage} "
         f"calibrated through {hi}, which is not before the cutoff")
+
+
+# --------------------------------------------------------------- provenance
+# Section 15 of the review asked for two things per path: "Add a Provenance
+# record for EIA fuel and for the corridor-growth year, and a guard per path
+# asserting the selected year and date lie at or before the permitted cutoff."
+# The tests above cover execution. These cover the record and the guard.
+
+GROWTH_SOURCE = "BTS T-100 Segment (corridor growth year)"
+FUEL_SOURCE = "EIA jet fuel spot price"
+
+
+def _record(vintages, source: str):
+    """The one provenance record for `source`, or a useful failure."""
+    hits = [p for p in vintages.provenance if p.source == source]
+    assert len(hits) == 1, (
+        f"expected exactly one provenance record for {source!r} at "
+        f"{vintages.label}, found {len(hits)}. Sources present: "
+        f"{sorted(p.source for p in vintages.provenance)}")
+    return hits[0]
+
+
+@pytest.mark.parametrize("study_id,cutoff", CASES)
+def test_the_corridor_growth_year_carries_a_provenance_record(
+        run, study_id, cutoff):
+    """P1-1, first half. `replay/vintage.py` claimed every source a snapshot
+    reads carries a record; for this one it was false."""
+    snaps, _, _ = run
+    v = snaps[(study_id, cutoff)]["vintages"]
+    p = _record(v, GROWTH_SOURCE)
+    assert p.permitted_cutoff == v.label
+    assert p.original_availability_date <= v.label, (
+        f"{study_id}@{cutoff}: corridor growth year {p.reference_period} first "
+        f"became available {p.original_availability_date}, after the cutoff")
+
+
+@pytest.mark.parametrize("study_id,cutoff", CASES)
+def test_the_fuel_vintage_carries_a_provenance_record(run, study_id, cutoff):
+    """P1-1, second half."""
+    snaps, _, _ = run
+    v = snaps[(study_id, cutoff)]["vintages"]
+    p = _record(v, FUEL_SOURCE)
+    assert p.permitted_cutoff == v.label
+    assert p.original_availability_date[:7] <= v.label, (
+        f"{study_id}@{cutoff}: fuel window ends {p.original_availability_date}, "
+        f"after the cutoff")
+    assert p.lookahead_exception, (
+        "the window ends on the decision date itself and fact_fuel is weekly, "
+        "so the final observation postdates the decision by a few days. That "
+        "residual is declared, not absorbed silently.")
+
+
+@pytest.mark.parametrize("study_id,cutoff", CASES)
+def test_the_growth_record_names_the_year_the_transfer_layer_actually_used(
+        run, study_id, cutoff):
+    """A record that does not track the value in use is worse than no record:
+    it is a false claim about what the decision read. The two agree here by
+    construction, and this asserts the construction was not undone."""
+    snaps, _, _ = run
+    r = snaps[(study_id, cutoff)]
+    p = _record(r["vintages"], GROWTH_SOURCE)
+    assert p.reference_period == str(r["transfer"]["growth_year"]), (
+        f"{study_id}@{cutoff}: provenance names year {p.reference_period}, "
+        f"build_transfer used {r['transfer']['growth_year']}")
+    assert r["transfer"]["growth_year"] == r["vintages"].growth_year
+
+
+@pytest.mark.parametrize("study_id,cutoff", CASES)
+def test_the_fuel_record_names_the_date_economics_actually_requested(
+        run, study_id, cutoff):
+    """Same contract on the fuel path, checked against the `as_of` every
+    `fuel_price_base` call received rather than against the field alone."""
+    snaps, _, fuel_seen = run
+    p = _record(snaps[(study_id, cutoff)]["vintages"], FUEL_SOURCE)
+    seen = set(fuel_seen.get((study_id, cutoff), []))
+    assert seen == {p.original_availability_date}, (
+        f"{study_id}@{cutoff}: provenance names "
+        f"{p.original_availability_date}, build_economics requested {seen}")
+    assert p.reference_period == f"365 days ending {p.original_availability_date}"
+
+
+# ------------------------------------------------------ the guards, by injection
+@pytest.mark.parametrize("cutoff", CUTOFFS)
+def test_a_future_growth_year_cannot_masquerade_as_permitted(con, cutoff):
+    """The review's M4 mutation, injected through the vintage rather than by
+    patching the source: take the growth year from the panel end.
+
+    Both layers of the defence are exercised. The resolver refuses to select a
+    year the window does not permit, and the use-site guard in build_transfer
+    refuses one handed to it.
+    """
+    v = S.resolve_vintages(cutoff, con)
+    cached = S.cached_years(con)["t100"]
+    panel_end = con.execute(
+        "SELECT max(year::INT*100+month) FROM fact_segment").fetchone()[0]
+    leaked = max(y for y in cached if y * 100 + 12 <= panel_end)
+    assert leaked > v.growth_year, (
+        f"the panel-end year {leaked} does not differ from the permitted "
+        f"{v.growth_year} at {cutoff}; this test would prove nothing")
+
+    with pytest.raises(ValueError, match="corridor growth year"):
+        S.build_transfer(con, dataclasses.replace(v, growth_year=leaked))
+
+    with pytest.raises(LookupError, match="no complete T-100 calendar year"):
+        V.Cutoff(cutoff).t100_corridor_growth_year({leaked}, v.t100_max_ym)
+
+
+@pytest.mark.parametrize("cutoff", CUTOFFS)
+def test_a_later_fuel_observation_cannot_masquerade_as_permitted(con, cutoff):
+    """The review's M5 mutation, same treatment.
+
+    The vintaged window must exclude every observation after the decision date,
+    and must actually bite: a window that happens to end at the panel end would
+    satisfy the first condition and still be a leak.
+    """
+    v = S.resolve_vintages(cutoff, con)
+    latest_in_window = con.execute(
+        "SELECT max(date) FROM fact_fuel WHERE date <= ?::DATE",
+        [v.fuel_as_of]).fetchone()[0]
+    panel_latest = con.execute("SELECT max(date) FROM fact_fuel").fetchone()[0]
+    assert str(latest_in_window) <= v.fuel_as_of
+    assert latest_in_window != panel_latest, (
+        f"the vintaged fuel window at {cutoff} ends at the panel end; the "
+        "as_of is not constraining anything")
+    assert (fuel_price_base(con, v.fuel_as_of)
+            != fuel_price_base(con, None)), (
+        f"the vintaged and unvintaged fuel prices agree at {cutoff}, so this "
+        "guard would pass even if the vintage were dropped")
+
+    with pytest.raises(ValueError, match="no fuel vintage"):
+        S.build_economics("westjet_yyc", con,
+                          dataclasses.replace(v, fuel_as_of=None), None, None)
+
+
+# ------------------------------------------------------- production untouched
+def test_the_new_guards_do_not_fire_on_the_production_path():
+    """Production reads the committed transfer factor and the unvintaged fuel
+    price by design, and both guards are scoped to historical vintages. The
+    parity suite owns the numbers; this owns the scoping."""
+    v = S.production_vintages()
+    assert v.fuel_as_of is None
+    con = connect(read_only=True)
+    try:
+        tf = S.build_transfer(con, v)
+        assert "growth_t100" in tf or "growth_t100_2018_to_2024" in tf
+    finally:
+        con.close()
