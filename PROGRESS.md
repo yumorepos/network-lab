@@ -1,5 +1,60 @@
 # Progress log
 
+## Stage 2R.1 to 2R.4 complete (2026-08-16): the mechanism diagnostics
+
+Generated into `docs/STAGE_2R_DIAGNOSTICS.md` by `replay/stage2r_report.py`,
+guarded by `tests/test_stage2r_diagnostics.py`. Nothing was fitted, calibrated
+or repaired, no assumption or threshold moved, and the rebuilt chain reproduces
+`decision_rows.parquet` market by market before any diagnostic runs.
+
+**The binding constraint is not D1, D2 or D3.** Median modelled load factor at
+3x weekly on the study gauge is 0.075 against a feasibility floor of 0.50. Only
+18 of 463 decision rows reach the floor at any frequency and only 9 have a
+positive annual contribution. The candidate sets are thinner than the smallest
+schedule the model is allowed to fly, so every downstream layer is evaluated in
+a regime where nothing is feasible.
+
+**2R.1.** Two layers materially reorder and two do not. Share is MEANINGFUL
+DIFFERENTIATION and rests almost entirely on the one-stop reconstruction: 85 of
+88 WestJet candidates have no nonstop incumbent and 33 have no reconstructed
+competitor at all. Economics is MEANINGFUL DIFFERENTIATION and applies a
+distance tilt to captured demand. Right-sizing is MOSTLY REDUNDANT: ranking by
+margin at the minimum option and at the chosen option are the same ordering,
+Spearman exactly 1.000 at every date. The verdict is NOT SEPARABLY
+IDENTIFIABLE, constant at two of three dates. This gives Stage 2R.0's null a
+mechanical explanation: away from capacity, margin is a monotone function of
+captured demand times a distance-driven fare-over-cost factor.
+
+**2R.2.** D3A is a DOWNSTREAM ASYMMETRY, not a ranking bottleneck. The tied
+block is 51, 50 and 49 rows at one value, sits entirely below demand rank 50,
+reaches no demand top 20 and contains no WestJet launch, yet the margin score
+pulls it into its own top 10 and top 20. D3B is a separate CORRECTNESS ISSUE:
+the tie group is the same size at every floor from 280 to 4,000 and gets larger
+as the floor falls, so a floor correction cannot be sold as removing the
+compression. Porter has one capped launch, correcting the roadmap's
+preliminary note.
+
+**2R.3.** D2 is MULTIPLE INTERACTING CAUSES, and the QSI frequency exponent is
+not among the primary ones. 445 of 463 decisions never reach a comparison: they
+take the branch that fires when no option clears the load-factor floor, which
+returns the highest load factor and is therefore identical to returning 3x.
+7x wins in 2 of 463 rows, both where the 3x schedule is already 98% full. The
+median market would need 78 times its captured demand for 7x to win.
+Recommendation, not implemented: **RETIRE / DE-SCOPE RIGHT-SIZING**.
+
+**2R.4.** D1's blast radius is DEMAND-LEVEL and ECONOMICS only. Growth is a
+common positive scalar on every demand branch, verified on the rows: the demand
+ratio is constant to six decimals, both rankings are identical, **zero WestJet
+verdicts change**, and every Family 1 and Family 4 figure is unchanged. Porter
+does move, 6 verdicts, because its candidate set reaches capacity where the
+margin transform stops being monotone. The repair stays scheduled and
+unconditional; 2023-01 is not rescued by it.
+
+**Provisional W2 necessity, not authorised.** W2.1, W2.4 and W2.5 LIKELY NOT
+JUSTIFIED. W2.2 and W2.3 DEPENDENT ON STRUCTURAL REPAIR.
+
+**Next: 2R.5 and the Stage 2R decision gate.** Not started.
+
 ## Stage 2R.0 complete (2026-08-16): the resolution limit, measured
 
 **Verdict: LIMITED TO LARGE EFFECTS.** The first stage of the redesigned

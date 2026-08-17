@@ -18,6 +18,9 @@ validation numbers).
 - [STAGE_2R0_RESOLUTION.md](STAGE_2R0_RESOLUTION.md) - generated: what the
   frozen predictive comparison can and cannot distinguish, and the verdict
   that binds how the rest of Stage 2R may be read
+- [STAGE_2R_DIAGNOSTICS.md](STAGE_2R_DIAGNOSTICS.md) - generated: score-layer
+  attribution, the survey ceiling, the frequency degeneracy and D1's blast
+  radius, all as mechanism rather than prediction
 - [interview_story.md](interview_story.md) - the narrative, numbers first
 - [resume_material.md](resume_material.md) - bullets and talking points
 - [deploy.md](deploy.md) - one-command GitHub + Streamlit Community Cloud path
