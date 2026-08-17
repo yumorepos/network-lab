@@ -16,6 +16,7 @@ from ingest.common import DATA_PARQUET, ROOT
 # implementation of agreement@k here could disagree with the one that produced
 # results.json without anything failing, which is the defect
 # models/share_validation.py shipped with in round 4.
+from replay import vintage as V
 from replay.run_replay import K_VALUES, _agreement_at_k, _recall_at_k
 
 REPLAY = DATA_PARQUET / "replay"
@@ -367,18 +368,21 @@ def main() -> str:
     # ------------------------------------------------------------- defects
     tg = pd.read_parquet(REPLAY / "vintage_transfer_growth.parquet")
     dd = pd.read_parquet(REPLAY / "vintage_demand_dispersion.parquet")
-    A("## 7. Defects the replay exposed. Measured, not fixed.")
+    A("## 7. Defects the replay exposed")
     A("")
-    A("Milestone A records defects and Phase 6 fixes them under a change "
-      "report. None of the following was changed to produce these results.")
+    A("Milestone A recorded these and later stages disposed of them under "
+      "change reports. D1 has since been repaired and this run carries the "
+      "repair; D2 and D3 are recorded as found. Nothing was changed to "
+      "produce the metrics above.")
     A("")
 
-    A("### D1. The corridor-growth term collapses transborder demand at a "
-      "COVID vintage")
+    A("### D1. The corridor-growth vintage. Found here, repaired under T1.")
     A("")
-    A("Anchored transborder demand is `anchor x growth`, where growth is a raw "
-      "ratio of T-100 corridor traffic in the latest complete year to the "
-      "anchor year, with no COVID handling of any kind.")
+    A("Anchored transborder demand is `anchor x growth`, where growth is a "
+      "ratio of T-100 corridor traffic in a single later year to the anchor "
+      "year. The defect was that the later year was chosen without applying "
+      "any exclusion, so a declared structural-break year could serve as the "
+      "numerator.")
     A("")
     A("| cutoff | growth year | YYC growth | YYZ growth | YYC transfer | YYZ transfer |")
     A("|---|---|---|---|---|---|")
@@ -390,10 +394,6 @@ def main() -> str:
           f"{yyc['transfer_per_hub_median']:.3f} | "
           f"{yyz['transfer_per_hub_median']:.3f} |")
     A("")
-    A("At the 2023-01 cutoff the latest complete T-100 year is 2021, so growth "
-      "is **0.196** at YYC and **0.166** at YYZ. Every anchored WestJet market "
-      "is scaled to roughly a fifth of its 2018 level:")
-    A("")
     A("| study | cutoff | method | n | median demand | median margin |")
     A("|---|---|---|---|---|---|")
     for _, r in dd.iterrows():
@@ -401,25 +401,43 @@ def main() -> str:
           f"{int(r['n'])} | {r['median_demand']:,.0f} | "
           f"{r['median_margin']:,.0f}% |")
     A("")
-    A("**Consequence for reading these results.** The 2023-01 WestJet cell is "
-      "dominated by this artifact: median margin around -3,800% and every "
-      "market PASS. Its five positives are therefore scored by a model that "
-      "believed the market had shrunk 80%. The 2024-01 cell is affected less "
-      "severely (growth 0.739) and 2022-01 barely at all (growth 1.057).")
+    breaks = sorted(V.structural_break_years())
+    picked = sorted({int(y) for y in tg["growth_year"]})
+    still_broken = [y for y in picked if y in breaks]
+    if still_broken:
+        A(f"**D1 is live in this run.** A structural-break year "
+          f"{still_broken} is serving as the corridor-growth numerator, so "
+          "every anchored and every capped transborder row at that cutoff is "
+          "scaled by a ratio anchored on a COVID year and applied as a "
+          "permanent level shift.")
+    else:
+        A(f"**D1 was repaired in T1 and this run carries the repair.** The "
+          f"corridor-growth numerator is now the latest complete T-100 year "
+          f"in the permitted window that is not a declared structural break "
+          f"{breaks}; the years selected above are {picked}. Before the "
+          "repair the 2023-01 cutoff took 2021, scaling every anchored "
+          "WestJet market to roughly a fifth of its 2018 level. See "
+          "`docs/change_reports/D1_corridor_growth_vintage.md` for the frozen "
+          "protocol, the eight predictions it made and the measured "
+          "before-and-after, and `docs/W1.4_POST_D1_COMPARISON.md` for the "
+          "comparison against the immutable V2 baseline.")
     A("")
-    A("**This is a point-in-time behaviour, not a replay bug.** A planner in "
-      "January 2023 genuinely saw depressed 2021 traffic. What no planner "
-      "would have done is treat it as a permanent level shift with no recovery "
-      "expectation, and the frozen model has no mechanism to do otherwise. "
-      "Production avoids the problem only because it happens to read 2024.")
+    A("**The repair moved no verdict, no ranking and no metric.** It changes "
+      "demand and margin LEVELS at the one affected cutoff and nothing else, "
+      "which is what makes it a correctness fix rather than an improvement. "
+      "Growth enters as a common positive scalar on every demand branch, so "
+      "it cannot reorder the demand comparator, and away from capacity the "
+      "margin ranking inherits the same invariance.")
     A("")
-    A("The protocol admits 2021 as input data while excluding it as a decision "
-      "vintage, with the rationale recorded in `config/replay_protocol.yaml` "
-      "**before** the replay ran: a planner at 2023-01 did in fact hold 2021 "
-      "data. That was a design choice made in advance, so it stands as "
-      "primary. Excluding 2021 as data too would move the 2023-01 growth year "
-      "back to 2019; that is a permitted labelled sensitivity and is not run "
-      "here.")
+    A("**The defect was point-in-time behaviour, not a replay bug, and that "
+      "is why the repair is narrow.** A planner in January 2023 genuinely saw "
+      "depressed 2021 traffic, and the protocol admits 2021 as input data on "
+      "exactly that ground. What no planner would have done is put it at one "
+      "end of a two-point growth ratio and treat the result as permanent. So "
+      "a structural-break year remains admissible as a LEVEL the decision "
+      "read, and is no longer admissible as the ENDPOINT OF A RATIO. "
+      "Production was never exposed: `models/transfer.py` reads a fixed "
+      "2018-to-2024 ratio containing no break year.")
     A("")
 
     A("### D2. Right-sizing has no discriminating power")
