@@ -1,5 +1,43 @@
 # Progress log
 
+## Stage 2R closed (2026-08-16): the decision gate
+
+**Gate verdict: NO DETECTABLE INCREMENTAL VALUE AT CURRENT RESOLUTION.**
+Generated into `docs/STAGE_2R_DECISION.md` by `replay/stage2r_gate_report.py`,
+guarded by `tests/test_stage2r_decision.py`. A decision stage: nothing fitted,
+calibrated, ingested or repaired, and D1, D2 and D3 are exactly as V2 froze
+them.
+
+**The product claim is narrowed to fixed-gauge route screening.** Two products
+were hiding in the code. The built one asks whether a candidate route is
+economically supportable on the configured gauge against a fixed schedule menu.
+The one the documentation claims, choosing an aircraft and a frequency, is not
+supported: one gauge, a menu starting at 3x weekly, and 445 of 463 decisions
+that never reach a comparison. Under the narrower claim, most routes failing is
+a legitimate answer rather than a defect. **RETIRE / DE-SCOPE RIGHT-SIZING**;
+the replacement terminology and an audit of the 15 lines across 7 reader-facing
+surfaces that need it are in the decision document.
+
+**Necessity gates.** W2.1, W2.2, W2.4 and W2.5 NOT JUSTIFIED. W2.3 REQUIRED,
+but as a validation rather than a refit: the one-stop reconstruction carries
+95% of WestJet competitor preference and the existing share check covers that
+structural regime with 2 of 66 markets, which is closable by extending a check
+that already exists. W2.2 is settled by measurement: unresolved regional flying
+is under 0.15% of hub-origin departures at all three hubs.
+
+**Defects.** D1 MUST FIX BEFORE FINAL AUDIT, with the 2R.4 predictions as its
+acceptance test. D2 RETIRE / DE-SCOPE. D3A DOCUMENTATION, since zero of 172
+survey-ceiling rows clear the feasibility floor and a feasibility-gated
+ordering cannot contain them. D3B ACCEPTABLE DOCUMENTED APPROXIMATION.
+
+**Public ranking.** Verdict first, ordering only within candidates that clear
+the feasibility floor. The continuous margin ranking stays a research
+comparator for Family 4 and stops being a recommendation ordering.
+
+**Six material tasks remain**: fix D1, retire the right-sizing claim, extend
+the share validation, document D3A/D3B and the resolution bound, re-run the V2
+comparison, final audit. Everything else is out of scope.
+
 ## Stage 2R.1 to 2R.4 complete (2026-08-16): the mechanism diagnostics
 
 Generated into `docs/STAGE_2R_DIAGNOSTICS.md` by `replay/stage2r_report.py`,

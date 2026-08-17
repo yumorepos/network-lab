@@ -21,6 +21,9 @@ validation numbers).
 - [STAGE_2R_DIAGNOSTICS.md](STAGE_2R_DIAGNOSTICS.md) - generated: score-layer
   attribution, the survey ceiling, the frequency degeneracy and D1's blast
   radius, all as mechanism rather than prediction
+- [STAGE_2R_DECISION.md](STAGE_2R_DECISION.md) - generated: the product claim,
+  the necessity gates, the final defect treatments, and the six tasks that
+  remain
 - [interview_story.md](interview_story.md) - the narrative, numbers first
 - [resume_material.md](resume_material.md) - bullets and talking points
 - [deploy.md](deploy.md) - one-command GitHub + Streamlit Community Cloud path
