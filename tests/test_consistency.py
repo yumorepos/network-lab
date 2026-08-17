@@ -272,6 +272,90 @@ def test_readme_degeneracy_count_matches_the_decision_document():
         f"docs/STAGE_2R_DECISION.md; it does not")
 
 
+def test_limitations_d3a_figures_match_the_decision_document():
+    """LIMITATIONS restates the D3A feasibility result, which is the
+    measurement that makes D3A a documentation item rather than a fix.
+
+    Checked against `docs/STAGE_2R_DECISION.md` rather than recomputed:
+    `stage2r_gate.ceiling_feasibility()` rebuilds the replay snapshots and needs
+    the warehouse, which CI does not have, so recomputing here would make the
+    guard skip or error in exactly the environment it is meant to protect.
+    `tests/test_stage2r_decision.py` recomputes it where the warehouse exists.
+    """
+    import re
+    doc = (ROOT / "docs" / "STAGE_2R_DECISION.md").read_text()
+    m = re.search(r"\*\*(\d+) of (\d+) survey-ceiling rows clear the floor\*\*",
+                  doc)
+    lf = re.search(r"the highest reaching a load factor of ([\d.]+)", doc)
+    assert m and lf, "STAGE_2R_DECISION.md no longer states the D3A result"
+    lim = (ROOT / "docs" / "LIMITATIONS.md").read_text()
+    assert f"{m.group(1)} of {m.group(2)}" in lim, (
+        f"LIMITATIONS must state the ceiling-feasibility result as "
+        f"'{m.group(1)} of {m.group(2)}'")
+    assert lf.group(1) in lim, (
+        f"LIMITATIONS must state the maximum capped load factor {lf.group(1)}")
+
+
+def test_limitations_resolution_bounds_match_the_resolution_document():
+    """The predictive-resolution bound must travel with the predictive claim,
+    and must agree with the document that measured it."""
+    import re
+    doc = (ROOT / "docs" / "STAGE_2R0_RESOLUTION.md").read_text()
+    ev = re.search(r"\*\*(\d+) positive rows rest on (\d+) distinct launch "
+                   r"events", doc)
+    floor = re.search(r"\*\*(\d+) or more net launch events\*\*", doc)
+    assert ev and floor, "STAGE_2R0_RESOLUTION.md no longer states its bounds"
+    lim = (ROOT / "docs" / "LIMITATIONS.md").read_text()
+    problems = []
+    if f"{ev.group(1)} positive rows" not in lim:
+        problems.append(f"LIMITATIONS lacks the {ev.group(1)} positive rows")
+    if f"{ev.group(2)} distinct launch events" not in lim:
+        problems.append(f"LIMITATIONS lacks the {ev.group(2)} distinct launches")
+    if f"{floor.group(1)} or more net launch events" not in lim:
+        problems.append(
+            f"LIMITATIONS lacks the {floor.group(1)}-event detectability floor")
+    assert not problems, "\n".join(problems)
+
+
+def test_the_bounded_predictive_claim_is_never_shortened():
+    """The two forbidden shortenings assert things the study cannot support:
+    one claims a measured equivalence, the other a lift never observed. Neither
+    may be asserted on a reader-facing surface.
+
+    Quoted spans are stripped before searching. The documents that forbid these
+    phrasings have to be able to name them, and a mention inside quotation
+    marks is the opposite of an assertion. Without the use/mention split this
+    guard fires on the very text that establishes the rule.
+    """
+    import re
+    banned = ("the model does not beat demand",
+              "the model beats demand",
+              "no incremental value over demand")
+    problems = []
+    for rel in ("README.md", "docs/LIMITATIONS.md", "docs/interview_story.md",
+                "docs/resume_material.md", "docs/FINAL_SCOPE_CONTRACT.md",
+                "docs/linkedin_posts.md"):
+        p = ROOT / rel
+        if not p.exists():
+            continue
+        asserted = re.sub(r"[\"'`]{1,3}[^\"'`\n]*[\"'`]{1,3}", " ",
+                          p.read_text().lower())
+        for phrase in banned:
+            if phrase in asserted:
+                problems.append(f"{rel} asserts '{phrase}' without its bound")
+    assert not problems, "\n".join(problems)
+
+
+def test_connection_share_validation_status_is_stated_consistently():
+    """W2.3 closed as a validation, not a refit. The verdict string is frozen
+    vocabulary and must match the change report that issued it."""
+    verdict = "CONNECTION SHARE VALIDATED FOR FINAL SCOPE"
+    src = ROOT / "docs" / "change_reports" / "T3_connection_share_validation.md"
+    assert verdict in src.read_text(), "the T3 report no longer issues its verdict"
+    lim = (ROOT / "docs" / "LIMITATIONS.md").read_text()
+    assert verdict in lim, "LIMITATIONS must publish the T3 validation verdict"
+
+
 def test_gravity_counts_labeled_by_vintage():
     _need(OUT / "gravity_pre2022.yaml")
     pre = yaml.safe_load((OUT / "gravity_pre2022.yaml").read_text())
