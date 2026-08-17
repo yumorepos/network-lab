@@ -1,5 +1,49 @@
 # Progress log
 
+## Checkpoint A complete (2026-08-17): T1, T3 and T5
+
+**ANALYTICAL WORK COMPLETE, READY FOR FINAL PACKAGING.** Three of the six
+finish tasks are done. No analytical blocker remains. T2, T4 and T6 are
+documentation, scope wording and audit.
+
+**T1, D1 fixed** (`54155d7`, protocol frozen first at `7b3a7db`). The corridor
+growth resolver was the one vintage selection in `replay/vintage.py` applying no
+exclusion set while its siblings all applied one, so a declared structural break
+year could serve as the numerator of a growth ratio. The rule adopted is the
+smallest that removes the inconsistency: the numerator is the latest complete
+T-100 year in the permitted window that is not a declared structural break. It
+deliberately does not reach the seats vintage, which is a level input whose
+exclusion would move the candidate set. Effect: 2023-01 growth year 2021 to
+2019, median WestJet demand 783 to 4,227, median margin -7,136% to -1,240%. All
+eight predictions in the frozen protocol held, including zero verdict changes in
+463 rows and identical rankings everywhere.
+
+**T3, the connection-only share validation** (`531c95e`, protocol frozen first
+at `c889a3d`). **CONNECTION SHARE VALIDATED FOR FINAL SCOPE.** The gap was not
+that the regime is unobservable but that the published check's 50,000 passenger
+floor selects against it. At the 4,000 floor the demand layer already uses,
+the zero-nonstop regime is the largest stratum: 87 of 176 markets, 482
+market-carrier rows, MAE 6.5 share points against an equal-share null of 9.4,
+Spearman 0.874. The layer contributes sizing and not only identification. The
+share-1.0 default is defensible: the sole reconstructed carrier carries a median
+0.987 of its market, so the existing `share_uncertainty` guard is precautionary
+rather than load-bearing. W2.3 is closed and no calibration is justified.
+
+**T5, the post-D1 comparison** (`2131ff4`). V2 is not modified and not
+superseded. Two of six growth terms moved, both at 2023-01. The decision
+universe is identical, zero verdicts and zero frequencies changed, both rankings
+are identical everywhere, and Family 1, 3 and 4 are unchanged to three decimals
+including bootstrap intervals, per date and leave-one-date-out. Porter's six
+predicted verdict changes did not occur, exactly as the D1 protocol declared in
+advance: Stage 2R.4 measured a broader counterfactual than the repair made.
+
+**195 tests pass.** `make all` clean, `make reproducibility` run twice reports
+29 artifacts identical both times.
+
+**Remaining: T2, T4, T6.** Retire the right-sizing wording across 15 lines in 7
+reader-facing surfaces; document D3A, D3B and the resolution bound; final audit
+and packaging.
+
 ## Stage 2R closed (2026-08-16): the decision gate
 
 **Gate verdict: NO DETECTABLE INCREMENTAL VALUE AT CURRENT RESOLUTION.**
