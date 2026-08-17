@@ -148,3 +148,200 @@ decision and would make T3 an analytical blocker for the checkpoint.
 
 A `USABLE WITH MATERIAL LIMITATION` result is not a blocker. It narrows what
 may be claimed, which is a documentation task already scheduled as T4.
+
+---
+
+## 1. Result
+
+> # CONNECTION SHARE VALIDATED FOR FINAL SCOPE
+
+> - stratum B: 482 rows across 87 markets, MAE 6.5 share points against an equal-share null of 9.4.
+> - QSI-lite beats the null, so the layer contributes sizing and not only identification.
+
+Hub SEA, year 2024, floor 4,000 annual O and D passengers. 1047 market-carrier rows across 176 markets, against 503 rows across 66 markets in the published check.
+
+### By stratum
+
+| stratum | markets | rows | passengers | median observed share | median modelled share | MAE | passenger-weighted MAE | equal-share null MAE | beats null | bias | Spearman | worst error |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| **A nonstop competition** | 66 | 503 | 23,943,780 | 0.022 | 0.054 | **5.5** | 10.5 | 12.8 | yes | -0.05 | 0.887 | 48.6 |
+| **B one-stop competition only** | 87 | 482 | 1,422,090 | 0.099 | 0.150 | **6.5** | 8.1 | 9.4 | yes | -0.03 | 0.874 | 46.5 |
+| **C sole reconstructed carrier** | 23 | 62 | 977,700 | 0.037 | 0.000 | **5.9** | 16.9 | 5.9 | no | -0.00 | 0.837 | 34.2 |
+
+All errors are in share points. Bias is modelled minus observed, so a negative value means the model understates.
+
+### Reading the table
+
+**Stratum B is the result T3 was commissioned for.** 482 market-carrier rows
+across 87 markets, comfortably past the declared minimums of 30 and 10. MAE
+6.5 share points against an equal-share null of 9.4, and Spearman 0.874
+between modelled and observed share. The layer contributes sizing, not only
+the identification of who competes, which is the bar protocol 0.7 set.
+
+Stratum B is now the **largest** stratum by market count, 87 of 176. The old
+50,000 passenger floor was the entire reason the regime looked unobservable:
+it is not rare, it is small.
+
+**Stratum B is only about one point worse than stratum A** on unweighted MAE,
+6.5 against 5.5, and is **better** on passenger-weighted MAE, 8.1 against
+10.5. Reconstructing competition from one-stops is not markedly harder than
+scoring it where a nonstop exists. Both biases are near zero, so neither
+regime is systematically over or under-stated.
+
+**Stratum C cannot beat the null by construction**, and its row reads that
+way: with one reconstructed carrier the equal-share null assigns that carrier
+1.0, which is exactly what the model assigns. Its MAE is reported for
+completeness and carries no verdict weight. The stratum is judged separately
+below.
+
+**Unresolved operating certificates contribute nothing at this hub.** The
+mean unresolved share of competitor preference is 0.000 in every stratum,
+consistent with the Stage 2R.5 measurement that unresolved regional flying is
+0.09% of SEA departures. This is the second independent confirmation that
+W2.2 was correctly classified NOT JUSTIFIED.
+
+---
+
+## 2. Stratum C: is the share-1.0 default defensible?
+
+The candidate-side question. At 2022-01, 33 of 88 WestJet candidates receive
+share 1.0 because the reconstruction finds no competitor at all. The
+validation analogue is a market where the reconstruction finds exactly one
+carrier and therefore gives it share 1.0.
+
+| quantity | value |
+|---|---|
+| markets | 23 |
+| median observed share of the sole reconstructed carrier | **0.987** |
+| mean | 0.921 |
+| interquartile range | 0.879 to 0.991 |
+| fraction at or above the engine's own 0.70 limit | **95.7%** |
+| mean number of carriers actually selling in those markets | 2.70 |
+
+**Classification: defensible.**
+
+The reconstruction does miss carriers: on average 2.70 carriers sell tickets
+in these markets and the model finds one. But the carriers it misses are
+small. The one it finds really does carry the market, at a median observed
+share of 0.987, and 22 of 23 markets sit at or above the 0.70 limit the engine
+already uses to distrust such a share.
+
+So the share-1.0 default overstates by roughly one to twelve share points at
+the median, which is inside the same error band as the other two strata. The
+existing `share_uncertainty` guard in `build_screen`, which caps such a
+verdict at MONITOR, is **correctly placed and precautionary rather than
+load-bearing**. That is a stronger statement than the guard's own comment
+makes, and it should be carried into the limitations document in T4.
+
+**One protocol gap, disclosed.** Section 0.6 fixed a minimum for stratum B in
+market-carrier rows. It did not fix one for stratum C, which yields exactly
+one relevant observation per market, so the row minimum does not transfer. The
+declared **market** minimum of 10 was applied instead, and stratum C's 23
+markets clear it either way. The full distribution is reported above so a
+reader who would set the bar elsewhere can do so without recomputing.
+
+---
+
+## 3. Representation in the Stage 2R candidate universe
+
+A stratum can be well validated and still be rare. It is not, here.
+
+| regime | share of the validation panel | share of the WestJet candidate universe |
+|---|---|---|
+| nonstop competition present | 66 of 176 markets | 3 of 88 candidates at 2022-01 |
+| one-stop competition only | **87 of 176 markets** | the great majority |
+| no competitor reconstructed | 23 of 176 markets | 33 of 88 at 2022-01, 1 of 80 and 1 of 76 after |
+
+The validation panel now over-represents nonstop markets relative to the
+flagship study rather than the reverse, which is the correct direction for a
+check: the regime the study depends on is the one with 87 markets behind it.
+
+The 2022-01 concentration of zero-competitor candidates is a COVID-window
+artifact and not a heuristic failure. The trailing T-100 window at that cutoff
+covers 2021, when connecting service was suspended at scale; at the two later
+cutoffs the same reconstruction finds a competitor for all but one candidate.
+
+---
+
+## 4. Answers to the three questions T3 was asked
+
+**1. Does the one-stop reconstruction produce directionally credible
+competitive shares in the zero-nonstop regime?** Yes. MAE 6.5 share points on
+87 markets, better than an equal-share null at 9.4, Spearman 0.874, and near
+zero bias. It is about one point worse than the nonstop regime unweighted and
+better passenger-weighted.
+
+**2. Is the share-1.0 default empirically defensible?** Yes, and mildly
+conservative in its consequence. The sole reconstructed carrier carries a
+median 0.987 of its market. The default overstates the proposed service's
+share by a few points, and the existing 0.70 guard already catches the cases
+where it would matter.
+
+**3. Can the competition and share layer remain a claimed component of the
+final fixed-gauge screening product without further calibration?** **Yes**,
+with the error band stated. The claim it supports is "modelled competitive
+shares agree with observed DB1B ticketing shares to about 6 to 7 share points
+in the regime the flagship study occupies, and beat an equal-share null".
+It does not support a claim of calibrated share prediction, and T4 should
+publish the figure with the stratum it came from.
+
+---
+
+## 5. Regression risk
+
+**Guarded by** `tests/test_share_validation_strata.py`, ten tests: the
+published check is unmodified, the sampling floor is the one the demand layer
+already uses, the strata partition the sample, modelled and null values are
+shares that sum to at most one per market, stratum B clears the declared
+minimums, the null really is an equal split, the verdict rule maps to the
+frozen protocol on synthetic frames, and no QSI or reconstruction parameter
+moved.
+
+**Would still slip through:**
+
+- A regime difference between SEA and Calgary. The check is a US domestic
+  proxy for a transborder competitive set, because DB1B is the only ticketing
+  truth available and it does not cover Canadian origins. Nothing here closes
+  that, and T4 must say so.
+- Correlated error. Market is the cluster and the metrics are unclustered
+  means, so the intervals a reader might infer from n are optimistic. No
+  interval is reported for that reason.
+- A reconstruction that is right on average and wrong on the markets that
+  matter. The worst errors are 46.5 share points in stratum B.
+- Year-specific structure. One DB1B year is scored.
+
+---
+
+## 6. Statistical meaningfulness
+
+- **Sample size:** stratum B, 482 market-carrier rows across 87 markets.
+- **Comparison:** an equal-share null on identical markets and carriers,
+  which isolates sizing from identification.
+- **Verdict: improvement over the null**, on a sample large enough to say so,
+  and reported without a confidence interval because the clustering is not
+  modelled.
+
+---
+
+## 7. Assumptions touched
+
+**None.** No entry in `config/assumptions.yaml` or
+`config/replay_protocol.yaml` was added, removed, fitted or moved. `MIN_PAX`
+in the new module is the 4,000 threshold `replay/snapshot.py:build_demand` and
+`models/economics.py:fare_curve` already use, asserted by a test rather than
+restated.
+
+The two reporting conventions, the 30-row and 10-market minimums, are declared
+in protocol 0.6 and live in the module rather than in a config file because
+they govern reporting rather than the model.
+
+---
+
+## 8. Adoption decision
+
+> **ADOPTED. The competition and share layer stays in the final product**, with
+> its error band published and its two limitations, the US domestic proxy and
+> the unclustered metrics, carried into T4.
+
+W2.3 is closed. No calibration was performed and none is justified: the layer
+already beats its null in the regime that matters.
