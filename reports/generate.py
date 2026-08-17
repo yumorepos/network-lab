@@ -49,24 +49,32 @@ def westjet_cases(top_n: int = 3) -> list[str]:
         c = comp[comp["cbsa"] == d["cbsa"]]
         slug = (r["metro_name"].split(",")[0].lower()
                 .replace(" ", "_").replace("-", "_").replace(".", ""))
-        reason = ("margin stays negative even at its best-fit frequency"
+        reason = ("margin stays negative at every tested frequency"
                   if r["margin_pct"] < 0 else
                   "clears base margin but fails a downside or load-factor test")
+        lf_floor = float(a["min_feasible_load_factor"]["value"])
+        sched_note = (
+            f"No tested option cleared the {lf_floor:.0%} load-factor floor "
+            f"(best achieved {r['load_factor']:.0%}), so the schedule reported "
+            f"below is the fallback the screen emits when nothing is feasible, "
+            f"not a selected schedule."
+            if float(r["load_factor"]) < lf_floor else
+            f"The best feasible option was {r['chosen_freq_wk']:.0f}x weekly "
+            f"x {r['chosen_seats']:.0f} seats.")
         md = f"""# Route evaluation: YYC - {r['metro_name']} (WestJet 737-8)
 
 **Verdict: {r['verdict']}** - {reason} (confidence: {r['confidence']}).
-The market was evaluated across 3x, 7x, and 14x weekly; its best-fit schedule
-was {r['chosen_freq_wk']:.0f}x weekly x {r['chosen_seats']:.0f} seats, and it
-did not clear at any service level.
+The market was evaluated across 3x, 7x, and 14x weekly on the single configured
+gauge. {sched_note} It did not clear at any tested service level.
 
 ## The two numbers that drive this
 1. {r['driver_1']}
 2. {r['driver_2']}
 
 ## Market
-- Distance {r['dist_mi']:.0f} mi. Best-fit schedule
-  {r['chosen_freq_wk']:.0f}x weekly x {r['chosen_seats']:.0f} seats, chosen to
-  maximize annual contribution at a feasible load factor.
+- Distance {r['dist_mi']:.0f} mi. Evaluated schedule
+  {r['chosen_freq_wk']:.0f}x weekly x {r['chosen_seats']:.0f} seats, reported
+  from the fixed 3x/7x/14x weekly menu on the study gauge.
 - Demand {d['demand_pax_yr']:,.0f} pax/yr, method **{d['demand_method']}**:
   the market's own 2018 StatCan actual ({d['anchor_2018_pax']:,.0f} pax,
   frozen table 23-10-0256) times T-100 corridor growth {d['t100_growth']:.2f}.
@@ -123,7 +131,8 @@ def alaska_validation() -> str:
         m0 = mon.sort_values("margin_pct", ascending=False).iloc[0]
         monitor_note = (
             f"The one exception is {m0['metro_name'].split(',')[0]}, which "
-            f"screens MONITOR rather than PASS: its best-fit margin is "
+            f"screens MONITOR rather than PASS: its margin at the evaluated "
+            f"schedule is "
             f"{m0['margin_pct']:+.1f}%, positive but below the {hurdle:.0f}% "
             f"launch hurdle, so the rule holds it for watching rather than "
             f"launching or rejecting. ")
@@ -146,12 +155,13 @@ carrier shares.
 ## Reading the screen honestly
 
 The screen resolves the {len(scr)} unserved candidates to {dist}: effectively
-no new-market opportunity at a mature hub. {monitor_note}This holds after
-right-sizing: each market was tested at 3x, 7x, and 14x weekly (a single
-178-seat mainline gauge, which is what Alaska flies from SEA), and none cleared
-its best-fit schedule on the launch hurdle. So the earlier "fixed-gauge
-artifact" caveat is partly resolved (lowering frequency did not rescue these
-markets), and what remains is a genuine gauge limitation: a regional-jet gauge
+no new-market opportunity at a mature hub. {monitor_note}This holds across the
+whole tested schedule menu: each market was evaluated at 3x, 7x, and 14x weekly
+(a single 178-seat mainline gauge, which is what Alaska flies from SEA), and
+none cleared the launch hurdle at any tested option. So the earlier
+"fixed-gauge artifact" caveat is partly resolved (lowering frequency did not
+rescue these markets), and what remains is a genuine gauge limitation: a
+regional-jet gauge
 (which Alaska operates through Horizon/SkyWest but is out of this study's
 mainline scope) would be the honest next test for the thinnest markets. The
 near-uniform PASS shows the screen does not invent opportunities at a mature
@@ -178,9 +188,10 @@ Same engine, different config: carrier PD, hub YYZ, E195-E2 economics (B6
 E190 proxy with the documented E2 fuel adjustment), YYZ competitive set.
 Ranked table only by design; no full business cases.
 
-Each market is right-sized: the engine picks the frequency (3x/7x/14x weekly)
-that maximizes annual contribution at a feasible load factor, then judges that
-schedule. Verdicts: **{pdist}**. Every LAUNCH is an anchor-backed large market
+Fixed-gauge screening: the engine evaluates the fixed 3x/7x/14x weekly menu on
+the study gauge, reports the best feasible option or that none is feasible, and
+judges that schedule. It does not perform fleet assignment or frequency
+selection. Verdicts: **{pdist}**. Every LAUNCH is an anchor-backed large market
 entered at modest share against real incumbents - the low-cost entry logic of
 taking a slice of a big market, not owning a small one.
 

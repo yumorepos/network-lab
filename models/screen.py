@@ -54,13 +54,25 @@ def top_risk(row) -> str:
 
 
 def _select_service(base: pd.DataFrame, lf_floor: float) -> pd.DataFrame:
-    """Per market, pick the (frequency, gauge) that maximizes total annual
-    contribution subject to load factor >= floor. 'Contribution' here is total
-    annual dollars, not margin percentage: maximizing margin percentage would
-    trivially pick the lowest frequency every time (fuller planes), whereas a
-    planner sizes the schedule to the demand the market can actually fill.
-    If no option clears the load-factor floor, keep the highest-LF option
-    (it will almost always screen PASS), so a market is never dropped."""
+    """Per market, report the (frequency, gauge) on the study's configured menu
+    with the highest total annual contribution subject to load factor >= floor.
+    'Contribution' here is total annual dollars, not margin percentage: ranking
+    on margin percentage would trivially return the lowest frequency every time
+    (fuller planes), whereas the quantity of interest is the demand the market
+    can actually fill. If no option clears the load-factor floor, keep the
+    highest-LF option (it will almost always screen PASS), so a market is never
+    dropped.
+
+    This is a fixed-menu evaluation, NOT right-sizing, and the distinction is
+    load-bearing for what the project may claim. Every shipped study configures
+    exactly one gauge, so no gauge comparison occurs; and on the historical
+    replay the great majority of markets take the fallback branch above, which
+    returns the highest load factor and is therefore arithmetically identical
+    to returning the smallest frequency on a monotone menu. A reported
+    frequency is not evidence that a comparison happened. The measurement and
+    the decision to retire the right-sizing claim rather than repair it are in
+    docs/STAGE_2R_DECISION.md. This function's behaviour is deliberately
+    unchanged by that decision; only the claims made about it changed."""
     picks = []
     for _, grp in base.groupby("cbsa"):
         feasible = grp[grp["load_factor"] >= lf_floor]
@@ -125,7 +137,7 @@ def run(study_id: str) -> pd.DataFrame:
                      + (100 * m["proposed_share"]).round(0).astype(int).astype(str)
                      + "% of " + (m["demand_pax_yr"] / 1000).round(0).astype(int)
                      .astype(str) + "k pax/yr (" + method + ")")
-    m["driver_service"] = ("best schedule: " + m["chosen_freq_wk"].astype(int)
+    m["driver_service"] = ("evaluated schedule: " + m["chosen_freq_wk"].astype(int)
                            .astype(str) + "x weekly x " + m["chosen_seats"]
                            .astype(int).astype(str) + " seats ("
                            + m["chosen_gauge"] + ")")

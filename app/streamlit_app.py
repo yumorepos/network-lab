@@ -6,10 +6,15 @@ from pathlib import Path
 import pandas as pd
 import plotly.express as px
 import streamlit as st
+import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "data" / "parquet" / "outputs"
 DOCS = ROOT / "docs"
+
+# The feasibility floor is read from the one assumptions file, never restated.
+LF_FLOOR = float(yaml.safe_load((ROOT / "config" / "assumptions.yaml")
+                                .read_text())["min_feasible_load_factor"]["value"])
 
 st.set_page_config(page_title="Network Lab", layout="wide")
 
@@ -41,16 +46,40 @@ if page == "Route screen":
         c1.metric("LAUNCH", int(counts.get("LAUNCH", 0)))
         c2.metric("MONITOR", int(counts.get("MONITOR", 0)))
         c3.metric("PASS", int(counts.get("PASS", 0)))
-        st.caption("Each market is right-sized: the screen picks the "
-                   "frequency (and gauge) that maximizes annual contribution "
-                   "at a feasible load factor, then judges that schedule. "
-                   "Margins are a fully-allocated proxy; demand rows are "
-                   "flagged observed or modeled. See Validation.")
-        show = df[["metro_name", "verdict", "confidence", "chosen_freq_wk",
-                   "chosen_seats", "margin_pct", "fare_down_margin",
-                   "fuel_down_margin", "belf", "load_factor", "proposed_share",
-                   "demand_pax_yr", "demand_method", "n_nonstop_incumbents",
-                   "top_competitor", "top_risk"]]
+        st.caption("Fixed-gauge route screening. Each market is evaluated "
+                   "against this study's single configured gauge and a fixed "
+                   "schedule menu (3x/7x/14x weekly); the screen reports the "
+                   "best feasible option, or that none is feasible, and judges "
+                   "that schedule. This is not fleet assignment or frequency "
+                   "selection. Margins are a fully-allocated proxy; demand "
+                   "rows are flagged observed or modeled. See Validation.")
+        # Presentation only: the artifact is already ordered verdict first,
+        # then margin within verdict (models/screen.py). Nothing is re-scored
+        # or re-ranked here; `feasible` is a readout of the existing load
+        # factor against the configured floor, not a new criterion.
+        show = df.copy()
+        show.insert(2, "feasible", show["load_factor"] >= LF_FLOOR)
+        show = show[["metro_name", "verdict", "feasible", "confidence",
+                     "chosen_freq_wk", "chosen_seats", "margin_pct",
+                     "fare_down_margin", "fuel_down_margin", "belf",
+                     "load_factor", "proposed_share", "demand_pax_yr",
+                     "demand_method", "n_nonstop_incumbents",
+                     "top_competitor", "top_risk"]]
+        n_feas = int(show["feasible"].sum())
+        if n_feas == 0:
+            st.warning(
+                f"No candidate in this study clears the {LF_FLOOR:.0%} "
+                f"load-factor floor at any tested frequency. Rows are ordered "
+                f"by verdict and then by margin, which is a research "
+                f"comparator retained for the historical replay; it is not an "
+                f"opportunity ranking, and the row at the top is not a "
+                f"recommendation.")
+        else:
+            st.info(
+                f"{n_feas} of {len(show)} candidates clear the "
+                f"{LF_FLOOR:.0%} load-factor floor. Read the verdict first: "
+                f"ordering within a verdict is by margin and is a research "
+                f"comparator, not an opportunity ranking.")
         st.dataframe(show, use_container_width=True, height=560)
         st.download_button("Download CSV", df.to_csv(index=False),
                            f"screen_{sid}.csv")
@@ -65,15 +94,23 @@ elif page == "Market detail":
         scr = load(f"screen_{sid}.parquet")
         mkt = st.selectbox("Market", sorted(eco["metro_name"].unique()))
         e = eco[eco["metro_name"] == mkt]
-        # filter economics to this market's right-sized service (the frequency
-        # and gauge the screen selected), so the scenario grid is one schedule
+        # filter economics to the schedule the screen evaluated (the frequency
+        # and gauge it reported), so the scenario grid is one schedule
         if scr is not None and (scr["metro_name"] == mkt).any():
             srow = scr[scr["metro_name"] == mkt].iloc[0]
             e = e[(e["freq_wk"] == srow["chosen_freq_wk"])
                   & (e["seats"] == srow["chosen_seats"])]
-            st.caption(f"Right-sized service: {int(srow['chosen_freq_wk'])}x "
+            feasible = float(srow["load_factor"]) >= LF_FLOOR
+            st.caption(f"Evaluated schedule: {int(srow['chosen_freq_wk'])}x "
                        f"weekly x {int(srow['chosen_seats'])} seats "
                        f"({srow['chosen_gauge']}) - verdict {srow['verdict']}")
+            if not feasible:
+                st.warning(
+                    f"No option on the tested menu clears the "
+                    f"{LF_FLOOR:.0%} load-factor floor for this market "
+                    f"(best achieved {srow['load_factor']:.0%}). The "
+                    f"frequency shown is the fallback the screen reports when "
+                    f"nothing is feasible, not a selected schedule.")
         base = e[(e.fare_scenario_pct == 0) & (e.fuel_scenario_pct == 0)].iloc[0]
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("Demand (pax/yr)", f"{base['demand_pax_yr']:,.0f}",

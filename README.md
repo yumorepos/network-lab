@@ -29,7 +29,7 @@ reasons, and admits what it cannot see.
 
 **1. Porter at Toronto Pearson (YYZ): 1 LAUNCH / 1 MONITOR / 77 PASS.**
 The single LAUNCH is Boston, a large anchor-backed market the engine enters at
-16% share against real incumbents and right-sizes to 3x weekly. This is the
+16% share against real incumbents, evaluated at 3x weekly. This is the
 low-cost entry logic of taking a slice of a big market rather than owning a
 small one. It is a market Porter does not serve nonstop from YYZ inside the
 T-100 window this study reads.
@@ -72,14 +72,25 @@ grade, and a sensitivity range.
 | Candidate filter | metro population floor, distance in range, not already served by the carrier (metro-level, from T-100), real airport, not a satellite of a bigger one | `candidate_min_metro_pop` 400k, `served_market_min_deps_yr` 26, `candidate_min_airport_seats_yr` 250k, `satellite_airport_rule` 60mi/5x |
 | Demand | observed DB1B where it exists; else the market's own 2018 StatCan actual x T-100 corridor growth; else gravity x transfer, capped at the survey's own floor for unanchored markets | `transfer_factor` (median 0.80), unanchored cap 4,000 x growth |
 | Share | QSI-lite vs one-stop competitors reconstructed from T-100 frequencies | `qsi_weights`, `qsi_elapsed_time_exponent` |
-| Right-size | pick the frequency and gauge that maximize annual contribution at a feasible load factor | `min_feasible_load_factor` 0.50 (fallback: keep the highest-LF option) |
+| Schedule evaluation | evaluate the configured schedule menu (3x/7x/14x weekly) on the study gauge, and report the best feasible option or that none is feasible | `min_feasible_load_factor` 0.50 (when nothing clears the floor: report the highest-LF option, which is always the smallest) |
 | Economics | 3 fare x 3 fuel scenario grid, fully-allocated margin and break-even load factor | `hurdle_margin_pct` 8, `fare_scenario_grid_pct`, `fuel_scenario_grid` |
 | Verdict | **PASS** if base margin < 0; **LAUNCH** if margin >= 8% and the fare-downside stays positive and break-even LF <= 0.85; else **MONITOR** | hurdle 8%, BELF cap 0.85 |
 | Competition guard | a modeled share above 70% with zero nonstop incumbents caps LAUNCH to MONITOR (the one-stop reconstruction probably missed real competition) | `> 0.70` share, 0 incumbents |
 
-So Porter's lone MONITOR (Hartford) is fully traceable: its best-fit margin is
-+4.9%, positive but below the 8% hurdle, so it is held for watching, not
-launched or rejected.
+So Porter's lone MONITOR (Hartford) is fully traceable: its margin at the
+evaluated schedule is +4.9%, positive but below the 8% hurdle, so it is held for
+watching, not launched or rejected.
+
+**What the schedule step is, and is not.** The engine evaluates a fixed menu of
+3x, 7x and 14x weekly against the one gauge each study configures. It does not
+choose an aircraft, and it is not a frequency selector: the historical replay
+found the step effectively degenerate under the tested candidate universe, with
+445 of 463 decisions reaching no schedule comparison at all because no tested
+option clears the load-factor floor. That measurement, and the decision to
+retire the claim rather than repair it, are in
+[docs/STAGE_2R_DECISION.md](docs/STAGE_2R_DECISION.md). The scope this project
+does claim is in
+[docs/FINAL_SCOPE_CONTRACT.md](docs/FINAL_SCOPE_CONTRACT.md).
 
 Every market carries a 3 fare x 3 fuel contribution-margin grid, so a verdict is
 read against its own downside, not a single point estimate. The example below is
@@ -147,7 +158,7 @@ warehouse/  DuckDB marts: dim_airport/carrier/metro, fact_segment (T-100),
             fact_od_market (DB1B), fact_costs (Form 41), fact_fuel (EIA),
             reconcile.py checks computed vs published totals in writing
 models/     catchment -> demand -> competition -> QSI-lite share -> spill ->
-            economics (3x3 grid) -> screen (right-sized LAUNCH/MONITOR/PASS)
+            economics (3x3 grid) -> screen (fixed-gauge LAUNCH/MONITOR/PASS)
 backtest/   score real 2021-2025 launches with a pre-2022 model; post-mortems
 reports/    generated markdown business cases and ranked tables
 app/        Streamlit dashboard reading only the precomputed outputs
@@ -180,11 +191,10 @@ storyboard in [docs/demo_script.md](docs/demo_script.md).
 
 See [docs/LIMITATIONS.md](docs/LIMITATIONS.md): the limitations are stated with
 the design decision each one forced, including the single-vintage backtest
-lookahead, the airport-fee proxy, the frequency/gauge right-sizing scope, the
+lookahead, the airport-fee proxy, the fixed-gauge schedule-menu scope, the
 unanchored-demand cap, and the fact that the served-market exclusion trusts the
-T-100 join (cross-checked by the committed incumbent-network file). Planned
-extensions (per-vintage backtest refit, connectivity view, full Porter business
-cases, ACS income with a key) are listed there rather than implied to exist.
+T-100 join (cross-checked by the committed incumbent-network file). Closed and
+rejected research tasks are recorded there as decisions, not as a backlog.
 
 ## Data sources and licenses
 

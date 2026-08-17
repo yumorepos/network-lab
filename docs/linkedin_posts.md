@@ -65,8 +65,8 @@ What is under the hood:
   transborder survey.
 - A QSI-lite market-share model validated against observed DB1B carrier shares
   (7.0 share-point error), with competitor connections reconstructed from T-100.
-- A fully-allocated route P&L on a fare-by-fuel scenario grid, right-sized across
-  frequency and gauge.
+- A fully-allocated route P&L on a fare-by-fuel scenario grid, evaluated against
+  a fixed schedule menu on one configured gauge.
 - A backtest of 48 real 2021-2025 launches that honestly reports weak demand-only
   separation, and a warehouse that reconciles to published government totals
   within 1%.

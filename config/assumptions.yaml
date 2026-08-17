@@ -184,11 +184,13 @@ min_feasible_load_factor:
   value: 0.50
   source: "Public airline route-economics practice; system narrowbody load
     factors run 80%+ and individual routes are rarely sustained below ~50%"
-  rationale: "Feasibility floor for the frequency/gauge right-sizing search:
-    a schedule whose best load factor is below this is treated as structurally
-    infeasible regardless of the margin arithmetic, so the search cannot pick
+  rationale: "Feasibility floor for the fixed-gauge schedule evaluation: a
+    schedule whose best load factor is below this is treated as structurally
+    infeasible regardless of the margin arithmetic, so the screen cannot report
     an absurdly thin high-frequency option. If no option clears the floor the
-    market keeps its highest-LF option and almost always screens PASS."
+    market keeps its highest-LF option and almost always screens PASS. On the
+    historical replay that fallback is the common case rather than the
+    exception; see docs/STAGE_2R_DECISION.md."
   confidence: medium
   sensitivity: {low: 0.45, high: 0.60}
 

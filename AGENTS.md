@@ -56,7 +56,7 @@ warehouse/  DuckDB marts: dim_airport/carrier/metro, fact_segment (T-100),
             reconcile.py checks computed totals against published ones;
             route_spells.py derives the mechanical route-spell register
 models/     catchment -> demand -> competition -> QSI-lite share -> spill ->
-            economics (3x3 grid) -> screen (right-sized LAUNCH/MONITOR/PASS)
+            economics (3x3 grid) -> screen (fixed-gauge LAUNCH/MONITOR/PASS)
 backtest/   score real 2021-2025 launches with a pre-2022 model; post-mortems
 reports/    generated markdown business cases and ranked tables
 app/        Streamlit dashboard reading only the precomputed outputs
@@ -67,7 +67,7 @@ Where things live:
 
 - `config/assumptions.yaml` - every assumption, one file.
 - `config/studies/*.yaml` - a study is a config, not a code change.
-- `models/screen.py` - the verdict logic and right-sizing.
+- `models/screen.py` - the verdict logic and the fixed-menu schedule evaluation.
 - `models/gravity.py` - gravity public interface and estimator dispatch.
 - `models/gravity_log_ols.py`, `models/gravity_poisson.py` - the two estimators.
 - `reports/generate.py`, `backtest/postmortem.py` - report generators.

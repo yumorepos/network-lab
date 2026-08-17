@@ -183,12 +183,30 @@ def test_handwritten_docs_match_generated_scalar_metrics():
     """Share MAE and backtest N must match the generated metrics wherever a
     hand-written doc states them. These drifted independently of the verdict
     counts: README said MAE 7.0 against a computed 5.7, and PROGRESS drifted to
-    MAE 6.7."""
+    MAE 6.7.
+
+    A second, legitimately different MAE entered the docs at T3: the per-stratum
+    validation reports its own MAE per structural regime, and the flagship
+    result is the one-stop-only stratum. Comparing every "MAE x.y" against the
+    pooled value therefore flagged a correct number, and the guard was red from
+    T3 (531c95e) until T2. Both quantities are now checked against their own
+    artifact, and a stratum value is only accepted where the surrounding text
+    identifies the stratum, so a pooled figure still cannot hide behind one.
+    """
     import re
     _need(OUT / "headline_metrics.yaml")
+    # Required, not optional. If this artifact were treated as absent-is-fine,
+    # a doc could state any stratum MAE and the guard would wave it through,
+    # which is the failure mode the `## Phase 0` boundary bug already caused
+    # once in this file. It is tracked in git for exactly this reason.
+    _need(OUT / "share_validation_by_stratum.parquet")
     hm = yaml.safe_load((OUT / "headline_metrics.yaml").read_text())
     mae = hm["share_validation"]["mae_share_points"]
     n_bt = hm["backtest"]["n_launched_and_resolved"]
+    strata = pd.read_parquet(OUT / "share_validation_by_stratum.parquet")
+    stratum_maes = [float(v) for v in strata["mae"]]
+    STRATUM_TOKENS = ("stratum", "strata", "zero-nonstop", "one-stop",
+                      "nonstop competition", "sole reconstructed")
 
     problems = []
     for rel in ("README.md", "PROGRESS.md", "docs/interview_story.md",
@@ -197,9 +215,21 @@ def test_handwritten_docs_match_generated_scalar_metrics():
         if not p.exists():
             continue
         text = _live_text(p)
-        for found in re.findall(r"MAE \*{0,2}(\d+\.\d+)", text):
-            if abs(float(found) - mae) > 0.05:
-                problems.append(f"{rel} states MAE {found}, computed {mae}")
+        for m in re.finditer(r"MAE \*{0,2}(\d+\.\d+)", text):
+            found = float(m.group(1))
+            if abs(found - mae) <= 0.05:
+                continue
+            window = text[max(0, m.start() - 220):m.end() + 220].lower()
+            named = any(t in window for t in STRATUM_TOKENS)
+            matches_stratum = any(abs(found - s) <= 0.05 for s in stratum_maes)
+            if named and matches_stratum:
+                continue
+            why = ("does not match any computed stratum MAE"
+                   if named else
+                   "is not the pooled MAE and does not name a stratum")
+            problems.append(
+                f"{rel} states MAE {found}, which {why} "
+                f"(pooled {mae}, strata {[round(s, 1) for s in stratum_maes]})")
         # \s+ rather than a literal space: PROGRESS.md wraps between the count
         # and the phrase, so a single-space pattern matched nothing there and
         # the number went unguarded.
@@ -212,6 +242,34 @@ def test_handwritten_docs_match_generated_scalar_metrics():
                 problems.append(f"{rel} states {found} launched-and-resolved, "
                                 f"computed {n_bt}")
     assert not problems, "\n".join(problems)
+
+
+def test_readme_degeneracy_count_matches_the_decision_document():
+    """README restates one Stage 2R figure, the fallback count that makes the
+    right-sizing de-scope legible, and it is the only place that figure appears
+    outside its canonical source.
+
+    Under the T2 packaging policy an exact value repeated outside its source of
+    record must be checked against that record. The source here is
+    `docs/STAGE_2R_DECISION.md`, which is generated from `diag_wide.parquet` by
+    `replay/stage2r_gate_report.py` and guarded by
+    `tests/test_stage2r_decision.py`. The diagnostic parquet is not tracked, so
+    checking against the document rather than recomputing is what makes this
+    guard run in CI instead of silently skipping there.
+    """
+    import re
+    doc = (ROOT / "docs" / "STAGE_2R_DECISION.md").read_text()
+    total = re.search(r"\|\s*decision rows\s*\|\s*\**(\d+)\**\s*\|", doc)
+    fallback = re.search(
+        r"\|\s*rows where no option clears the floor\s*\|\s*\**(\d+)\**\s*\|", doc)
+    assert total and fallback, (
+        "docs/STAGE_2R_DECISION.md no longer states the decision-row and "
+        "fallback counts in the shape this guard reads")
+    canon = f"{fallback.group(1)} of {total.group(1)}"
+    readme = (ROOT / "README.md").read_text()
+    assert canon in readme, (
+        f"README must state the fallback count as '{canon}' to match "
+        f"docs/STAGE_2R_DECISION.md; it does not")
 
 
 def test_gravity_counts_labeled_by_vintage():

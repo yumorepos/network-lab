@@ -1,18 +1,17 @@
 # Route evaluation: YYC - Dallas-Fort Worth-Arlington, TX (WestJet 737-8)
 
-**Verdict: PASS** - margin stays negative even at its best-fit frequency (confidence: medium).
-The market was evaluated across 3x, 7x, and 14x weekly; its best-fit schedule
-was 3x weekly x 174 seats, and it
-did not clear at any service level.
+**Verdict: PASS** - margin stays negative at every tested frequency (confidence: medium).
+The market was evaluated across 3x, 7x, and 14x weekly on the single configured
+gauge. No tested option cleared the 50% load-factor floor (best achieved 28%), so the schedule reported below is the fallback the screen emits when nothing is feasible, not a selected schedule. It did not clear at any tested service level.
 
 ## The two numbers that drive this
 1. base margin -145.8% vs hurdle 8.0%
 2. modeled share 22% of 67k pax/yr (anchor_x_growth)
 
 ## Market
-- Distance 1523 mi. Best-fit schedule
-  3x weekly x 174 seats, chosen to
-  maximize annual contribution at a feasible load factor.
+- Distance 1523 mi. Evaluated schedule
+  3x weekly x 174 seats, reported
+  from the fixed 3x/7x/14x weekly menu on the study gauge.
 - Demand 67,219 pax/yr, method **anchor_x_growth**:
   the market's own 2018 StatCan actual (57,711 pax,
   frozen table 23-10-0256) times T-100 corridor growth 1.16.

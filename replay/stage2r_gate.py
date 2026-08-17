@@ -42,28 +42,70 @@ PUBLIC_SURFACES = [
     "README.md", "app/streamlit_app.py", "reports/generate.py",
     "docs/interview_story.md", "docs/resume_material.md",
     "docs/demo_script.md", "docs/LIMITATIONS.md", "docs/validation.md",
+    # Added at T2. The first list was the Stage 2R audit scope; these are the
+    # remaining surfaces a reader actually meets, including the generated
+    # reports, so a regression in `reports/generate.py` is caught in its output
+    # and not only in its source.
+    "docs/linkedin_posts.md", "docs/backtest.md",
+    "reports/alaska_sea_validation.md", "reports/porter_yyz_portability.md",
+    "config/assumptions.yaml", "AGENTS.md", "CLAUDE.md",
 ]
+# Deliberately NOT a public surface: `docs/FINAL_SCOPE_CONTRACT.md` exists to
+# enumerate the claims this project does not make, so the vocabulary is its
+# subject matter and a blunt scan over it would only ever fire on the
+# retraction. It carries the opposite guard instead: a test asserts it still
+# states each retired claim, so it cannot quietly lose them.
+# Claims of schedule or fleet optimisation. Deliberately blunt: on a public
+# surface the vocabulary itself is the defect, so denials are reworded rather
+# than exempted, and there is no negation carve-out to game.
+#
+# Two corrections at T2. "optimi[sz]" alone also matched "optimistic", which is
+# a statement about a share estimate and not an optimisation claim, so the verb
+# forms are now enumerated. And the original pattern missed "best-fit", which
+# `reports/generate.py` used in five places the Stage 2R audit therefore
+# undercounted.
 CLAIM_PATTERN = re.compile(
-    r"right[- ]?siz|optimi[sz]|best schedule|picks the frequency", re.I)
+    r"right[- ]?siz"
+    r"|optimi[sz](?:e|es|ed|ing|er|ation|ations)\b"
+    r"|best[- ]fit"
+    r"|best schedule"
+    r"|picks the frequency"
+    r"|maximi[sz]e",
+    re.I)
+# A line that explicitly retires or denies the claim is not making it. The
+# exemption is narrow on purpose: it requires one of these retirement tokens on
+# the SAME line as the claim vocabulary, so it cannot be satisfied by a denial
+# sitting somewhere else in the document. Exempted lines are reported by
+# `claim_audit(exempt=True)` so the carve-out stays visible rather than silent.
+RETIREMENT_PATTERN = re.compile(
+    r"\bno validated\b|\bretired\b|\bde-scoped?\b|\bnot (?:a |an )?(?:valid|"
+    r"support|claim)|does not claim|is not\b.{0,30}\b(?:right[- ]?siz|optimi)",
+    re.I)
 
 
 # ---------------------------------------------------------------- measurement
-def claim_audit() -> pd.DataFrame:
+def claim_audit(exempt: bool = False) -> pd.DataFrame:
     """Every reader-facing line that claims frequency or gauge optimisation.
 
     Recomputed from the working tree at generation time, so the audit cannot
     quietly go stale after the wording is corrected.
+
+    Lines that retire or deny the claim on the same line are not claims. Pass
+    `exempt=True` to get those instead of the violations, which is how the
+    carve-out is reviewed rather than trusted.
     """
-    rows = []
+    rows, waived = [], []
     for rel in PUBLIC_SURFACES:
         p = ROOT / rel
         if not p.exists():
             continue
         for i, line in enumerate(p.read_text().splitlines(), 1):
-            if CLAIM_PATTERN.search(line):
-                rows.append({"file": rel, "line": i,
-                             "text": line.strip()[:160]})
-    return pd.DataFrame(rows)
+            if not CLAIM_PATTERN.search(line):
+                continue
+            rec = {"file": rel, "line": i, "text": line.strip()[:160]}
+            (waived if RETIREMENT_PATTERN.search(line) else rows).append(rec)
+    return pd.DataFrame(waived if exempt else rows,
+                        columns=["file", "line", "text"])
 
 
 def competition_composition() -> pd.DataFrame:

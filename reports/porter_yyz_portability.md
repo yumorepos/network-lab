@@ -4,9 +4,10 @@ Same engine, different config: carrier PD, hub YYZ, E195-E2 economics (B6
 E190 proxy with the documented E2 fuel adjustment), YYZ competitive set.
 Ranked table only by design; no full business cases.
 
-Each market is right-sized: the engine picks the frequency (3x/7x/14x weekly)
-that maximizes annual contribution at a feasible load factor, then judges that
-schedule. Verdicts: **1 LAUNCH / 1 MONITOR / 77 PASS**. Every LAUNCH is an anchor-backed large market
+Fixed-gauge screening: the engine evaluates the fixed 3x/7x/14x weekly menu on
+the study gauge, reports the best feasible option or that none is feasible, and
+judges that schedule. It does not perform fleet assignment or frequency
+selection. Verdicts: **1 LAUNCH / 1 MONITOR / 77 PASS**. Every LAUNCH is an anchor-backed large market
 entered at modest share against real incumbents - the low-cost entry logic of
 taking a slice of a big market, not owning a small one.
 

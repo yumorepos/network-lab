@@ -31,8 +31,8 @@ or a labeled assumption in one YAML file.
 ## Numbers I lead with
 - The recommendations: Porter YYZ surfaces one LAUNCH market (Boston), a large
   anchor-backed market entered at 16% share against real incumbents - the
-  low-cost entry logic of taking a slice of a big market, right-sized across
-  3x/7x/14x weekly. An earlier version reported five LAUNCHes and did not
+  low-cost entry logic of taking a slice of a big market, evaluated across the
+  fixed 3x/7x/14x weekly menu. An earlier version reported five LAUNCHes and did not
   survive correctness review; the two defects and the before and after are in
   INTEGRITY_REPORT.md. WestJet YYC comes back all-PASS, and I
   lead with that too: it stays PASS at every service level, because WestJet

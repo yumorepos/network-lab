@@ -66,15 +66,31 @@ after the fact.
     parsing are name-based joins with pinned overrides; unmatched traffic is
     logged loudly rather than silently dropped.
 
-11. **Right-sizing is over frequency and gauge, not the full schedule.** The
-    screen picks the weekly frequency (from the study's target list) and gauge
-    that maximize annual contribution subject to a load-factor floor
-    (assumptions.yaml min_feasible_load_factor). It does not optimize
-    departure times, day-of-week banks, or seasonality; a real planner tunes
-    those too. Each study here operates a single transborder/domestic mainline
-    gauge, so frequency is the active axis; the gauge search runs for any
-    study that lists more than one, and a regional-gauge option was NOT
-    invented for WestJet, which flies 737s transborder.
+11. **There is no validated right-sizing claim. The schedule step is a fixed
+    menu evaluation.** The screen evaluates the study's configured weekly
+    frequencies against its configured gauge and reports the best option
+    clearing the load-factor floor (assumptions.yaml
+    min_feasible_load_factor), or, when none clears it, the highest-load-factor
+    option as a fallback. It does not select an aircraft, assign fleet, design
+    a schedule, or set departure times, day-of-week banks or seasonality. Each
+    study here operates a single transborder or domestic mainline gauge, so no
+    gauge comparison occurs in any shipped study; a regional-gauge option was
+    NOT invented for WestJet, which flies 737s transborder.
+
+    This component was previously described as frequency and gauge
+    right-sizing. That description was **retired rather than repaired**. The
+    historical replay measured the step effectively degenerate under the tested
+    candidate universe: the menu begins at 3x weekly on one gauge, the great
+    majority of decisions reach no schedule comparison at all because no tested
+    option is feasible, and the fallback branch returns the highest load
+    factor, which on this menu is arithmetically the smallest frequency. A
+    reported frequency is therefore not evidence that a comparison happened.
+    Counts, the control transition showing the step does not reorder markets,
+    and the retirement decision are in `docs/STAGE_2R_DECISION.md`; the
+    mechanism is in `docs/STAGE_2R_DIAGNOSTICS.md`. Repairing the claim would
+    require gauges the studied carriers do not fly on these routes, schedules
+    below a real operation, and a fleet-assignment layer, so the claim was
+    narrowed instead.
 
 12. **Already-served markets are excluded, not evaluated as add-frequency.**
     A metro the study carrier already serves nonstop from the hub (any airport
@@ -117,7 +133,7 @@ after the fact.
     at most ~4,000 O&D passengers that year by construction. The US-calibrated
     gravity model over-predicts these small markets (routinely 5-8x the
     ceiling), so their demand is capped at 4,000 x corridor growth (~4,660 for
-    YYC) - a generous upper bound. This keeps right-sizing from manufacturing
+    YYC) - a generous upper bound. This keeps the screen from manufacturing
     launch verdicts out of gravity noise on markets known to be tiny. Anchored
     markets keep their own observed value; the cap only touches the negative
     space where the model has no ground truth to lean on.

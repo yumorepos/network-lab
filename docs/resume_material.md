@@ -13,8 +13,9 @@ on the resume is reproducible from `make data && make models`.
 - Reconstructed competitive one-stop itineraries from T-100 segment
   frequencies and validated a QSI-lite share model against observed DB1B
   carrier shares (MAE 5.7 share points), then screened 200 candidate markets
-  across three hub studies into LAUNCH/MONITOR/PASS, right-sizing each market
-  across 3x/7x/14x weekly and a 3x3 fare-fuel scenario grid.
+  across three hub studies into LAUNCH/MONITOR/PASS, evaluating each market
+  against a fixed 3x/7x/14x weekly schedule menu on one configured gauge and a
+  3x3 fare-fuel scenario grid.
 - Backtested 48 real 2021-2025 transborder route launches against a
   fixed pre-2022 model and published the honest result: demand percentile
   does not separate survivors from failures (0.89 vs 0.86 median), even

@@ -27,19 +27,64 @@ def _need(p: Path):
         pytest.skip(f"{p.name} not built yet; run replay.stage2r_report first")
 
 
-def test_claim_audit_reads_the_working_tree(tmp_path):
+def test_claim_audit_reads_the_working_tree(tmp_path, monkeypatch):
     """The audit must be recomputed, not stored. If it ever reads a cached
-    frame this test fails, and the document's central promise about T2 with
-    it."""
+    frame this test fails, and the document's central promise about T2 with it.
+
+    Before T2 this was shown by asserting the audit was non-empty against the
+    real tree. T2 corrected the wording, so that form would now assert the
+    defect is still present. The property under test is unchanged and is now
+    demonstrated positively: plant a violation in a temporary surface and
+    require the audit to find it at the right line.
+    """
+    bad = tmp_path / "planted_surface.md"
+    bad.write_text("intro line\nthe engine right-sizes each market\n")
+    monkeypatch.setattr(G, "ROOT", tmp_path)
+    monkeypatch.setattr(G, "PUBLIC_SURFACES", ["planted_surface.md"])
+    planted = G.claim_audit()
+    assert len(planted) == 1, "the audit did not read the tree it was given"
+    assert planted.iloc[0]["line"] == 2
+    assert planted.iloc[0]["file"] == "planted_surface.md"
+
+
+def test_no_public_surface_claims_schedule_optimisation():
+    """T2's permanent regression guard, and the completion criterion Stage 2R
+    set for it: `docs/STAGE_2R_DECISION.md` promised its audit table "empties
+    itself when the wording is corrected". This asserts it is empty and stays
+    empty.
+
+    This is strictly stronger than the pre-T2 assertion it replaces. The old
+    test required the audit to be non-empty, which was a statement about a
+    defect that has since been fixed; this one requires it to be empty, which
+    is a statement about the fix holding. Neither tolerance nor scope was
+    relaxed: the surface list grew by eight files and the pattern gained three
+    forms at the same commit.
+    """
     df = G.claim_audit()
-    assert len(df), "no claim lines found; the pattern or the surface list broke"
-    for rel in df["file"].unique():
-        assert (ROOT / rel).exists()
-    # every reported line must still be present at the reported position
-    for _, r in df.iterrows():
-        line = (ROOT / r["file"]).read_text().splitlines()[r["line"] - 1]
-        assert G.CLAIM_PATTERN.search(line), (
-            f"{r['file']}:{r['line']} no longer matches; the audit is stale")
+    assert df.empty, (
+        "schedule or fleet optimisation wording is back on a public surface; "
+        "the retired right-sizing claim must not return:\n"
+        + df.to_string(index=False))
+
+
+def test_the_scope_contract_still_states_every_retired_claim():
+    """`docs/FINAL_SCOPE_CONTRACT.md` is exempt from the claim scan because its
+    subject matter is the retraction. It carries the opposite guard instead: it
+    must keep saying what the project does not do, so the exemption cannot be
+    used to quietly empty it."""
+    text = (ROOT / "docs" / "FINAL_SCOPE_CONTRACT.md").read_text().lower()
+    for claim in ("fleet assignment", "network design",
+                  "validated frequency selection", "right-sizing",
+                  "predictive superiority"):
+        assert claim in text, f"the scope contract no longer retires {claim!r}"
+
+
+def test_every_claim_audit_exemption_is_an_explicit_retraction():
+    """The carve-out is reported, not trusted. Every waived line must carry a
+    retirement token on the line itself."""
+    for _, r in G.claim_audit(exempt=True).iterrows():
+        assert G.RETIREMENT_PATTERN.search(r["text"]), (
+            f"{r['file']}:{r['line']} was waived without retracting anything")
 
 
 def test_claim_audit_covers_every_public_surface_that_exists():

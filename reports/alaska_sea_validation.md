@@ -15,12 +15,13 @@ carrier shares.
 ## Reading the screen honestly
 
 The screen resolves the 45 unserved candidates to 45 PASS: effectively
-no new-market opportunity at a mature hub. This holds after
-right-sizing: each market was tested at 3x, 7x, and 14x weekly (a single
-178-seat mainline gauge, which is what Alaska flies from SEA), and none cleared
-its best-fit schedule on the launch hurdle. So the earlier "fixed-gauge
-artifact" caveat is partly resolved (lowering frequency did not rescue these
-markets), and what remains is a genuine gauge limitation: a regional-jet gauge
+no new-market opportunity at a mature hub. This holds across the
+whole tested schedule menu: each market was evaluated at 3x, 7x, and 14x weekly
+(a single 178-seat mainline gauge, which is what Alaska flies from SEA), and
+none cleared the launch hurdle at any tested option. So the earlier
+"fixed-gauge artifact" caveat is partly resolved (lowering frequency did not
+rescue these markets), and what remains is a genuine gauge limitation: a
+regional-jet gauge
 (which Alaska operates through Horizon/SkyWest but is out of this study's
 mainline scope) would be the honest next test for the thinnest markets. The
 near-uniform PASS shows the screen does not invent opportunities at a mature

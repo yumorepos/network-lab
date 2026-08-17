@@ -48,7 +48,7 @@ number or verdict count drifts); PROGRESS.md reflects the current numbers.
 
 - `config/assumptions.yaml` - every assumption, one file.
 - `config/studies/*.yaml` - a study is a config, not a code change.
-- `models/screen.py` - the verdict logic and right-sizing.
+- `models/screen.py` - the verdict logic and the fixed-menu schedule evaluation.
 - `reports/generate.py`, `backtest/postmortem.py` - report generators.
 - `tests/test_sanity.py` - correctness-critical logic and the served-market
   cross-check against `data/reference/incumbent_network_202604.csv`.

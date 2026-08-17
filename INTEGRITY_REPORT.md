@@ -119,6 +119,17 @@ the computed artifacts.
 
 # Round 3: right-size service, then package (2026-07-20)
 
+> **Superseded on scope, preserved as a record (2026-08-17).** This round
+> introduced the frequency and gauge selection described below and called it
+> right-sizing. Stage 2R measured that component and found it effectively
+> degenerate under the tested candidate universe, and the claim was **retired
+> rather than repaired**: see `docs/STAGE_2R_DECISION.md` for the decision and
+> `docs/change_reports/T2_scope_retirement.md` for the wording change. The
+> mechanism described here is accurate and the code is unchanged; the framing
+> of it as an optimisation is not current. Nothing below has been rewritten,
+> because the trail showing the claim was made, tested and withdrawn is the
+> point.
+
 The prior rounds evaluated every candidate at a single hardcoded schedule (7x
 weekly, mainline gauge). That forced daily mainline capacity onto markets far
 too thin for it and produced meaningless verdicts (YYC-Sacramento: 22% load

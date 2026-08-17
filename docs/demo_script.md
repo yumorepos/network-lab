@@ -25,9 +25,12 @@ Vancouver. A tool that only says 'launch' is a cheerleader."
 
 ## 1:00-1:40 - One route, one live assumption (Market detail)
 Open **Market detail -> Dallas-Fort Worth** (WestJet).
-"Here's the right-sizing: the engine tested 3x, 7x, and 14x weekly and picked
-the best - and it still fails, because against American's Dallas hub the
-modeled share is 23%." Show the fare x fuel margin heatmap.
+"Here's the schedule step: the engine evaluated 3x, 7x and 14x weekly on
+WestJet's single 737 gauge. None of them clears the load-factor floor, so what
+you see is the fallback the screen reports when nothing is feasible, not a
+chosen schedule - and the market fails on economics regardless, because against
+American's Dallas hub the modeled share is 23%." Show the fare x fuel margin
+heatmap.
 "Every cell is a scenario, never a single point estimate."
 Then change one assumption live if scripted (e.g. transborder fare premium in
 `config/assumptions.yaml`) and re-run `make models` to show a verdict move -
