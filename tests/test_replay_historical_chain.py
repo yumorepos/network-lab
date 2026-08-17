@@ -170,15 +170,31 @@ def test_corridor_growth_year_is_a_complete_year_within_the_t100_window(
 def test_corridor_growth_year_is_the_latest_permitted_complete_year(
         run, con, study_id, cutoff):
     """Bounding the year from above is not enough: silently reaching further
-    back would change the demand level just as much, in the other direction."""
+    back would change the demand level just as much, in the other direction.
+
+    **Updated by the D1 repair**
+    (`docs/change_reports/D1_corridor_growth_vintage.md`). This test encoded
+    the pre-repair specification, "the latest complete year in the window",
+    and the repair deliberately changes that specification to "the latest
+    complete year in the window that is not a declared structural break". It
+    failed at westjet_yyc@202301 with growth year 2019 against a permitted
+    2021, which is the repair working.
+
+    The assertion is re-encoded against the new rule rather than relaxed, and
+    the guard is strictly stronger than before: it still rejects reaching
+    further back than necessary, and now also rejects a break year. Reaching
+    back to 2018 at 2023-01 fails here exactly as it did before.
+    """
     snaps, _, _ = run
     r = snaps[(study_id, cutoff)]
     v = r["vintages"]
     want = max(y for y in S.cached_years(con)["t100"]
-               if y * 100 + 12 <= v.t100_max_ym)
+               if y * 100 + 12 <= v.t100_max_ym
+               and y not in V.structural_break_years())
     assert r["transfer"]["growth_year"] == want, (
         f"{study_id}@{cutoff}: corridor growth year "
-        f"{r['transfer']['growth_year']}, latest permitted complete year {want}")
+        f"{r['transfer']['growth_year']}, latest permitted complete "
+        f"non-break year {want}")
 
 
 @pytest.mark.parametrize("study_id,cutoff", CASES)

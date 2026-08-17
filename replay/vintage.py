@@ -72,6 +72,20 @@ def excluded_decision_vintages() -> set[int]:
     return set(protocol()["exclusions"]["excluded_decision_vintages"]["value"])
 
 
+def structural_break_years() -> set[int]:
+    """Years the project has declared a structural break.
+
+    Distinct from `excluded_decision_vintages` in use, not in value. That entry
+    governs which years may be a DECISION or a LAUNCH COHORT and leaves 2021
+    admissible as input data, because a planner at 2023-01 did hold 2021 data.
+    This one governs which years may be an ENDPOINT OF A GROWTH RATIO, where
+    the same year is not admissible: a two-point trend anchored on a break year
+    and applied as a permanent level shift is a specification error rather than
+    a point-in-time fact. See `config/replay_protocol.yaml`.
+    """
+    return set(protocol()["exclusions"]["structural_break_years"]["value"])
+
+
 @dataclass(frozen=True)
 class Provenance:
     """One source, resolved against one cutoff. Immutable by design."""
@@ -163,25 +177,43 @@ class Cutoff:
             lookahead_exception=None))
         return m
 
-    def _t100_complete_year(self, cached: set[int], max_ym: int) -> int:
+    def _t100_complete_year(self, cached: set[int], max_ym: int,
+                            exclude: set[int] | None = None) -> int:
         """Latest complete T-100 calendar year inside the permitted window.
 
         Shared by the two callers below rather than duplicated, because two
         independent computations of the same selection are precisely how the
         corridor-growth year came to disagree with nothing and be recorded
         nowhere. One selection, one rule, two declared uses.
+
+        `exclude` is the D1 repair. Every other vintage resolver in this file
+        goes through `_latest_complete_year`, which has taken an exclusion set
+        since it was written; this helper was the one selection that took none,
+        and the corridor-growth year is the one use where that matters. The two
+        callers below pass different sets on purpose: seats are a level input
+        and admit a break year, a growth ratio is not and does not.
         """
-        ok = [y for y in cached if y * 100 + 12 <= max_ym]
+        exclude = exclude or set()
+        ok = [y for y in cached if y * 100 + 12 <= max_ym and y not in exclude]
         if not ok:
             raise LookupError(
                 f"no complete T-100 calendar year within {_fmt(max_ym)} at "
-                f"cutoff {self.label}: cached {sorted(cached)}. The replay "
-                "fails closed rather than reaching for a later year.")
+                f"cutoff {self.label}: cached {sorted(cached)}, excluded "
+                f"{sorted(exclude)}. The replay fails closed rather than "
+                "reaching for a later year.")
         return max(ok)
 
     def t100_seats_year(self, cached: set[int], max_ym: int) -> int:
         """Airport seat totals. Feeds the candidate seat floor and the
-        satellite rule."""
+        satellite rule.
+
+        **Deliberately keeps structural-break years.** A seat total is a level
+        the decision genuinely read, and it is the level that was there: 2021
+        airports really did handle 2021 seats. Excluding break years here would
+        move the candidate set at 2023-01, which is a different change from D1
+        and is not made. See `structural_break_years` for why the growth ratio
+        is treated differently.
+        """
         y = self._t100_complete_year(cached, max_ym)
         self._record(Provenance(
             source="BTS T-100 Segment (annual seats)",
@@ -200,11 +232,17 @@ class Cutoff:
         The single largest lever on transborder demand: the ratio is applied
         to every anchored and every capped row, so taking this year from the
         panel end rather than the permitted window multiplies 2023-01 YYC
-        demand by 5.73. It resolves to the same year as the seats vintage by
-        construction, and is recorded separately because it is a separate
-        claim about what the decision was allowed to read.
+        demand by 5.73.
+
+        **D1 repair**, `docs/change_reports/D1_corridor_growth_vintage.md`.
+        A structural-break year is admissible as a level input and is not
+        admissible as an endpoint of a growth ratio, so this resolver skips
+        them and `t100_seats_year` does not. Before the repair the two shared
+        one selection and returned the same year; they are now genuinely two
+        rules with two declared uses, which is what the docstring below always
+        claimed.
         """
-        y = self._t100_complete_year(cached, max_ym)
+        y = self._t100_complete_year(cached, max_ym, structural_break_years())
         self._record(Provenance(
             source="BTS T-100 Segment (corridor growth year)",
             reference_period=str(y),

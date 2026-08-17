@@ -92,6 +92,30 @@ exclusions:
       the analysis window and pretending a planner could not see it are
       different claims; only the first is supported."
 
+  structural_break_years:
+    value: [2020, 2021]
+    source: "PHASE_5_6_PLAN.md W1.6, the same pre-commitment that
+      excluded_decision_vintages cites. Same years, same source, declared
+      separately because it has a second and different use."
+    rationale: "The years the project has declared a structural break. The
+      entry above applies that finding to DECISION VINTAGES and to LAUNCH
+      COHORTS, and deliberately keeps 2021 admissible as INPUT DATA. That
+      distinction is correct for a LEVEL a planner read and wrong for a RATIO.
+      A corridor growth ratio is a two-point trend estimator, and putting a
+      structural-break year at one end of it, then applying the result as a
+      permanent level shift with no recovery expectation, is a specification
+      error rather than a point-in-time fact. So: a break year is admissible
+      as a level input and is not admissible as the endpoint of a growth
+      ratio. Consumed by replay/vintage.py:t100_corridor_growth_year and by
+      nothing else. It deliberately does NOT reach t100_seats_year, which is a
+      level input feeding the candidate seat floor; excluding a break year
+      there would change the candidate set, which is a different change from
+      D1 and is not made."
+    sensitivity: "At the approved cutoffs the rule moves exactly one year: the
+      2023-01 corridor growth numerator, from 2021 to 2019. 2022-01 already
+      resolved to 2019 and 2024-01 resolves to 2022, which is not a break
+      year."
+
 outcome:
 
   horizon_months:

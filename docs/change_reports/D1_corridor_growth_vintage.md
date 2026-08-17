@@ -189,3 +189,227 @@ narrower repair actually being made.
 
 Any prediction that fails is investigated and reported rather than
 accommodated.
+
+---
+
+## 2. The change made
+
+**Committed after section 0 and 1 were frozen at commit `7b3a7db`.**
+
+| file | change |
+|---|---|
+| `config/replay_protocol.yaml` | new `exclusions.structural_break_years` entry: same value and source as `excluded_decision_vintages`, declared separately because it has a second and different use |
+| `replay/vintage.py` | `structural_break_years()` accessor; `_t100_complete_year` gains an optional `exclude` set, which is what every sibling resolver already had; `t100_corridor_growth_year` passes the break years, `t100_seats_year` deliberately does not |
+| `tests/test_d1_corridor_growth.py` | eight regression guards |
+
+Three lines of behaviour change. Nothing in `config/assumptions.yaml`, no model
+module, no threshold, no scoring function, and no demand, share, fare, cost or
+frequency logic was touched.
+
+### Vintages, before and after
+
+| cutoff | complete years in window | growth year before | after | seats year before | after |
+|---|---|---|---|---|---|
+| 2022-01 | ... 2019 | 2019 | 2019 | 2019 | 2019 |
+| 2023-01 | ... 2019, 2021 | **2021** | **2019** | 2021 | 2021 |
+| 2024-01 | ... 2019, 2021, 2022 | 2022 | 2022 | 2022 | 2022 |
+
+The seats vintage at 2023-01 stays a break year, which is the point: growth and
+seats were one selection and are now two rules with two declared uses.
+
+---
+
+## 3. Metric impact
+
+Family 1 and Family 4, WestJet, the only cell carrying a predictive claim.
+
+| metric | before | after | delta |
+|---|---|---|---|
+| agreement@5 difference | -0.067 | -0.067 | 0.000 |
+| agreement@10 difference | +0.033 | +0.033 | 0.000 |
+| agreement@20 difference | 0.000 | 0.000 | 0.000 |
+| recall@5 difference | -0.048 | -0.048 | 0.000 |
+| recall@10 difference | +0.111 | +0.111 | 0.000 |
+| recall@20 difference | 0.000 | 0.000 | 0.000 |
+
+Per-decision-date and leave-one-date-out differences are identical before and
+after at every k. **No Family 1, Family 3 or Family 4 number moved.**
+
+### What did move
+
+| study | date | rows | median demand before | after | median margin before | after | rows moved |
+|---|---|---|---|---|---|---|---|
+| westjet_yyc | 2023-01 | 80 | 783 | 4,227 | -7,135.9% | -1,240.3% | 80 |
+
+Every other study and date is unchanged, including annual contribution. The
+demand ratio at WestJet 2023-01 is **5.398598 on every one of the 80 rows**,
+minimum equal to maximum, which is the common-scalar property measured rather
+than assumed.
+
+---
+
+## 4. Verdict changes
+
+| study | LAUNCH | MONITOR | PASS | change |
+|---|---|---|---|---|
+| westjet_yyc 2022-01 | 1 | 6 | 81 | none |
+| westjet_yyc 2023-01 | 0 | 0 | 80 | none |
+| westjet_yyc 2024-01 | 0 | 0 | 76 | none |
+| alaska_sea, all dates | 0 | 0 | 45 / 43 / 43 | none |
+| porter_yyz 2024-01 | 2 | 0 | 86 | none |
+
+**Markets that changed category: none.** Zero of 463 decision rows changed
+verdict, and zero changed chosen frequency.
+
+At 2023-01 a 5.4x demand correction moves the median margin from -7,136% to
+-1,240% and every candidate still screens PASS. That is the Stage 2R.3 finding
+restated from the other side: the cell is not rescued by fixing D1, because the
+binding constraint is the gap between the candidate demand and the smallest
+schedule the model may fly.
+
+---
+
+## 5. Did the predictions hold?
+
+| # | prediction | outcome |
+|---|---|---|
+| P1 | only WestJet 2023-01 changes | **held** |
+| P2 | demand rises by a single constant factor | **held**, 5.398598 on all 80 rows |
+| P3 | demand-only ranking identical everywhere | **held** |
+| P4 | margin ranking identical at WestJet 2023-01 | **held**, and at every other study-date |
+| P5 | zero verdict changes anywhere | **held** |
+| P6 | Family 1 and Family 4 unchanged | **held**, at every k, per date and leave-one-out |
+| P7 | chosen frequency unchanged everywhere | **held** |
+| P8 | Porter entirely unchanged, contrary to 2R.4 | **held** |
+
+All eight. Invariants 0.6.1 through 0.6.5 hold: candidate sets identical (463
+rows matched, none added or dropped), demand-method branch assignment unchanged
+on every row, provenance recorded at every cutoff.
+
+### The one divergence from Stage 2R, and why it was predicted
+
+Stage 2R.4 reported six Porter verdict changes. **None occurred, and none
+should have.** 2R.4 measured `alt_year = 2019` at every transborder study-date,
+which is the intervention "always use the last pre-COVID year". The repair
+adopted here is "skip structural-break years", which leaves Porter's 2024-01
+growth year of 2022 alone because 2022 is not a break year.
+
+This was written down in section 0.5 before the fix existed, so it is a
+narrowing that was declared rather than discovered. The 2R.4 blast-radius
+figures remain correct for the counterfactual they measured; they overstate the
+repair actually made, and the Stage 2R decision document's D1 row should be read
+with that correction.
+
+---
+
+## 6. Regression risk
+
+**Guarded by** `tests/test_d1_corridor_growth.py`, eight tests. The load-bearing
+one is not the year assertion but
+`test_the_repair_actually_binds_at_the_cutoff_that_exposed_it`, which computes
+the naive and corrected selections on the same window and asserts they differ:
+deleting the exclusion fails it for the right reason, and it self-reports if the
+cached years ever stop exercising the case.
+`test_resolver_skips_a_break_year_at_any_constructed_cutoff` drives five cutoffs
+beyond the approved three, so a future protocol change that admits a new
+decision vintage cannot reintroduce the defect quietly.
+`test_seats_year_still_admits_a_structural_break_year` is the mirror guard
+against over-applying the fix into the candidate set.
+
+**Would still slip through:**
+
+- A second growth-ratio-shaped term added elsewhere that resolves its own year
+  without consulting `structural_break_years()`. The tests guard the resolver,
+  not the concept.
+- A wrong `anchor_year`. The denominator of the ratio is untested here because
+  it is not part of this defect.
+- A structural break the project has not declared. The rule is only as good as
+  the list in `config/replay_protocol.yaml`, and nothing detects a break
+  automatically.
+- The production path. `models/transfer.py` hardcodes a 2018-to-2024 ratio and
+  never consults the resolver, so the defect cannot fire there today, but that
+  is a property of the hardcoded years rather than of a rule. Recorded as an
+  observation; changing it is out of scope for this repair.
+
+---
+
+## 7. Statistical meaningfulness
+
+- **Sample size:** WestJet, 15 positive decision rows on 10 distinct launch
+  events, 3 decision vintages.
+- **Interval or test:** none computed. Under Stage 2R.0 the design cannot
+  distinguish an effect smaller than about five net launch events, and this
+  repair moved zero.
+- **Verdict: no detectable change.**
+
+**This is not a disappointment and adoption does not depend on it.** Section
+0.8 fixed the adoption rule in advance: D1 is adopted because it corrects an
+established historical-input defect. A repair that moved a Family 4 number by
+one launch event would have been reported as a movement the design cannot
+distinguish from zero, not as an improvement. It moved nothing, which is the
+cleaner outcome.
+
+---
+
+## 8. Assumptions touched
+
+One entry added to `config/replay_protocol.yaml`:
+
+- `exclusions.structural_break_years`, value `[2020, 2021]`, source
+  `PHASE_5_6_PLAN.md` W1.6, the same pre-commitment
+  `excluded_decision_vintages` already cites. **No new numeric value enters the
+  codebase**: the years were already declared, and this entry names the second
+  use so the two cannot drift.
+
+`config/assumptions.yaml` is unchanged.
+
+---
+
+## 9. Adoption decision
+
+> **ADOPTED.**
+
+It corrects an established historical-input defect, every invariant held, every
+prediction held, no verdict moved, no ranking moved and no metric moved.
+
+### What this does and does not do to the Stage 2R record
+
+`docs/W1.4_predictive_baseline_v2.md` is **not** modified: V2 is the immutable
+before-state and D1 is carried in it as recorded defect 1.
+
+`docs/STAGE_2R0_RESOLUTION.md`, `docs/STAGE_2R_DIAGNOSTICS.md` and
+`docs/STAGE_2R_DECISION.md` are dated analyses of the pre-D1 engine, in the same
+sense V2 is, and are **not** regenerated. Stage 2R.0's numbers are in fact
+unaffected, because it measures ranks and launch labels and neither moved; the
+diagnostics' median-margin figures for WestJet 2023-01 describe the pre-repair
+state and should be read that way. The pre-D1 replay artifacts are preserved
+under `data/parquet/replay/pre_d1/` so the comparison in T5 is reproducible.
+
+---
+
+## 10. One existing test had to change, and why that is not a relaxation
+
+`tests/test_replay_historical_chain.py::test_corridor_growth_year_is_the_latest_permitted_complete_year`
+failed at `westjet_yyc@202301`: corridor growth year 2019 against a permitted
+2021. **That failure is the repair working.** The test encoded the pre-repair
+specification, "the latest complete year inside the permitted window", which is
+precisely the rule D1 corrects.
+
+Hard rule 7 forbids relaxing an assertion to make a test pass, and this is not
+that. The assertion is re-encoded against the new declared specification and
+the guard is **strictly stronger** than before:
+
+| behaviour | before | after |
+|---|---|---|
+| reaching past the permitted window | rejected | rejected |
+| silently reaching further back than necessary | rejected | rejected |
+| selecting a declared structural-break year | **accepted** | **rejected** |
+
+Its stated purpose, that bounding the year from above is not enough because
+reaching further back moves the demand level just as much, is unchanged: the
+resolver returning 2018 at 2023-01 still fails it. Recorded here because a test
+that changes alongside the code it guards deserves to be visible in the change
+report rather than buried in a diff.
+
+No other test changed, no tolerance was widened, and no expected value was
+edited.
