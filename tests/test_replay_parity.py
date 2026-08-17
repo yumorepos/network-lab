@@ -18,6 +18,14 @@ import pytest
 from models.common import OUTPUTS, connect
 from replay import snapshot as S
 
+from tests.conftest import requires_warehouse
+
+# Every test here reconstructs the model chain from the DuckDB
+# warehouse, which is not committed. Skip cleanly rather than erroring
+# on a fresh checkout; see tests/conftest.py.
+pytestmark = requires_warehouse
+
+
 STUDIES = ["westjet_yyc", "alaska_sea", "porter_yyz"]
 
 

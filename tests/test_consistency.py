@@ -77,8 +77,11 @@ def test_share_mae_consistent():
     _need(OUT / "share_validation.parquet")
     sv = pd.read_parquet(OUT / "share_validation.parquet")
     canon = f"{100 * sv['abs_err'].mean():.1f} share"
+    # docs/linkedin_posts.md added at T6: it was outside every guard and had
+    # drifted to "7.0 share-point error" against a computed 5.7.
     for f in ("README.md", "docs/validation.md", "docs/interview_story.md",
-              "docs/resume_material.md", "reports/alaska_sea_validation.md"):
+              "docs/resume_material.md", "reports/alaska_sea_validation.md",
+              "docs/linkedin_posts.md"):
         assert canon in (ROOT / f).read_text(), f"{f} lacks '{canon}'"
 
 
@@ -266,10 +269,11 @@ def test_readme_degeneracy_count_matches_the_decision_document():
         "docs/STAGE_2R_DECISION.md no longer states the decision-row and "
         "fallback counts in the shape this guard reads")
     canon = f"{fallback.group(1)} of {total.group(1)}"
-    readme = (ROOT / "README.md").read_text()
-    assert canon in readme, (
-        f"README must state the fallback count as '{canon}' to match "
-        f"docs/STAGE_2R_DECISION.md; it does not")
+    for rel in ("README.md", "docs/PORTFOLIO_NARRATIVE.md",
+                "docs/interview_story.md"):
+        assert canon in (ROOT / rel).read_text(), (
+            f"{rel} must state the fallback count as '{canon}' to match "
+            f"docs/STAGE_2R_DECISION.md; it does not")
 
 
 def test_limitations_d3a_figures_match_the_decision_document():
@@ -354,6 +358,66 @@ def test_connection_share_validation_status_is_stated_consistently():
     assert verdict in src.read_text(), "the T3 report no longer issues its verdict"
     lim = (ROOT / "docs" / "LIMITATIONS.md").read_text()
     assert verdict in lim, "LIMITATIONS must publish the T3 validation verdict"
+
+
+def test_v2_frozen_sections_are_immutable():
+    """V2 is the pre-repair predictive baseline that the post-D1 comparison is
+    read against, and "V2 is unchanged" is asserted in prose by three
+    generators, by PROGRESS.md and by the release criteria. Nothing enforced it
+    until T6.
+
+    The real convention is append-only. Sections 1 to 6 are the freeze; two
+    later commits appended sections 7 and 8, each of which states that it adds
+    no number and changes none. This pins the frozen region and leaves the
+    addendum mechanism available.
+
+    The digest below was verified equal to the same region at the freeze commit
+    `d514ec2`, so it pins the original baseline rather than whatever the file
+    happened to contain when this guard was written. Trailing whitespace is
+    normalised because the boundary is a truncation point.
+    """
+    import hashlib
+    import re
+    doc = (ROOT / "docs" / "W1.4_predictive_baseline_v2.md").read_text()
+    boundary = re.search(r"\n+---\n+## 7\. Reporting addendum", doc)
+    assert boundary, (
+        "the V2 addendum boundary is gone; either section 7 was renamed or the "
+        "frozen document was restructured, and neither is allowed")
+    frozen = doc[:boundary.start()].rstrip()
+    digest = hashlib.sha256(frozen.encode()).hexdigest()
+    assert digest == ("445d02844d279a6780676a74ae63e701"
+                      "9f19929c5bbbb25bebaa3b7dab2310a6"), (
+        "sections 1 to 6 of the V2 predictive baseline changed. V2 is the "
+        "immutable pre-repair scoreboard: a new result belongs in a new freeze "
+        "document with a statement of what moved and why, never in this one.")
+
+
+def test_v2_addenda_declare_that_they_change_nothing():
+    """The append-only convention is only safe if an addendum cannot smuggle in
+    a revision. Each one has to say so."""
+    doc = (ROOT / "docs" / "W1.4_predictive_baseline_v2.md").read_text()
+    for section in ("## 7. Reporting addendum", "## 8. Reporting addendum"):
+        i = doc.find(section)
+        assert i > 0, f"{section} is missing from the V2 baseline"
+        head = doc[i:i + 400]
+        assert "adds no number to the freeze and changes none" in head, (
+            f"{section} no longer declares that it changes no frozen number")
+
+
+def test_final_audit_ends_with_exactly_one_verdict():
+    """The final audit issues a single verdict from a frozen vocabulary, as its
+    last line. Two verdicts, a hedged verdict, or a verdict buried mid-document
+    would each let the document avoid committing to one."""
+    p = ROOT / "docs" / "FINAL_PROJECT_AUDIT.md"
+    assert p.exists(), "docs/FINAL_PROJECT_AUDIT.md is missing"
+    lines = [ln.strip() for ln in p.read_text().splitlines() if ln.strip()]
+    verdicts = [ln for ln in lines
+                if ln in ("PORTFOLIO READY", "NOT PORTFOLIO READY")]
+    assert len(verdicts) == 1, (
+        f"the final audit states {len(verdicts)} verdicts; it must state "
+        f"exactly one")
+    assert lines[-1] == verdicts[0], (
+        "the verdict must be the last line of the final audit")
 
 
 def test_gravity_counts_labeled_by_vintage():

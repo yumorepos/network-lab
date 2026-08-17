@@ -46,7 +46,7 @@ PUBLIC_SURFACES = [
     # remaining surfaces a reader actually meets, including the generated
     # reports, so a regression in `reports/generate.py` is caught in its output
     # and not only in its source.
-    "docs/linkedin_posts.md", "docs/backtest.md",
+    "docs/linkedin_posts.md", "docs/backtest.md", "docs/PORTFOLIO_NARRATIVE.md",
     "reports/alaska_sea_validation.md", "reports/porter_yyz_portability.md",
     "config/assumptions.yaml", "AGENTS.md", "CLAUDE.md",
 ]

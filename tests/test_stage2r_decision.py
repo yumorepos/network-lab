@@ -17,6 +17,7 @@ import pytest
 from models.common import assumptions, study
 from replay import stage2r as X
 from replay import stage2r_gate as G
+from tests.conftest import need_warehouse
 
 ROOT = Path(__file__).resolve().parents[1]
 DOC = ROOT / "docs" / "STAGE_2R_DECISION.md"
@@ -109,6 +110,7 @@ def test_no_survey_ceiling_row_clears_the_feasibility_floor():
     """The D3A decision is DOCUMENTATION rather than FIX precisely because a
     feasibility-gated ordering cannot contain a ceiling row. If one ever
     clears the floor, D3A becomes a live ranking problem again."""
+    need_warehouse()
     cf = G.ceiling_feasibility()
     assert cf["capped_rows"] > 0
     assert cf["capped_clearing_floor"] == 0, (
@@ -119,6 +121,7 @@ def test_no_survey_ceiling_row_clears_the_feasibility_floor():
 def test_brand_resolution_is_immaterial_where_the_studies_consume_it():
     """W2.2's NOT JUSTIFIED classification, stated as a threshold on the
     measurement rather than on the conclusion."""
+    need_warehouse()
     b = G.brand_resolution_at_hubs()
     assert len(b) == len(X.STUDIES)
     assert b["unresolved_share"].max() < 0.01, (
@@ -149,6 +152,7 @@ def test_share_validation_barely_covers_the_flagship_regime():
 
 
 def test_gate_verdict_is_one_of_the_frozen_three_and_matches_the_document():
+    need_warehouse()
     res = G.resolution_facts()
     gates = pd.DataFrame(G.W2_GATES)
     verdict, reasons = G.gate_verdict(res, gates)
@@ -166,6 +170,7 @@ def test_a_required_validation_task_does_not_flip_the_gate():
     """The gate turns on calibration, not validation. W2.3 is REQUIRED and the
     verdict must still be the third one; if `kind` is ever dropped this fires.
     """
+    need_warehouse()
     gates = pd.DataFrame(G.W2_GATES)
     assert (gates["classification"] == "REQUIRED").any()
     assert set(gates["kind"]) <= {"calibration", "validation"}

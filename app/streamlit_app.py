@@ -156,7 +156,37 @@ elif page == "Validation":
         st.plotly_chart(fig, use_container_width=True)
 
 elif page == "Backtest":
-    st.title("Backtest")
+    st.title("Backtest and predictive validation")
+    st.info(
+        "**Two different things live here, and only one of them is a test of "
+        "this engine.**\n\n"
+        "**The launch backtest** (below) scores real 2021-2025 launches on "
+        "demand percentile using a single pre-2022 model. It asks whether "
+        "demand rank alone separates survivors from failures. It does not.\n\n"
+        "**The point-in-time replay** reconstructs the full verdict chain at "
+        "three historical decision dates and compares the whole engine against "
+        "a demand-only ranking on identical rows. Its result: no detectable "
+        "incremental ranking value at effects larger than the study's "
+        "resolution, with smaller effects unresolved. That is a bounded "
+        "negative, not a demonstration that the two are equivalent.\n\n"
+        "The screen on the other pages is a **screening** output. It has not "
+        "been shown to rank better than demand, and it is not presented as a "
+        "validated predictor.")
+    with st.expander("What bounds the predictive result"):
+        st.markdown(
+            "- 15 positive rows rest on only **10 distinct launch events** "
+            "across **3 decision vintages**\n"
+            "- roughly **5 net launch events** spread across two vintages is "
+            "the optimistic detectability floor, and it is a floor because it "
+            "was built by an oracle construction\n"
+            "- the largest observed difference was **one event**\n"
+            "- an effect confined to a single vintage cannot be identified at "
+            "any magnitude this sample permits\n"
+            "- **k=20 is arithmetically saturated**: the demand comparator "
+            "already contains every positive, so nothing can beat it there\n\n"
+            "Full measurement in `docs/STAGE_2R0_RESOLUTION.md`; scope and "
+            "evidence boundary in `docs/LIMITATIONS.md`.")
+    st.divider()
     p = DOCS / "backtest.md"
     if p.exists():
         st.markdown(p.read_text())

@@ -62,6 +62,55 @@ or a labeled assumption in one YAML file.
   economics and competitive layers at launch vintage, and I say so instead
   of overclaiming signal.
 
+## The part I would actually want to be asked about
+
+I tested the engine against the simplest possible competitor and it did not
+win.
+
+I built a point-in-time replay: reconstruct the whole verdict chain at three
+historical decision dates from offline data only, guarded by leakage tests
+where all ten injected leaks were demonstrated to fire, then score it against
+the launches that actually happened. Then I ranked the same rows by modeled
+demand alone and compared.
+
+Before reading the comparison I measured what it could resolve, which turned
+out to be the important step. The 15 positive rows rest on only 10 distinct
+launch events across 3 vintages, the smallest difference the design can detect
+is roughly 5 net launch events spread over two vintages, and at k=20 the demand
+ranking already contains every positive, so nothing can beat it there by any
+amount. Every non-zero number in the headline was one launch label moving at
+one date.
+
+So the honest statement is bounded: no detectable incremental ranking value at
+effects larger than the study's resolution, smaller effects unresolved. Not
+"the model does not beat demand", which claims an equivalence this design
+cannot establish, and not a quiet reframing into something that sounds
+positive.
+
+Two things followed, and I think the second is the more interesting one.
+
+First, the replay showed one component was doing no work at all. The frequency
+and gauge step was described as right-sizing, a claim I have retired. Each
+study configures a single gauge, the menu starts at 3x weekly, and 445 of 463
+decisions never reached a comparison because nothing was feasible. Ranking by margin
+at the minimum option and at the chosen option is the same ordering, Spearman
+exactly 1.000 at every date. I retired the claim instead of building a
+fleet-assignment layer to justify it.
+
+Second, I did not react to a null by deleting everything sophisticated. I asked
+which layers had mechanistic evidence. Share and economics genuinely reorder
+the candidate set; the schedule step does not. The share layer rested almost
+entirely on the one-stop reconstruction and had been validated almost entirely
+outside that regime, because the published check's passenger floor selected
+against it. So I re-ran the validation at the floor the demand layer already
+uses, with the protocol frozen first, and the one-stop-only regime is now the
+largest stratum and beats an equal-share null there. I kept that layer, and I
+can say why.
+
+The summary I would give: I falsified my own headline component, published a
+negative result against my own engine, and narrowed the claim to what survived.
+Knowing when to stop defending a model is the part that took judgment.
+
 ## The tradeoffs I made on purpose
 - Single fixed-vintage backtest with disclosed lookahead; production refits
   per decision date.

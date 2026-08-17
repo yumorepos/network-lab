@@ -1,5 +1,52 @@
 # Progress log
 
+## Final packaging complete (2026-08-17): T2, T4 and T6
+
+**ANALYTICAL WORK CLOSED. PACKAGING COMPLETE, PENDING INDEPENDENT REVIEW.** The
+last three finish tasks are done. No model behaviour, assumption, threshold or
+numeric result moved in any of them.
+
+**T2, the right-sizing retirement.** The Stage 2R audit named 15 lines across 7
+surfaces; recomputed from the tree it reproduced exactly, and searching
+directly found 14 more, including five `best-fit` phrasings the original
+pattern missed. The claim scan now covers 16 surfaces including the generated
+reports, and the guard asserts the audit is **empty** rather than non-empty,
+which is the completion criterion Stage 2R set for T2. The only artifact
+content that changed is the `driver_service` label on 200 screen rows.
+
+**T4, the evidence boundary.** `docs/LIMITATIONS.md` now opens with a status
+table classifying every quantity that carries weight in a verdict, and closes
+with the disposition of every defect, the five declared residual lookaheads,
+the predictive resolution bound, the T3 verdict scoped to the screening use
+case, and the closed research recorded as decisions rather than backlog. D3A
+and D3B are documented separately and explicitly so.
+
+**T6, the consistency pass.** Scope contract, portfolio narrative, and the
+resume, interview and demo material aligned to the final claim. The Streamlit
+app names the product, marks feasibility per row, warns when a reported
+frequency is the infeasibility fallback, and separates the launch backtest from
+the predictive replay. Ordering was **not** changed: `models/screen.py` already
+sorts verdict first, then margin within verdict, so Amendment D's conditions
+were met without touching semantics.
+
+**206 tests pass.** `make all` clean, `make reproducibility` green twice.
+
+**Two pre-existing defects found and fixed during packaging, neither analytical.**
+The consistency guard had been red since T3 (`531c95e`) because it compared
+every "MAE x.y" against the pooled 5.7 and T3 legitimately published the
+stratum 6.5; it now checks both against their own artifacts. And a fresh
+checkout produced roughly a hundred errors rather than skips, because the
+chain tests need a warehouse that is deliberately not committed, which had made
+the CI badge a statement about a run predating the replay machinery. Under CI
+conditions the suite is now 65 passed, 141 skipped, zero errors.
+
+**Correction to the entry below:** its "195 tests pass" was not accurate when
+written. One consistency test was failing at `039b83e`. Details in
+`docs/change_reports/T2_scope_retirement.md` section 11.
+
+**Next: independent read-only final audit.** Not started. The verdict in
+`docs/FINAL_PROJECT_AUDIT.md` is provisional until then.
+
 ## Checkpoint A complete (2026-08-17): T1, T3 and T5
 
 **ANALYTICAL WORK COMPLETE, READY FOR FINAL PACKAGING.** Three of the six

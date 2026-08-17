@@ -17,6 +17,12 @@ click through the route screen, per-market scenario economics, validation, and
 backtest. Everything is reproducible from public sources with `make data && make
 all`.
 
+**Scope, stated once:** this is fixed-gauge route screening. It is not fleet
+assignment, network design, frequency selection, or a validated predictor. The
+full contract is [docs/FINAL_SCOPE_CONTRACT.md](docs/FINAL_SCOPE_CONTRACT.md);
+the story of how the claim got narrowed to that is
+[docs/PORTFOLIO_NARRATIVE.md](docs/PORTFOLIO_NARRATIVE.md).
+
 [![Route screen](docs/img/dashboard_route_screen.png)](https://network-lab-tweqoqjxhfrhj7imgmuftl.streamlit.app)
 
 ---
@@ -121,6 +127,20 @@ does not dress up:
   barely moves when Lynx's shutdown casualties are excluded. Demand rank alone
   does not predict survival, and [the report](docs/backtest.md) says so rather
   than overclaiming a signal that is not there.
+- **Point-in-time replay, and the result the project leads with.** The verdict
+  chain is reconstructed at three historical decision dates from offline
+  point-in-time data and scored against the launches that actually happened.
+  On the WestJet Calgary replay, **the full engine showed no detectable
+  incremental ranking value over a demand-only baseline at effects larger than
+  the study's resolution; smaller effects remain unresolved.** The resolution
+  was measured before the comparison was read: 15 positive rows rest on only 10
+  distinct launch events over 3 vintages, roughly 5 net events spread across
+  two vintages is the optimistic detectability floor, the largest observed
+  difference is one event, and k=20 is arithmetically saturated. This is a
+  bounded negative, not a demonstration of equivalence and not a failure. It is
+  why the product claim was narrowed instead of the model being expanded to
+  rescue it. See [docs/STAGE_2R0_RESOLUTION.md](docs/STAGE_2R0_RESOLUTION.md)
+  and [docs/LIMITATIONS.md](docs/LIMITATIONS.md).
 
 ## Method, and where it comes from
 
@@ -167,10 +187,12 @@ app/        Streamlit dashboard reading only the precomputed outputs
 No single open-source project combines DB1B, T-100, Form 41, gravity, QSI, and
 route economics end to end, which is what this repo is. It is config-driven: a
 new study is a YAML file (`config/studies/`), not a code change. Continuous
-integration runs the sanity and consistency tests on every push
-([.github/workflows/ci.yml](.github/workflows/ci.yml)); the consistency tests
-fail the build if any reader-facing number or verdict count drifts from the
-computed artifacts.
+integration runs on every push ([.github/workflows/ci.yml](.github/workflows/ci.yml)),
+and the consistency tests fail the build if any reader-facing number, verdict
+count or scope claim drifts from the computed artifacts. CI runs the subset
+that does not need the DuckDB warehouse, because the raw data is deliberately
+not committed; the point-in-time replay, leakage and parity tests skip there
+with a reason and run in full under `make test` against a built warehouse.
 
 ## Run it
 
@@ -188,6 +210,11 @@ file) are committed. Deploy steps in [docs/deploy.md](docs/deploy.md); demo
 storyboard in [docs/demo_script.md](docs/demo_script.md).
 
 ## Honest limitations
+
+Start with [docs/FINAL_SCOPE_CONTRACT.md](docs/FINAL_SCOPE_CONTRACT.md) for what
+this project does and does not claim, and
+[docs/PORTFOLIO_NARRATIVE.md](docs/PORTFOLIO_NARRATIVE.md) for how it got there,
+including the components it falsified and retired.
 
 See [docs/LIMITATIONS.md](docs/LIMITATIONS.md): the limitations are stated with
 the design decision each one forced, including the single-vintage backtest

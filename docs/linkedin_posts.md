@@ -64,7 +64,7 @@ What is under the hood:
   transferred across the border with a factor anchored to Canada's last published
   transborder survey.
 - A QSI-lite market-share model validated against observed DB1B carrier shares
-  (7.0 share-point error), with competitor connections reconstructed from T-100.
+  (MAE 5.7 share points), with competitor connections reconstructed from T-100.
 - A fully-allocated route P&L on a fare-by-fuel scenario grid, evaluated against
   a fixed schedule menu on one configured gauge.
 - A backtest of 48 real 2021-2025 launches that honestly reports weak demand-only

@@ -29,19 +29,62 @@ on the resume is reproducible from `make data && make models`.
   (Flair vs Lynx on the same Calgary-Las Vegas market) that separate an economic
   route failure from a corporate shutdown to show what a demand-first screen
   cannot see.
+- Built a point-in-time historical replay (three decision vintages, leakage
+  tests with all ten injected leaks demonstrated to fire) and benchmarked the
+  full engine against a demand-only ranking: no detectable incremental ranking
+  value at effects larger than the study's measured resolution, published as
+  the finding under a protocol frozen before results existed. Measured the
+  detectable effect size first, so the null is reported as bounded and
+  underpowered rather than as equivalence.
+- Used that replay to find and retire a headline component: the frequency and
+  gauge selection was effectively degenerate under the tested candidates, so
+  the product claim was narrowed to evidence-supported fixed-gauge screening
+  instead of adding a fleet layer to rescue it. Separately validated the
+  competition and share layer in the structural regime the flagship study
+  occupies, and kept it.
+
+## One-line project framing
+
+Built and validated a Python/DuckDB airline route-screening engine using BTS,
+DB1B, Form 41, StatCan and economic data. Developed point-in-time historical
+replay and regression tests that exposed demand, carrier-mapping and schedule
+selection defects; narrowed the final model to evidence-supported fixed-gauge
+screening after benchmarking against a demand-only baseline.
 
 ## LinkedIn project description
 
-Network Lab is an airline network planning workbench built entirely on open
-data. It sizes markets with a US-calibrated gravity model, carries demand
-across the border with a factor anchored to Canada's last published
-transborder O&D survey, reconstructs competing itineraries from T-100
-frequencies, and turns Form 41 cost filings into route-level scenario grids.
-Every demand number is flagged observed or modeled; every assumption lives in
-one YAML file with source, confidence, and sensitivity; and the whole
-warehouse reconciles against published government totals within 1%. Flagship
-study: WestJet transborder opportunities from Calgary. Validation study:
-Alaska at Seattle, where the full chain is checkable against observed truth.
+Network Lab is an airline route-screening engine built entirely on open data.
+It sizes markets with a US-calibrated gravity model, carries demand across the
+border with a factor anchored to Canada's last published transborder O&D
+survey, reconstructs competing itineraries from T-100 frequencies, and turns
+Form 41 cost filings into route-level scenario grids. Every demand number is
+flagged observed or modeled; every assumption lives in one YAML file with
+source, confidence, and sensitivity; and the whole warehouse reconciles against
+published government totals within 1%. Flagship study: WestJet transborder
+opportunities from Calgary. Validation study: Alaska at Seattle, where the full
+chain is checkable against observed truth.
+
+The part I would actually talk about is what happened when I tested it: a
+point-in-time replay showed no detectable ranking advantage over a demand-only
+baseline at any effect the study could resolve, and showed that one headline
+component was doing no work. I narrowed the product claim rather than adding
+complexity to rescue it, validated the one layer that had mechanistic evidence,
+and stopped.
+
+## Terms not to use
+
+Each of these overstates what the evidence supports, and each appears nowhere
+in the repository.
+
+| term | why |
+|---|---|
+| "optimized route network" | not claimed; nothing is optimised and no network-level decision is made |
+| "validated route predictor" | not claimed; the predictive comparison returned a bounded negative |
+| "right-sizing optimizer" | not claimed; the schedule step is a fixed menu evaluation, retired as an optimisation claim |
+| "AI-powered network planner" | not claimed; there is no model here that anyone would call AI |
+
+The defensible framing is fixed-gauge route screening with a bounded negative
+predictive result.
 
 ## Talking points on honest tradeoffs
 
