@@ -30,6 +30,14 @@ def test_route_screen_counts_match_generated_headline(study, headline):
     csv = OUT / f"screen_{study}.csv"
     assert csv.is_file(), f"Committed dashboard screen missing: {csv}"
     screen = pd.read_csv(csv)
+    # Streamlit displays the Parquet file, while public reports use the CSV.
+    # They must agree on every market and verdict before deployment.
+    app = pd.read_parquet(OUT / f"screen_{study}.parquet")
+    fields = ["metro_name", "verdict"]
+    pd.testing.assert_frame_equal(
+        screen[fields].sort_values(fields).reset_index(drop=True),
+        app[fields].sort_values(fields).reset_index(drop=True),
+    )
     expected = headline[study]
     actual = screen["verdict"].value_counts()
     assert len(screen) == expected["n_candidates"]
