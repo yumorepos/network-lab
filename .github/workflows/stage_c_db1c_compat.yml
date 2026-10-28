@@ -6,6 +6,7 @@ on:
     paths:
       - scripts/stage_c_db1c_compat.py
       - tests/test_stage_c_db1c_compat.py
+      - tests/test_stage_c_db1c_small_segment.py
       - docs/STAGE_C_DB1C_COMPAT_2026_10.md
       - docs/STAGE_B_T100_2026_07.md
       - .github/workflows/stage_c_db1c_compat.yml
@@ -22,14 +23,18 @@ jobs:
           python-version: "3.11"
       - run: pip install -r requirements.txt -q
       - name: Test four-grain cardinality and negative controls
-        run: pytest tests/test_stage_c_db1c_compat.py -q
+        run: pytest tests/test_stage_c_db1c_compat.py tests/test_stage_c_db1c_small_segment.py -q
       - name: Verify public monthly archive metadata without download
         run: python -m scripts.stage_c_db1c_compat --probe-public-headers | tee "$RUNNER_TEMP/db1c_headers.json"
+      - name: Inspect a bounded real Segment ZIP sample
+        run: python -m scripts.stage_c_db1c_compat --inspect-small-segment | tee "$RUNNER_TEMP/db1c_segment_schema.json"
       - name: Preserve small source status result
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: stage-c-db1c-head-diagnostics
-          path: ${{ runner.temp }}/db1c_headers.json
+          path: |
+            ${{ runner.temp }}/db1c_headers.json
+            ${{ runner.temp }}/db1c_segment_schema.json
           if-no-files-found: ignore
           retention-days: 7
