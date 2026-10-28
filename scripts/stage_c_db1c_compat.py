@@ -184,7 +184,7 @@ def inspect_public_segment_sample(
                        if item.filename.lower().endswith(".csv")
                        and not item.filename.lower().endswith("documentation.csv")]
         if not csv_members:
-            raise ValueError("No Segment CSV in official archive")
+            raise ValueError("No Segment CSV in official archive; members: " + repr(z.namelist()[:20]))
         member = max(csv_members, key=lambda i: i.file_size)
         with z.open(member) as raw:
             sample = pd.read_csv(raw, nrows=sample_rows, dtype=str)
