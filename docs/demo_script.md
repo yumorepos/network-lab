@@ -10,7 +10,7 @@ reads precomputed outputs; it **does not recompute model assumptions live**.
 "How can someone screen potential airline routes without proprietary booking
 and schedule feeds? I assembled public BTS, StatCan and economic data, with
 observed-versus-modeled demand and traceable assumptions, to produce research
-screening verdicts. It is not a route-success predictor or a network optimizer."
+screening verdicts. It is not a route-success predictor or a network-design tool."
 
 ## 0:20-1:00 - Route screen: corrected results
 
@@ -94,4 +94,4 @@ route was economically unviable.
 - Compare 5.7 and 10.9 share-point error with docs/validation.md.
 - Keep the 48-route fixed-vintage backtest separate from the 10-event
   point-in-time WestJet replay.
-- Never describe the fixed menu as aircraft/frequency optimization.
+- Never describe the fixed menu as aircraft or frequency selection.
