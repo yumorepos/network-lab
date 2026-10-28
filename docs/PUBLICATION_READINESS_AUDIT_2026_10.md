@@ -15,8 +15,28 @@ controls. Run from the repository root:
 ```bash
 python -m scripts.audit_airport_join_exposure
 python -m scripts.audit_publication_readiness
-pytest tests/test_airport_join_exposure.py tests/test_publication_readiness_audit.py -q
+pytest tests/test_airport_join_exposure.py tests/test_publication_readiness_audit.py tests/test_warehouse_mapping_audit.py -q
 ```
+
+## Additional warehouse audit (requires local source data)
+
+The new `scripts/audit_warehouse_mapping.py` opens a built DuckDB warehouse
+**read-only**. It reports ambiguous airport codes, city-market-to-CBSA
+cardinality, unmatched U.S. airport codes and passenger/seat/departure exposure,
+unmapped destination-metro traffic, PBI/DJT by source year, T-100 monthly
+coverage and current Master Coordinate code collisions. It cannot recover
+historical AirportIDs missing from the production slim T-100 Parquet.
+
+```bash
+python -m scripts.audit_warehouse_mapping --output /tmp/network_mapping_audit.json
+```
+
+The warehouse-dependent production run **has not been completed** in this
+GitHub-only audit. CI exercises its SQL with a **synthetic DuckDB fixture**
+that deliberately has a two-CBSA fanout, a missing PBI airport join and an
+ambiguous reused SAW code, and verifies all are detected. This is evidence
+that the diagnostic can catch those defect classes, **not proof** the full
+warehouse lacks them. A real output is required for publication sign-off.
 
 ## A. Tracked artifacts: supported facts
 
