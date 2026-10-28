@@ -1,0 +1,240 @@
+/* Network Lab visual layer. Research calculations and outputs are untouched.
+   Uses the same near-black surfaces as yumorepos.github.io, with restrained amber. */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  --nl-bg: #0a0b0e;
+  --nl-surface: #12151a;
+  --nl-surface-2: #171b21;
+  --nl-border: #292e35;
+  --nl-text: #f0f2f5;
+  --nl-muted: #a0a8b3;
+  --nl-accent: #e5a24a;
+}
+html, body, [data-testid="stAppViewContainer"], .stApp {
+  background: var(--nl-bg) !important;
+  color: var(--nl-text);
+  font-family: 'DM Sans', Inter, system-ui, sans-serif;
+}
+[data-testid="stHeader"] { background: transparent !important; }
+[data-testid="stAppViewContainer"] > .main { background: transparent !important; }
+[data-testid="stSidebar"], [data-testid="stSidebarContent"] {
+  background: #101318 !important;
+  border-right: 1px solid var(--nl-border);
+}
+[data-testid="stSidebar"] label, [data-testid="stSidebar"] p { color: #d4d9e1; }
+[data-testid="stMainBlockContainer"], .main .block-container {
+  max-width: 1210px;
+  padding-top: 1.25rem;
+  padding-bottom: 3rem;
+}
+h1, h2, h3, h4 { letter-spacing: -.025em; color: var(--nl-text) !important; }
+p, label, [data-testid="stMarkdownContainer"] { line-height: 1.55; }
+[data-testid="stCaptionContainer"] { color: var(--nl-muted); }
+a, a:visited { color: #eec084; }
+.stButton > button, .stDownloadButton > button {
+  background: #1c2128;
+  color: #f0f2f5;
+  border: 1px solid #363c45;
+  border-radius: 11px;
+  min-height: 2.7rem;
+}
+.stButton > button:hover, .stDownloadButton > button:hover {
+  border-color: var(--nl-accent);
+  color: #fff;
+}
+[data-baseweb="input"] > div, [data-baseweb="select"] > div {
+  background-color: #171b21 !important;
+  border-color: #363c45 !important;
+  border-radius: 11px !important;
+}
+[data-testid="stDataFrame"] {
+  border: 1px solid #292e35;
+  border-radius: 13px;
+  overflow: hidden;
+}
+[data-testid="stExpander"] {
+  border: 1px solid #292e35;
+  border-radius: 13px;
+  background: #12151a;
+}
+.nl-brand {
+  padding: 0 0 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #b7bec9;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .72rem;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+.nl-brand .nl-star {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border: 2px solid var(--nl-accent);
+  border-radius: 3px;
+  transform: rotate(45deg);
+}
+.nl-hero {
+  background:
+    radial-gradient(ellipse at 92% 10%, rgba(229,162,74,.095), transparent 38%),
+    linear-gradient(135deg, #15191f 0%, #0e1116 85%);
+  border: 1px solid #272d34;
+  border-radius: 18px;
+  padding: 29px 32px 27px;
+  margin: 0 0 22px;
+}
+.nl-eyebrow {
+  color: var(--nl-accent);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .7rem;
+  font-weight: 500;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+.nl-hero h1 {
+  margin: 0 0 9px !important;
+  font-size: clamp(1.55rem, 3vw, 2.4rem) !important;
+  line-height: 1.18;
+  font-weight: 650;
+}
+.nl-subtitle {
+  max-width: 770px;
+  color: #a4adb8;
+  font-size: .94rem;
+}
+.nl-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 9px 0 23px;
+}
+.nl-metrics.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.nl-metric {
+  background: linear-gradient(145deg, #171b21, #111419);
+  border: 1px solid var(--nl-border);
+  border-radius: 14px;
+  padding: 17px 19px 16px;
+  min-width: 0;
+}
+.nl-metric-label {
+  display: block;
+  color: #9aa5b1;
+  text-transform: uppercase;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: .07em;
+  font-size: .67rem;
+  margin-bottom: 9px;
+}
+.nl-metric-value {
+  display: block;
+  font-weight: 650;
+  font-size: clamp(1.4rem, 2.35vw, 2rem);
+  line-height: 1.18;
+  color: #f0f2f5;
+}
+.nl-metric:first-child .nl-metric-value { color: #f0c27d; }
+.nl-section-header {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  margin: 25px 0 12px;
+  font-size: 1rem;
+  font-weight: 650;
+  color: #e9edf3;
+}
+.nl-section-header small {
+  color: #919ba8;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight:400;
+  font-size:.69rem;
+}
+.nl-notice {
+  border: 1px solid #3e372b;
+  border-left: 3px solid #c89144;
+  background: #201c17;
+  color: #d6c5ae;
+  border-radius: 11px;
+  padding: 12px 15px;
+  margin: 10px 0 19px;
+  font-size: .87rem;
+  line-height: 1.58;
+}
+.nl-notice.neutral {
+  background: #161b22;
+  color: #b7c1cd;
+  border: 1px solid #303944;
+  border-left: 3px solid #64748b;
+}
+.nl-market-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap: 10px;
+  margin: 12px 0 16px;
+}
+.nl-market {
+  border: 1px solid #2b3039;
+  border-radius: 12px;
+  padding: 13px 15px;
+  background: #15191f;
+}
+.nl-market-top {
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:10px;
+}
+.nl-market-name {
+  font-weight: 600;
+  font-size:.87rem;
+  color:#e9edf3;
+  overflow-wrap: anywhere;
+  line-height:1.4;
+}
+.nl-pill {
+  border: 1px solid #41454c;
+  color: #c9d0da;
+  border-radius: 6px;
+  padding: 2px 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .61rem;
+  white-space: nowrap;
+}
+.nl-pill.launch { border-color:#765d38; color:#f0c27d; }
+.nl-pill.monitor { border-color:#685d45; color:#d7ba7e; }
+.nl-market-detail {
+  display:flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  color: #909aa8;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .67rem;
+  margin-top:10px;
+}
+.nl-footer {
+  color: #7f8894;
+  font-size: .73rem;
+  border-top: 1px solid #252a31;
+  padding-top: 18px;
+  margin-top: 22px;
+}
+@media(max-width: 760px) {
+  [data-testid="stMainBlockContainer"], .main .block-container {
+    padding: .7rem .8rem 2rem;
+  }
+  .nl-hero { padding: 20px 19px; border-radius: 14px; margin-bottom:15px; }
+  .nl-hero h1 { font-size: 1.57rem !important; }
+  .nl-subtitle { font-size: .82rem; }
+  .nl-metrics { gap: 7px; margin-bottom: 16px; }
+  .nl-metrics.four { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .nl-metric { padding: 11px 9px 12px; border-radius: 10px; }
+  .nl-metric-label { font-size: .57rem; letter-spacing: .01em; }
+  .nl-metric-value { font-size: 1.42rem; }
+  .nl-market-grid { grid-template-columns: 1fr; gap: 8px; }
+  .nl-market { padding: 11px 12px; }
+  .nl-section-header { align-items: flex-start; flex-direction: column; gap: 2px; }
+}
