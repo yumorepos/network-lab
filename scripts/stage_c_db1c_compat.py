@@ -14,6 +14,7 @@ import json
 import zipfile
 
 import pandas as pd
+import pyarrow.parquet as pq
 import requests
 
 # These column names are the published DB1C TranStats field names, not guesses.
@@ -180,21 +181,40 @@ def inspect_public_segment_sample(
     if total != expected:
         raise ValueError(f"segment ZIP truncated: expected {expected}, got {total}")
     with zipfile.ZipFile(io.BytesIO(payload)) as z:
-        csv_members = [item for item in z.infolist()
-                       if item.filename.lower().endswith(".csv")
-                       and not item.filename.lower().endswith("documentation.csv")]
-        if not csv_members:
-            raise ValueError("No Segment CSV in official archive; members: " + repr(z.namelist()[:20]))
-        member = max(csv_members, key=lambda i: i.file_size)
-        with z.open(member) as raw:
-            sample = pd.read_csv(raw, nrows=sample_rows, dtype=str)
-    missing = REQUIRED["segment"] - set(sample.columns)
+        parquet_members = [item for item in z.infolist()
+                           if item.filename.lower().endswith(".parquet")]
+        if parquet_members:
+            member = max(parquet_members, key=lambda i: i.file_size)
+            with z.open(member) as raw:
+                file = pq.ParquetFile(io.BytesIO(raw.read()))
+            columns = list(file.schema_arrow.names)
+            row_count = int(file.metadata.num_rows)
+            batch = next(file.iter_batches(batch_size=sample_rows), None)
+            sample = batch.to_pandas() if batch is not None else pd.DataFrame(
+                columns=columns)
+        else:
+            # Small synthetic archives in offline tests can contain CSV.
+            # Actual BTS ZIPs have nested ASCII / CSV ZIPs and Parquet.
+            csv_members = [item for item in z.infolist()
+                           if item.filename.lower().endswith(".csv")
+                           and not item.filename.lower().endswith("documentation.csv")]
+            if not csv_members:
+                raise ValueError("No readable Parquet/CSV in Segment archive; members: "
+                                 + repr(z.namelist()[:20]))
+            member = max(csv_members, key=lambda i: i.file_size)
+            with z.open(member) as raw:
+                sample = pd.read_csv(raw, nrows=sample_rows, dtype=str)
+            columns = list(sample.columns)
+            row_count = None
+    missing = REQUIRED["segment"] - set(columns)
     return {
         "zip_bytes": total,
         "zip_sha256": hashlib.sha256(payload).hexdigest(),
-        "archive_member_count": len(csv_members),
+        "selected_member": member.filename,
+        "archive_members": [i.filename for i in zipfile.ZipFile(io.BytesIO(payload)).infolist()],
+        "source_row_count": row_count,
         "sample_row_count": len(sample),
-        "columns": list(sample.columns),
+        "columns": columns,
         "missing_expected_fields": sorted(missing),
         "sample_periods": sorted({
             str(y) + "-" + str(m) for y, m in zip(
