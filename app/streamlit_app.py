@@ -196,6 +196,38 @@ elif page == "Market detail":
         st.caption(f"Demand source: {base['demand_source']} / "
                    f"{base.get('demand_method', '')}. All figures are modeled "
                    "or observed as marked in source artifacts.")
+
+        # Read-only source lineage and verdict drivers, taken directly from the
+        # committed screen artifacts. No change to demand, share or economics.
+        if scr is not None and (scr["metro_name"] == mkt).any():
+            evidence = scr.loc[scr["metro_name"] == mkt].iloc[0]
+            with st.expander("Data sources & verdict evidence"):
+                st.markdown("**Demand evidence**")
+                st.write(f"Origin: {evidence['demand_source']} · "
+                         f"Method: {evidence['demand_method']} · "
+                         f"Confidence: {evidence['confidence']}")
+                anchor = evidence.get("anchor_2018_pax")
+                if pd.notna(anchor) and float(anchor) > 0:
+                    st.caption(f"Historical anchor: {float(anchor):,.0f} "
+                               "passengers from the 2018 StatCan transborder "
+                               "survey. The anchor is not a current-year count.")
+                elif evidence["demand_source"] != "observed":
+                    st.caption("No observed 2018 city-pair anchor for this "
+                               "candidate; demand is estimated.")
+                st.markdown("**Why this verdict**")
+                st.write(str(evidence.get("driver_1", "Not recorded")))
+                st.write(str(evidence.get("driver_2", "Not recorded")))
+                st.caption(str(evidence.get("driver_service", "")))
+                if bool(evidence.get("share_uncertainty", False)):
+                    st.caption("Competitor reconstruction uncertainty is flagged.")
+                risk = evidence.get("top_risk")
+                if pd.notna(risk) and str(risk).strip():
+                    st.caption(f"Main risk: {risk}")
+                assumptions = evidence.get("key_assumptions")
+                if pd.notna(assumptions) and str(assumptions).strip():
+                    st.caption(f"Assumptions to test: {assumptions}")
+                st.caption("Screening only, not a validated prediction or "
+                           "a feasible published schedule. See Limitations.")
         grid = e.pivot_table(index="fuel_scenario_pct",
                              columns="fare_scenario_pct",
                              values="margin_pct")
