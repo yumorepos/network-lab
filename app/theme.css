@@ -222,19 +222,51 @@ a, a:visited { color: #eec084; }
   padding-top: 18px;
   margin-top: 22px;
 }
-@media(max-width: 760px) {
+/* Keep Streamlit's native header/menu visible and functional. On phones,
+   move our branding BELOW that header, rather than concealing its controls.
+   These changes are mobile-only; desktop styling remains unchanged. */
+@media (max-width: 760px) {
   [data-testid="stMainBlockContainer"], .main .block-container {
-    padding: .7rem .8rem 2rem;
+    padding: 3.6rem .9rem 2.25rem !important;
   }
-  .nl-hero { padding: 20px 19px; border-radius: 14px; margin-bottom:15px; }
-  .nl-hero h1 { font-size: 1.57rem !important; }
-  .nl-subtitle { font-size: .82rem; }
-  .nl-metrics { gap: 7px; margin-bottom: 16px; }
-  .nl-metrics.four { grid-template-columns:repeat(2,minmax(0,1fr)); }
-  .nl-metric { padding: 11px 9px 12px; border-radius: 10px; }
-  .nl-metric-label { font-size: .57rem; letter-spacing: .01em; }
-  .nl-metric-value { font-size: 1.42rem; }
-  .nl-market-grid { grid-template-columns: 1fr; gap: 8px; }
-  .nl-market { padding: 11px 12px; }
-  .nl-section-header { align-items: flex-start; flex-direction: column; gap: 2px; }
+  .nl-brand {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-bottom: 15px;
+    font-size: .76rem;
+    letter-spacing: .10em;
+    line-height: 1.5;
+  }
+  .nl-hero { padding: 21px 19px; border-radius: 14px; margin-bottom: 16px; }
+  .nl-eyebrow { font-size: .74rem; }
+  .nl-hero h1 { font-size: 1.68rem !important; }
+  .nl-subtitle { font-size: .91rem; line-height: 1.5; }
+  .nl-metrics { gap: 8px; margin-bottom: 17px; }
+  .nl-metrics.four { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .nl-metric { padding: 12px 10px 13px; border-radius: 10px; }
+  .nl-metric-label {
+    font-size: .70rem;
+    letter-spacing: .01em;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+  }
+  .nl-metric-value { font-size: 1.49rem; overflow-wrap: anywhere; }
+  .nl-market-grid { grid-template-columns: 1fr; gap: 9px; }
+  .nl-market { padding: 13px 13px; }
+  .nl-market-name { font-size: .98rem; line-height: 1.45; }
+  .nl-market-detail { font-size: .76rem; line-height: 1.6; }
+  .nl-pill { font-size: .72rem; padding: 3px 7px; }
+  .nl-notice { font-size: .9rem; line-height: 1.5; }
+  .nl-section-header { align-items: flex-start; flex-direction: column; gap: 4px; font-size: 1.06rem; }
+  .nl-section-header small { font-size: .78rem; line-height: 1.5; }
+  [data-testid="stCaptionContainer"] p,
+  [data-testid="stCaptionContainer"] span { font-size: .86rem !important; line-height: 1.5; }
+}
+
+/* Leave space for the system sidebar toggle and app controls even on
+   narrow phones; don't shrink evidence text to fit a compressed header. */
+@media (max-width: 390px) {
+  [data-testid="stMainBlockContainer"], .main .block-container {
+    padding-top: 3.9rem !important;
+  }
 }
