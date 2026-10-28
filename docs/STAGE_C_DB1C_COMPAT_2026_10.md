@@ -1,11 +1,11 @@
 # Stage C - DB1C four-table compatibility spike (2026-10-28)
 
-**Status: isolated schema and join-grain prototype, not production ingestion.**
-The published Network Lab DB1B mart and all current route verdicts are frozen.
-The pilot uses synthetic U.S. hub-month records to exercise the schema, and
-separately verifies the official July 2025 ZIP URLs via metadata-only requests.
-Actual DB1C Market/Coupon/Ticket/Segment rows have **not** yet been compared,
-and no new prediction or fare observation is claimed.
+**Status: limited observed Segment schema verified; Ticket, Market and
+Coupon compatibility is not yet validated.** The published DB1B mart and route
+verdicts remain frozen. The synthetic U.S. hub-month fixture tests join safety,
+while official archive HEAD checks and one bounded **real Segment** sample
+verify source accessibility and its actual record layout. No combined
+four-table DB1C market analysis, prediction or observed airfare is claimed.
 
 ## Published source, vintage and survey discontinuity
 
@@ -79,10 +79,43 @@ itinerary IDs, orphan markets/coupons/segments, an illegal Segment row for a
 direct coupon, an incorrect `MktFare` field, and a mixed reporting month.
 The expected assertion failure is recorded by each `pytest.raises`.
 
-The pilot also offers **HEAD-only** probes of the four BTS July 2025
-download links. These check source availability without downloading
-potentially large consumer-ticket archives. A HEAD success establishes a
-reachable archive, not a validated row schema or comparability.
+The pilot provides **HEAD-only** probes of all four BTS July 2025 ZIPs
+and a bounded download of the small Segment archive only. A HEAD success
+establishes reachability, not validated Ticket/Market/Coupon rows.
+
+## Verified source probe and bounded real sample
+
+Source: [Stage C official-source run 40783325936](https://github.com/yumorepos/network-lab/actions/runs/40783325936)
+at October 28, 2026. The GitHub runner made HEAD requests to the September
+18, 2026 public release of July **2025** data. Each official ZIP responded
+with HTTP 200, type `application/zip`:
+
+| DB1C table | Compressed ZIP bytes | Action in pilot |
+|---|---:|---|
+| Ticket | 1,319,846,154 | Header metadata only, no row download |
+| Market | 1,183,355,754 | Header metadata only, no row download |
+| Coupon | 1,965,799,735 | Header metadata only, no row download |
+| Segment | **7,355,408** | Downloaded, inspected Parquet metadata and 256 source rows |
+
+The **4.47 GB** combined Ticket, Market and Coupon archive sizes make a
+blind full-download CI test inappropriate for this bounded research task.
+A later actual U.S. market subset needs a documented, resource-safe
+selection mechanism that does not pretend a 256-row Segment sample
+validates the other three tables.
+
+The real Segment archive contains nested `.asc.zip`, nested `.csv.zip`,
+and a direct `.parquet` member. The original inspector erroneously
+expected a top-level CSV. An earlier runner was falsely green because a
+`tee` shell pipeline hid the Python exception. **Both defects were fixed**:
+the inspector reads Parquet metadata; the workflow enables
+`set -o pipefail`, so source failures fail CI.
+
+Verified Parquet findings: **126,457 Segment rows**, 256 sampled, expected
+`ItinID`, `MktID`, `SegmentID`, `SeqNum`, `RpYear`, and `RpMonth`
+all present, with **zero missing expected identity fields**. The 256
+sampled rows report July 2025. No individual itinerary IDs were
+exported as artifacts. These are **Segment records involving via points**,
+not all U.S. nonstop legs and not a count of distinct travelers.
 
 ## Gate C and findings disposition
 
