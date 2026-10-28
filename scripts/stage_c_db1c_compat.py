@@ -8,7 +8,10 @@ or convert DB1C gross fares into historical DB1B market fares.
 from __future__ import annotations
 
 import argparse
+import hashlib
+import io
 import json
+import zipfile
 
 import pandas as pd
 import requests
@@ -147,12 +150,70 @@ def probe_public_zip_headers(timeout: int = 35) -> dict:
     return out
 
 
+def inspect_public_segment_sample(
+    *, url: str | None = None, max_zip_bytes: int = 16_000_000,
+    sample_rows: int = 256,
+) -> dict:
+    """Inspect actual small Segment ZIP without exporting individual tickets.
+
+    The safety limit applies to compressed bytes. Ticket/Market/Coupon have
+    >1 GB ZIP files and must NOT be pulled by this inspection command.
+    """
+    url = url or ZIP_URLS["segment"]
+    headers = requests.head(url, timeout=35, allow_redirects=True)
+    headers.raise_for_status()
+    expected = int(headers.headers.get("Content-Length", 0))
+    if not expected or expected > max_zip_bytes:
+        raise ValueError(f"segment ZIP exceeds size cap: {expected} bytes")
+    chunks = []
+    total = 0
+    with requests.get(url, timeout=90, stream=True) as response:
+        response.raise_for_status()
+        for part in response.iter_content(chunk_size=262144):
+            if not part:
+                continue
+            total += len(part)
+            if total > max_zip_bytes:
+                raise ValueError("segment ZIP streamed beyond size cap")
+            chunks.append(part)
+    payload = b"".join(chunks)
+    if total != expected:
+        raise ValueError(f"segment ZIP truncated: expected {expected}, got {total}")
+    with zipfile.ZipFile(io.BytesIO(payload)) as z:
+        csv_members = [item for item in z.infolist()
+                       if item.filename.lower().endswith(".csv")
+                       and not item.filename.lower().endswith("documentation.csv")]
+        if not csv_members:
+            raise ValueError("No Segment CSV in official archive")
+        member = max(csv_members, key=lambda i: i.file_size)
+        with z.open(member) as raw:
+            sample = pd.read_csv(raw, nrows=sample_rows, dtype=str)
+    missing = REQUIRED["segment"] - set(sample.columns)
+    return {
+        "zip_bytes": total,
+        "zip_sha256": hashlib.sha256(payload).hexdigest(),
+        "archive_member_count": len(csv_members),
+        "sample_row_count": len(sample),
+        "columns": list(sample.columns),
+        "missing_expected_fields": sorted(missing),
+        "sample_periods": sorted({
+            str(y) + "-" + str(m) for y, m in zip(
+                sample.get("RpYear", pd.Series(dtype=str)),
+                sample.get("RpMonth", pd.Series(dtype=str)))
+        }),
+        "segment_row_values_exported": False,
+    }
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--probe-public-headers", action="store_true")
+    parser.add_argument("--inspect-small-segment", action="store_true")
     args = parser.parse_args()
     if args.probe_public_headers:
         print(json.dumps(probe_public_zip_headers(), indent=2))
+    elif args.inspect_small_segment:
+        print(json.dumps(inspect_public_segment_sample(), indent=2))
     else:
         parser.print_help()
 
