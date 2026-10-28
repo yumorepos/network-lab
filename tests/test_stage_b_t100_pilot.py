@@ -139,7 +139,11 @@ def test_airport_market_lookup_conflicts_are_reported(tmp_path):
     sample = read_month_zip(zipped(tmp_path, "sample.zip", [record()]), 2026, 7)
     result = airport_lookup_diagnostic(sample, path)
     assert result["ambiguous_latest_airport_market_ids"] == 1
+    assert result["ambiguous_latest_airport_codes"] == ["YYC"]
+    assert result["ambiguous_observed_airport_codes"] == ["YYC"]
+    assert result["ambiguous_observed_segment_rows"] == 1
     assert result["unmatched_observed_airport_count"] == 0
+    assert result["unmatched_observed_segment_rows"] == 0
 
 
 def test_negative_control_master_lookup_missing_market_id(tmp_path):
