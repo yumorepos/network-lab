@@ -128,13 +128,25 @@ def airport_lookup_diagnostic(frame: pd.DataFrame, path: Path) -> dict:
     airports = set(pd.concat([frame.ORIGIN, frame.DEST]).dropna())
     found = set(latest.AIRPORT.dropna())
     ambiguity = (latest.groupby("AIRPORT")["CITY_MARKET_ID"].nunique() > 1)
+    ambiguous_codes = set(ambiguity[ambiguity].index)
+    missing_codes = airports - found
+    touching_missing = frame.ORIGIN.isin(missing_codes) | frame.DEST.isin(missing_codes)
+    touching_ambiguous = (
+        frame.ORIGIN.isin(ambiguous_codes) | frame.DEST.isin(ambiguous_codes)
+    )
     return {
         "lookup_current_airport_rows": int(len(latest)),
         "unique_observed_airports": len(airports),
         "matched_observed_airports": len(airports & found),
-        "unmatched_observed_airports": sorted(airports - found)[:30],
-        "unmatched_observed_airport_count": len(airports - found),
+        "unmatched_observed_airports": sorted(missing_codes)[:30],
+        "unmatched_observed_airport_count": len(missing_codes),
+        "unmatched_observed_segment_rows": int(touching_missing.sum()),
+        "unmatched_observed_segment_passengers": int(
+            frame.loc[touching_missing, "PASSENGERS"].sum()),
         "ambiguous_latest_airport_market_ids": int(ambiguity.sum()),
+        "ambiguous_latest_airport_codes": sorted(ambiguous_codes),
+        "ambiguous_observed_airport_codes": sorted(ambiguous_codes & airports),
+        "ambiguous_observed_segment_rows": int(touching_ambiguous.sum()),
         "lookup_vintage": "latest available as of 2026-10-28; not a historical lookup",
     }
 
