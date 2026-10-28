@@ -5,6 +5,8 @@ import io
 import zipfile
 
 import pytest
+import pyarrow as pa
+import pyarrow.parquet as pq
 
 from scripts import stage_c_db1c_compat as spike
 
@@ -71,3 +73,23 @@ def test_negative_control_schema_missing_field_is_reported(monkeypatch):
     monkeypatch.setattr(spike.requests, "get", lambda *_a, **_kw: Response(data))
     out = spike.inspect_public_segment_sample()
     assert "SegmentID" in out["missing_expected_fields"]
+
+
+def test_actual_public_parquet_member_layout_is_read_without_csv(monkeypatch):
+    buffer = io.BytesIO()
+    pq.write_table(pa.table({
+        "ItinID": ["A"], "MktID": ["A1"], "SegmentID": [1],
+        "SeqNum": [1], "RpYear": [2025], "RpMonth": [7],
+    }), buffer)
+    outer = io.BytesIO()
+    with zipfile.ZipFile(outer, "w", compression=zipfile.ZIP_DEFLATED) as z:
+        z.writestr("DB1C.SEGMENT.synthetic.parquet", buffer.getvalue())
+        z.writestr("DB1C.SEGMENT.synthetic.csv.zip", b"")
+    data = outer.getvalue()
+    monkeypatch.setattr(spike.requests, "head", lambda *_a, **_kw: Response(data))
+    monkeypatch.setattr(spike.requests, "get", lambda *_a, **_kw: Response(data))
+    out = spike.inspect_public_segment_sample()
+    assert out["selected_member"].endswith(".parquet")
+    assert out["source_row_count"] == 1
+    assert out["sample_row_count"] == 1
+    assert out["missing_expected_fields"] == []
