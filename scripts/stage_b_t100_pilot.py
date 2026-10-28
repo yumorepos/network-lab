@@ -24,6 +24,11 @@ from ingest.transtats import T100_SEGMENT_ALL, ALL_FIELDS, download_table_year
 TARGET = (2026, 7)
 CONTROL = (2025, 7)
 COUNTS = ("SEATS", "PASSENGERS", "DEPARTURES_PERFORMED")
+# Stable identifiers published with table 293. The production ingest deliberately
+# remains at its 14-field contract; only this research download adds IDs.
+STABLE_FIELDS = ("ORIGIN_AIRPORT_ID", "DEST_AIRPORT_ID",
+                 "ORIGIN_CITY_MARKET_ID", "DEST_CITY_MARKET_ID")
+PILOT_FIELDS = [*FIELDS, *STABLE_FIELDS]
 
 
 def read_month_zip(path: Path, year: int, month: int) -> pd.DataFrame:
@@ -36,10 +41,10 @@ def read_month_zip(path: Path, year: int, month: int) -> pd.DataFrame:
             raise ValueError("No data CSV in T-100 ZIP")
         member = max(csv_members, key=lambda i: i.file_size)
         with archive.open(member) as raw:
-            frame = pd.read_csv(raw, usecols=lambda c: c.upper() in FIELDS,
+            frame = pd.read_csv(raw, usecols=lambda c: c.upper() in PILOT_FIELDS,
                                 dtype="string", low_memory=False)
     frame.columns = frame.columns.str.upper()
-    missing = sorted(set(FIELDS) - set(frame.columns))
+    missing = sorted(set(PILOT_FIELDS) - set(frame.columns))
     if missing:
         raise ValueError("Missing official T-100 fields: " + ", ".join(missing))
     for col in ("YEAR", "MONTH", *COUNTS):
@@ -51,7 +56,7 @@ def read_month_zip(path: Path, year: int, month: int) -> pd.DataFrame:
     for col in COUNTS:
         if frame[col].isna().any() or (frame[col] < 0).any():
             raise ValueError(f"Missing or negative {col} in {year}-{month:02d}")
-    for col in ("UNIQUE_CARRIER", "ORIGIN", "DEST"):
+    for col in ("UNIQUE_CARRIER", "ORIGIN", "DEST", *STABLE_FIELDS):
         if frame[col].isna().any() or (frame[col].str.len() == 0).any():
             raise ValueError(f"Missing {col} in {year}-{month:02d}")
     return frame
@@ -105,7 +110,7 @@ def operator_mapping_diagnostic(frame: pd.DataFrame, families: Path) -> dict:
 
 def airport_lookup_diagnostic(frame: pd.DataFrame, path: Path) -> dict:
     """Check current BTS airport-to-city-market lookup without silently deduping."""
-    needed = {"AIRPORT", "CITY_MARKET_ID", "AIRPORT_IS_LATEST"}
+    needed = {"AIRPORT", "AIRPORT_ID", "CITY_MARKET_ID", "AIRPORT_IS_LATEST"}
     with zipfile.ZipFile(path) as archive:
         members = [i for i in archive.infolist()
                    if i.filename.lower().endswith(".csv")
@@ -121,7 +126,7 @@ def airport_lookup_diagnostic(frame: pd.DataFrame, path: Path) -> dict:
         raise ValueError("Master Coordinate missing fields: " + ", ".join(missing))
     latest = lookup.loc[
         lookup["AIRPORT_IS_LATEST"].str.lower().isin(("true", "1"))
-        & lookup["CITY_MARKET_ID"].notna(), ["AIRPORT", "CITY_MARKET_ID"]
+        & lookup["CITY_MARKET_ID"].notna(), ["AIRPORT", "AIRPORT_ID", "CITY_MARKET_ID"]
     ].drop_duplicates()
     if latest.empty:
         raise ValueError("Master Coordinate has no current airport market IDs")
@@ -134,8 +139,34 @@ def airport_lookup_diagnostic(frame: pd.DataFrame, path: Path) -> dict:
     touching_ambiguous = (
         frame.ORIGIN.isin(ambiguous_codes) | frame.DEST.isin(ambiguous_codes)
     )
+    # A three-character code can be reused. Join stable AirportID instead,
+    # and compare the source's own July CityMarketID against latest lookup.
+    legs = pd.concat([
+        frame[["ORIGIN_AIRPORT_ID", "ORIGIN_CITY_MARKET_ID"]].rename(
+            columns={"ORIGIN_AIRPORT_ID": "AIRPORT_ID",
+                     "ORIGIN_CITY_MARKET_ID": "SOURCE_MARKET_ID"}),
+        frame[["DEST_AIRPORT_ID", "DEST_CITY_MARKET_ID"]].rename(
+            columns={"DEST_AIRPORT_ID": "AIRPORT_ID",
+                     "DEST_CITY_MARKET_ID": "SOURCE_MARKET_ID"}),
+    ], ignore_index=True).drop_duplicates()
+    by_id = latest[["AIRPORT_ID", "CITY_MARKET_ID"]].drop_duplicates()
+    lookup_conflicts_by_id = (
+        by_id.groupby("AIRPORT_ID")["CITY_MARKET_ID"].nunique() > 1)
+    joined = legs.merge(by_id, on="AIRPORT_ID", how="left",
+                        validate="many_to_many", indicator=True)
+    matched = joined.loc[joined["_merge"] == "both"]
+    conflict_ids = set(lookup_conflicts_by_id[lookup_conflicts_by_id].index)
+    stable_disagreements = matched.loc[
+        matched.SOURCE_MARKET_ID != matched.CITY_MARKET_ID]
     return {
         "lookup_current_airport_rows": int(len(latest)),
+        "source_distinct_airport_id_market_pairs": int(len(legs)),
+        "stable_id_lookup_matching_pairs": int(len(matched)),
+        "stable_id_lookup_missing_pairs": int((joined["_merge"] != "both").sum()),
+        "stable_id_market_disagree_pairs": int(len(stable_disagreements)),
+        "stable_id_market_disagree_ids": sorted(
+            set(stable_disagreements.AIRPORT_ID.dropna()))[:30],
+        "stable_id_with_multiple_latest_market_ids": len(conflict_ids),
         "unique_observed_airports": len(airports),
         "matched_observed_airports": len(airports & found),
         "unmatched_observed_airports": sorted(missing_codes)[:30],
@@ -167,7 +198,7 @@ def run(output_dir: Path, *, downloader=download_table_year) -> dict:
     output_dir.mkdir(parents=True, exist_ok=True)
     data = {}
     for year, month in (TARGET, CONTROL):
-        z = downloader(T100_SEGMENT_ALL, year, FIELDS,
+        z = downloader(T100_SEGMENT_ALL, year, PILOT_FIELDS,
                        output_dir / "raw" / f"t100_table293_{year}.zip")
         data[year] = read_month_zip(z, year, month)
     current, previous = data[TARGET[0]], data[CONTROL[0]]
