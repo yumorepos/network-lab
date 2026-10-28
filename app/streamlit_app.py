@@ -114,10 +114,8 @@ if page == "Route screen":
             ("MONITOR", str(int(counts.get("MONITOR", 0)))),
             ("PASS", str(int(counts.get("PASS", 0)))),
         ])
-        st.caption("Research screen on one configured aircraft gauge and the "
-                   "3x/7x/14x weekly menu. Fixed-menu evaluation is not fleet "
-                   "assignment, validated frequency selection or a route-success "
-                   "prediction. Margins are modeled proxies; demand may be estimated.")
+        st.caption("Fixed-gauge research · 3x / 7x / 14x weekly · "
+                   "not a route recommendation.")
 
         # Presentation only: sort order and verdicts come from the committed
         # artifact. No re-scoring, model adjustment, or new recommendations.
@@ -131,14 +129,17 @@ if page == "Route screen":
                      "top_competitor", "top_risk"]]
         n_feas = int(show["feasible"].sum())
         if n_feas == 0:
-            notice(f"No candidate clears the {LF_FLOOR:.0%} load-factor floor "
-                   "at any tested frequency. All displayed routes are research "
-                   "comparators, not ranked launch recommendations.")
+            notice(f"No tested schedule meets the {LF_FLOOR:.0%} "
+                   "load-factor floor.")
         else:
-            notice(f"{n_feas} of {len(show)} candidates clear the "
-                   f"{LF_FLOOR:.0%} load-factor floor. Read the verdict first; "
-                   "the displayed row order is not a validated opportunity "
-                   "ranking.", muted=True)
+            notice(f"{n_feas}/{len(show)} markets meet the "
+                   f"{LF_FLOOR:.0%} load-factor floor.", muted=True)
+        with st.expander("How to read these results"):
+            st.caption("A single aircraft size and a fixed schedule menu are "
+                       "evaluated for each candidate. Verdicts are research "
+                       "screens, not operational advice. Demand may be observed "
+                       "or estimated; modeled margins have uncertainty. "
+                       "Row order is not a validated opportunity ranking.")
 
         section_heading("Explore candidate markets",
                         "Search by metro · original research order retained")
@@ -178,12 +179,13 @@ elif page == "Market detail":
                        f"weekly x {int(srow['chosen_seats'])} seats "
                        f"({srow['chosen_gauge']}) - verdict {srow['verdict']}")
             if not feasible:
-                st.warning(
-                    f"No option on the tested menu clears the "
-                    f"{LF_FLOOR:.0%} load-factor floor for this market "
-                    f"(best achieved {srow['load_factor']:.0%}). The "
-                    f"frequency shown is the fallback the screen reports when "
-                    f"nothing is feasible, not a selected schedule.")
+                notice(f"Below {LF_FLOOR:.0%} load-factor floor. "
+                       "Displayed frequency is a fallback.")
+                with st.expander("Why the fallback appears"):
+                    st.caption("None of the tested frequencies clears the "
+                               "load-factor threshold. The displayed option "
+                               "is a research comparison, not a selected "
+                               "flight schedule.")
         base = e[(e.fare_scenario_pct == 0) & (e.fuel_scenario_pct == 0)].iloc[0]
         metric_strip([
             ("Demand / year", f"{base['demand_pax_yr']:,.0f}"),
