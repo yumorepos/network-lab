@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 from pathlib import Path
+import html
+import re
 
 import pandas as pd
 import plotly.express as px
@@ -16,7 +18,70 @@ DOCS = ROOT / "docs"
 LF_FLOOR = float(yaml.safe_load((ROOT / "config" / "assumptions.yaml")
                                 .read_text())["min_feasible_load_factor"]["value"])
 
-st.set_page_config(page_title="Network Lab", layout="wide")
+
+st.set_page_config(page_title="Network Lab | Aviation Route Research",
+                   page_icon="✦", layout="wide")
+# Theme is presentation-only. It does not touch the model or committed outputs.
+st.markdown("<style>" + (ROOT / "app" / "theme.css").read_text() + "</style>",
+            unsafe_allow_html=True)
+
+
+def page_heading(section: str, title: str, subtitle: str) -> None:
+    st.markdown(
+        '<div class="nl-brand"><span class="nl-star"></span> NETWORK / LAB'
+        ' &nbsp;·&nbsp; OPEN DATA RESEARCH</div>'
+        f'<section class="nl-hero"><div class="nl-eyebrow">{html.escape(section)}</div>'
+        f'<h1>{html.escape(title)}</h1>'
+        f'<div class="nl-subtitle">{html.escape(subtitle)}</div></section>',
+        unsafe_allow_html=True,
+    )
+
+
+def metric_strip(items: list[tuple[str, str]]) -> None:
+    cards = "".join(
+        '<div class="nl-metric">'
+        f'<span class="nl-metric-label">{html.escape(label)}</span>'
+        f'<span class="nl-metric-value">{html.escape(str(value))}</span>'
+        '</div>' for label, value in items
+    )
+    n = " four" if len(items) == 4 else ""
+    st.markdown(f'<div class="nl-metrics{n}">{cards}</div>',
+                unsafe_allow_html=True)
+
+
+def notice(message: str, muted: bool = False) -> None:
+    kind = " neutral" if muted else ""
+    st.markdown(f'<div class="nl-notice{kind}">{html.escape(message)}</div>',
+                unsafe_allow_html=True)
+
+
+def market_cards(rows: pd.DataFrame) -> None:
+    cards = []
+    for _, row in rows.iterrows():
+        verdict = str(row["verdict"])
+        klass = verdict.lower() if verdict in ("LAUNCH", "MONITOR") else ""
+        cards.append(
+            '<article class="nl-market"><div class="nl-market-top">'
+            f'<span class="nl-market-name">{html.escape(str(row["metro_name"]))}</span>'
+            f'<span class="nl-pill {klass}">{html.escape(verdict)}</span>'
+            '</div><div class="nl-market-detail">'
+            f'<span>MODELED MARGIN {row["margin_pct"]:.1f}%</span>'
+            f'<span>LOAD FACTOR {row["load_factor"]:.0%}</span>'
+            '</div></article>'
+        )
+    st.markdown('<div class="nl-market-grid">' + "".join(cards) + '</div>',
+                unsafe_allow_html=True)
+
+
+def section_heading(title: str, detail: str = "") -> None:
+    st.markdown(
+        '<div class="nl-section-header">'
+        f'<span>{html.escape(title)}</span>'
+        f'<small>{html.escape(detail)}</small></div>',
+        unsafe_allow_html=True,
+    )
+
+
 
 STUDIES = {
     "WestJet YYC transborder (flagship)": "westjet_yyc",
@@ -30,33 +95,32 @@ def load(name: str) -> pd.DataFrame | None:
     return pd.read_parquet(p) if p.exists() else None
 
 
+st.sidebar.caption("RESEARCH WORKSPACE · SCREENING, NOT A FORECAST")
 page = st.sidebar.radio("View", ["Route screen", "Market detail",
                                  "Validation", "Backtest", "About"])
 study_label = st.sidebar.selectbox("Study", list(STUDIES))
 sid = STUDIES[study_label]
 
 if page == "Route screen":
-    st.title(f"Route screen: {study_label}")
+    page_heading("01 / Route screening", "Route screen",
+                 f"{study_label} · Fixed-gauge research screen")
     df = load(f"screen_{sid}.parquet")
     if df is None:
         st.warning("Run `make models` first.")
     else:
         counts = df["verdict"].value_counts()
-        c1, c2, c3 = st.columns(3)
-        c1.metric("LAUNCH", int(counts.get("LAUNCH", 0)))
-        c2.metric("MONITOR", int(counts.get("MONITOR", 0)))
-        c3.metric("PASS", int(counts.get("PASS", 0)))
-        st.caption("Fixed-gauge route screening. Each market is evaluated "
-                   "against this study's single configured gauge and a fixed "
-                   "schedule menu (3x/7x/14x weekly); the screen reports the "
-                   "best feasible option, or that none is feasible, and judges "
-                   "that schedule. This is not fleet assignment or frequency "
-                   "selection. Margins are a fully-allocated proxy; demand "
-                   "rows are flagged observed or modeled. See Validation.")
-        # Presentation only: the artifact is already ordered verdict first,
-        # then margin within verdict (models/screen.py). Nothing is re-scored
-        # or re-ranked here; `feasible` is a readout of the existing load
-        # factor against the configured floor, not a new criterion.
+        metric_strip([
+            ("LAUNCH", str(int(counts.get("LAUNCH", 0)))),
+            ("MONITOR", str(int(counts.get("MONITOR", 0)))),
+            ("PASS", str(int(counts.get("PASS", 0)))),
+        ])
+        st.caption("Research screen on one configured aircraft gauge and the "
+                   "3x/7x/14x weekly menu. Fixed-menu evaluation is not fleet "
+                   "assignment, validated frequency selection or a route-success "
+                   "prediction. Margins are modeled proxies; demand may be estimated.")
+
+        # Presentation only: sort order and verdicts come from the committed
+        # artifact. No re-scoring, model adjustment, or new recommendations.
         show = df.copy()
         show.insert(2, "feasible", show["load_factor"] >= LF_FLOOR)
         show = show[["metro_name", "verdict", "feasible", "confidence",
@@ -67,25 +131,34 @@ if page == "Route screen":
                      "top_competitor", "top_risk"]]
         n_feas = int(show["feasible"].sum())
         if n_feas == 0:
-            st.warning(
-                f"No candidate in this study clears the {LF_FLOOR:.0%} "
-                f"load-factor floor at any tested frequency. Rows are ordered "
-                f"by verdict and then by margin, which is a research "
-                f"comparator retained for the historical replay; it is not an "
-                f"opportunity ranking, and the row at the top is not a "
-                f"recommendation.")
+            notice(f"No candidate clears the {LF_FLOOR:.0%} load-factor floor "
+                   "at any tested frequency. All displayed routes are research "
+                   "comparators, not ranked launch recommendations.")
         else:
-            st.info(
-                f"{n_feas} of {len(show)} candidates clear the "
-                f"{LF_FLOOR:.0%} load-factor floor. Read the verdict first: "
-                f"ordering within a verdict is by margin and is a research "
-                f"comparator, not an opportunity ranking.")
-        st.dataframe(show, use_container_width=True, height=560)
-        st.download_button("Download CSV", df.to_csv(index=False),
+            notice(f"{n_feas} of {len(show)} candidates clear the "
+                   f"{LF_FLOOR:.0%} load-factor floor. Read the verdict first; "
+                   "the displayed row order is not a validated opportunity "
+                   "ranking.", muted=True)
+
+        section_heading("Explore candidate markets",
+                        "Search by metro · original research order retained")
+        search = st.text_input("Search markets", placeholder="e.g., Boston, Dallas...",
+                               key=f"market_search_{sid}")
+        filtered = (show[show["metro_name"].str.contains(re.escape(search),
+                    case=False, na=False)] if search else show)
+        st.caption(f"Showing {min(10, len(filtered))} of {len(filtered)} matching "
+                   f"markets. {len(show)} total; expand for full data.")
+        market_cards(filtered.head(10))
+        with st.expander("Full research table · all candidates and fields"):
+            st.dataframe(show, use_container_width=True,
+                         hide_index=True, height=460)
+        st.download_button("Download full CSV", df.to_csv(index=False),
                            f"screen_{sid}.csv")
 
+
 elif page == "Market detail":
-    st.title(f"Market detail: {study_label}")
+    page_heading("02 / Scenario explorer", "Market detail",
+                 f"{study_label} · One evaluated schedule, scenario economics")
     eco = load(f"economics_{sid}.parquet")
     comp = load(f"competition_{sid}.parquet")
     if eco is None:
@@ -112,13 +185,15 @@ elif page == "Market detail":
                     f"frequency shown is the fallback the screen reports when "
                     f"nothing is feasible, not a selected schedule.")
         base = e[(e.fare_scenario_pct == 0) & (e.fuel_scenario_pct == 0)].iloc[0]
-        c1, c2, c3, c4 = st.columns(4)
-        c1.metric("Demand (pax/yr)", f"{base['demand_pax_yr']:,.0f}",
-                  help=f"source: {base['demand_source']} / "
-                       f"{base.get('demand_method','')}")
-        c2.metric("Modeled share", f"{base['proposed_share']:.0%}")
-        c3.metric("Base margin", f"{base['margin_pct']:.1f}%")
-        c4.metric("Break-even LF", f"{base['belf']:.2f}")
+        metric_strip([
+            ("Demand / year", f"{base['demand_pax_yr']:,.0f}"),
+            ("Modeled share", f"{base['proposed_share']:.0%}"),
+            ("Base margin", f"{base['margin_pct']:.1f}%"),
+            ("Break-even LF", f"{base['belf']:.2f}"),
+        ])
+        st.caption(f"Demand source: {base['demand_source']} / "
+                   f"{base.get('demand_method', '')}. All figures are modeled "
+                   "or observed as marked in source artifacts.")
         grid = e.pivot_table(index="fuel_scenario_pct",
                              columns="fare_scenario_pct",
                              values="margin_pct")
@@ -127,6 +202,8 @@ elif page == "Market detail":
                                     color="margin %"),
                         color_continuous_scale="RdYlGn",
                         color_continuous_midpoint=0)
+        fig.update_layout(template="plotly_dark", paper_bgcolor="#0a0b0e",
+                          plot_bgcolor="#12151a", font_color="#d8dee6")
         st.plotly_chart(fig, use_container_width=True)
         if comp is not None:
             cm = comp[comp["cbsa"] == e["cbsa"].iloc[0]]
@@ -142,7 +219,8 @@ elif page == "Market detail":
                         "share number skeptically, not gratefully.")
 
 elif page == "Validation":
-    st.title("Validation")
+    page_heading("03 / Evidence & checks", "Validation",
+                 "Reconciliation, share error, and known limits")
     for f in ("validation.md", "reconciliation.md"):
         p = DOCS / f
         if p.exists():
@@ -156,7 +234,8 @@ elif page == "Validation":
         st.plotly_chart(fig, use_container_width=True)
 
 elif page == "Backtest":
-    st.title("Backtest and predictive validation")
+    page_heading("04 / Historical evidence", "Backtest & replay",
+                 "Two distinct evaluations with explicitly bounded claims")
     st.info(
         "**Two different things live here, and only one of them is a test of "
         "this engine.**\n\n"
@@ -194,5 +273,6 @@ elif page == "Backtest":
         st.warning("Run `python -m backtest.run_backtest`.")
 
 else:
-    st.title("Network Lab")
+    page_heading("05 / Project notes", "About Network Lab",
+                 "Architecture, assumptions, data sources and project history")
     st.markdown((ROOT / "README.md").read_text())
