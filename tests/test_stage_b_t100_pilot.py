@@ -9,7 +9,7 @@ import pytest
 
 from ingest.bts_t100 import FIELDS
 from scripts.stage_b_t100_pilot import (
-    compare, read_month_zip, run, stats,
+    airport_lookup_diagnostic, compare, read_month_zip, run, stats,
 )
 
 
@@ -68,7 +68,17 @@ def test_directional_comparison_and_isolation(tmp_path):
         record(year=2025, origin="SEA", dest="YYC", pax=55),
     ])
 
+    lookup_zip = zipped(tmp_path, "airport_lookup.zip", [
+        {"AIRPORT": "YYC", "CITY_MARKET_ID": "12001",
+         "AIRPORT_IS_LATEST": "true"},
+        {"AIRPORT": "SEA", "CITY_MARKET_ID": "14401",
+         "AIRPORT_IS_LATEST": "true"},
+    ], fields=("AIRPORT", "CITY_MARKET_ID", "AIRPORT_IS_LATEST"))
+
     def fake_downloader(table, year, fields, dest):
+        if table == 288:
+            assert year == "All" and fields == "__ALL__"
+            return lookup_zip
         assert table == 293 and fields == FIELDS
         return zip26 if year == 2026 else zip25
 
@@ -77,6 +87,7 @@ def test_directional_comparison_and_isolation(tmp_path):
     assert summary["target"]["passengers"] == 144
     assert summary["control"]["passengers"] == 125
     assert summary["metro_crosswalk_verified"] is False
+    assert summary["airport_city_market_lookup"]["matched_observed_airports"] == 2
     assert (result_dir / "stage_b_t100.duckdb").is_file()
     assert (result_dir / "summary.json").is_file()
     assert (result_dir / "july_yoy_operator_segment.csv").is_file()
@@ -93,7 +104,14 @@ def test_negative_control_no_us_endpoint_is_rejected(tmp_path):
                     [record(origin="YYC", dest="YYC")])
     path25 = zipped(tmp_path, "prior.zip", [record(year=2025)])
 
+    lookup_zip = zipped(tmp_path, "airport_lookup.zip", [
+        {"AIRPORT": "YYC", "CITY_MARKET_ID": "12001",
+         "AIRPORT_IS_LATEST": "true"}
+    ], fields=("AIRPORT", "CITY_MARKET_ID", "AIRPORT_IS_LATEST"))
+
     def fake_downloader(table, year, fields, dest):
+        if table == 288:
+            return lookup_zip
         return path26 if year == 2026 else path25
 
     with pytest.raises(ValueError, match="without a US endpoint"):
@@ -107,3 +125,27 @@ def test_duplicate_grain_is_reported_not_silently_deduplicated(tmp_path):
     assert report["rows"] == 2
     assert report["exact_duplicate_rows"] == 1
     assert report["collisions_at_selected_key"] == 1
+
+
+def test_airport_market_lookup_conflicts_are_reported(tmp_path):
+    path = zipped(tmp_path, "conflicting_lookup.zip", [
+        {"AIRPORT": "YYC", "CITY_MARKET_ID": "12001",
+         "AIRPORT_IS_LATEST": "true"},
+        {"AIRPORT": "YYC", "CITY_MARKET_ID": "99999",
+         "AIRPORT_IS_LATEST": "true"},
+        {"AIRPORT": "SEA", "CITY_MARKET_ID": "14401",
+         "AIRPORT_IS_LATEST": "true"},
+    ], fields=("AIRPORT", "CITY_MARKET_ID", "AIRPORT_IS_LATEST"))
+    sample = read_month_zip(zipped(tmp_path, "sample.zip", [record()]), 2026, 7)
+    result = airport_lookup_diagnostic(sample, path)
+    assert result["ambiguous_latest_airport_market_ids"] == 1
+    assert result["unmatched_observed_airport_count"] == 0
+
+
+def test_negative_control_master_lookup_missing_market_id(tmp_path):
+    path = zipped(tmp_path, "broken_lookup.zip", [
+        {"AIRPORT": "YYC", "AIRPORT_IS_LATEST": "true"}
+    ], fields=("AIRPORT", "AIRPORT_IS_LATEST"))
+    sample = read_month_zip(zipped(tmp_path, "sample.zip", [record()]), 2026, 7)
+    with pytest.raises(ValueError, match="Master Coordinate missing fields"):
+        airport_lookup_diagnostic(sample, path)
