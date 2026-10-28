@@ -1,4 +1,4 @@
-# Economics sanity audit — 2026-10-28
+# Economics sanity audit  -  2026-10-28
 
 **Status:** Published-output arithmetic checked; **no evidence of a margin-formula defect in the committed screens**. This is not a revalidation of proprietary airline operating costs, independent fares, or missing Canadian O&D truth. The model, assumptions, scenario grids, historical replay and Streamlit design remain unchanged.
 
@@ -43,7 +43,7 @@ The 200 rows of the three committed `screen_*.csv` outputs were checked for the 
 | WestJet YYC | 76 | 76 | 46 | −1,971.6% |
 | Alaska SEA | 45 | 45 | 18 | −2,093.9% |
 | Porter YYZ | 79 | 75 | 29 | −2,576.0% |
-| **Total** | **200** | **196** | **93** | — |
+| **Total** | **200** | **196** | **93** |  -  |
 
 This is **not** 93 independent cost-model defects. It is a recurring consequence of applying fully allocated per-departure cost to a large fixed aircraft while captured passenger volumes are tiny.
 
@@ -55,8 +55,28 @@ This is **not** 93 independent cost-model defects. It is a recurring consequence
 4. **Verdict vocabulary: potential UX issue.** In this product, `PASS` means **pass on the opportunity / do not launch**, not that an evaluated schedule *passed* the 50% feasibility floor. This is defined in `README.md` and `models/screen.py`, but could be misread on cards. This audit makes **no UI change**; a later presentation-only patch could label it `DO NOT LAUNCH` with a glossary while preserving stored `PASS` values.
 5. **Cost assumptions unverified by this audit.** The committed screens cannot independently prove the 2024 Form 41 comparator rates, indirect allocation, fuel prices, modeled transborder fares, fee proxy, aircraft suitability, or true market demand. Validating these requires the full warehouse, documented raw-source checks, and a separately scoped protocol. No tuning is justified from the margin size alone.
 
+## Negative-control evidence
+
+The original seven positive tests showed that the committed rows reconcile, but did
+not establish that the guards reject corrupted rows. To verify rejection without
+ever altering committed/generated artifacts, the test module now executes three
+negative controls using copies of the actual published Albany row:
+
+| Injected defect | Wrong input | Expected reference | Assertion that must fail |
+|---|---:|---:|---|
+| Artificially raise margin by 100 percentage points | -1,008.688978% | -1,108.688978% derived from BELF / LF | Margin/LF/BELF identity |
+| Re-create the obsolete one-way-only departure denominator | LF 12.250279% (156 total annual legs) | LF 6.125140% (312 both-direction legs) | Albany LF from captured demand / both-direction departures |
+| Mislabel an infeasible loss-making route as launchable | LAUNCH at LF 6.125140% and negative margin | PASS | Low-LF/negative-margin verdict guard |
+
+Each negative-control test wraps the **same assertion function used by its
+positive test** in `pytest.raises(AssertionError)`; it therefore fails CI if the
+guard stops rejecting that particular injected defect. The failing values above
+are the intentionally incorrect inputs and the correct reference values. The
+injections are in-memory copies only; outputs, model inputs and historical replay
+remain untouched.
+
 ## Regression coverage and acceptance gate
 
-`tests/test_economics_sanity_audit.py` is a warehouse-free test of the *published* margin/LF/BELF identity for all three studies, valid finite inputs, verdict sign/floor consistency, and Albany's bidirectional annual departure arithmetic. It does not alter economic calculations.
+`tests/test_economics_sanity_audit.py` is a warehouse-free test of the *published* margin/LF/BELF identity for all three studies, valid finite inputs, verdict sign/floor consistency, and Albany's bidirectional annual departure arithmetic. It also carries the three executable negative controls above. It does not alter economic calculations.
 
 **Acceptance gate:** CI must pass on this audit branch, output CSV/Parquet and model source must remain unchanged, and the PR can be reviewed before any merge. No main-branch or Streamlit deployment is intended from the audit itself. After closing this stage, the next agreed separate task is mobile readability, then Stage B data freshness on an isolated branch.
