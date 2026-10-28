@@ -117,3 +117,11 @@ def test_negative_control_unknown_segment_coupon():
     s.loc[1, "SeqNum"] = 999
     with pytest.raises(ValueError, match="segment: orphan coupon"):
         validate_fixture(t, m, c, s)
+
+
+def test_negative_control_via_coupon_without_any_segment_expansion():
+    t, m, c, s = frames()
+    c.loc[2, "Viapoint"] = "SLC"
+    # Segment for ticket B is now mandatory but absent.
+    with pytest.raises(ValueError, match="coupon: via point missing segment expansion"):
+        validate_fixture(t, m, c, s)
