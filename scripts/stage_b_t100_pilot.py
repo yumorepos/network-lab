@@ -19,7 +19,7 @@ import duckdb
 import pandas as pd
 
 from ingest.bts_t100 import FIELDS
-from ingest.transtats import T100_SEGMENT_ALL, download_table_year
+from ingest.transtats import T100_SEGMENT_ALL, ALL_FIELDS, download_table_year
 
 TARGET = (2026, 7)
 CONTROL = (2025, 7)
@@ -103,6 +103,42 @@ def operator_mapping_diagnostic(frame: pd.DataFrame, families: Path) -> dict:
     }
 
 
+def airport_lookup_diagnostic(frame: pd.DataFrame, path: Path) -> dict:
+    """Check current BTS airport-to-city-market lookup without silently deduping."""
+    needed = {"AIRPORT", "CITY_MARKET_ID", "AIRPORT_IS_LATEST"}
+    with zipfile.ZipFile(path) as archive:
+        members = [i for i in archive.infolist()
+                   if i.filename.lower().endswith(".csv")
+                   and not i.filename.lower().endswith("documentation.csv")]
+        if not members:
+            raise ValueError("No BTS Master Coordinate data CSV in ZIP")
+        with archive.open(max(members, key=lambda i: i.file_size)) as raw:
+            lookup = pd.read_csv(raw, usecols=lambda s: s.upper() in needed,
+                                 dtype="string", low_memory=False)
+    lookup.columns = lookup.columns.str.upper()
+    missing = sorted(needed - set(lookup.columns))
+    if missing:
+        raise ValueError("Master Coordinate missing fields: " + ", ".join(missing))
+    latest = lookup.loc[
+        lookup["AIRPORT_IS_LATEST"].str.lower().isin(("true", "1"))
+        & lookup["CITY_MARKET_ID"].notna(), ["AIRPORT", "CITY_MARKET_ID"]
+    ].drop_duplicates()
+    if latest.empty:
+        raise ValueError("Master Coordinate has no current airport market IDs")
+    airports = set(pd.concat([frame.ORIGIN, frame.DEST]).dropna())
+    found = set(latest.AIRPORT.dropna())
+    ambiguity = (latest.groupby("AIRPORT")["CITY_MARKET_ID"].nunique() > 1)
+    return {
+        "lookup_current_airport_rows": int(len(latest)),
+        "unique_observed_airports": len(airports),
+        "matched_observed_airports": len(airports & found),
+        "unmatched_observed_airports": sorted(airports - found)[:30],
+        "unmatched_observed_airport_count": len(airports - found),
+        "ambiguous_latest_airport_market_ids": int(ambiguity.sum()),
+        "lookup_vintage": "latest available as of 2026-10-28; not a historical lookup",
+    }
+
+
 def compare(target: pd.DataFrame, control: pd.DataFrame) -> pd.DataFrame:
     """Same-calendar-month operator/airport/direction only, no O&D interpretation."""
     key = ["UNIQUE_CARRIER", "ORIGIN", "DEST"]
@@ -123,6 +159,9 @@ def run(output_dir: Path, *, downloader=download_table_year) -> dict:
                        output_dir / "raw" / f"t100_table293_{year}.zip")
         data[year] = read_month_zip(z, year, month)
     current, previous = data[TARGET[0]], data[CONTROL[0]]
+    lookup_zip = downloader(288, "All", ALL_FIELDS,
+                            output_dir / "raw" / "bts_master_coordinate.zip")
+    lookup_check = airport_lookup_diagnostic(current, lookup_zip)
     summary = {
         "source": "BTS TranStats T-100 Segment (All Carriers), table 293",
         "comparison": "same month year-over-year, NOT a point-in-time replay",
@@ -132,6 +171,7 @@ def run(output_dir: Path, *, downloader=download_table_year) -> dict:
         "control": stats(previous),
         "operator_mapping": operator_mapping_diagnostic(
             current, Path("data/reference/carrier_families.csv")),
+        "airport_city_market_lookup": lookup_check,
         "metro_crosswalk_verified": False,
         "foreign_carrier_filing_complete": "not established",
     }
