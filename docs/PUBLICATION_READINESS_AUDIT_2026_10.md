@@ -18,6 +18,23 @@ python -m scripts.audit_publication_readiness
 pytest tests/test_airport_join_exposure.py tests/test_publication_readiness_audit.py tests/test_warehouse_mapping_audit.py -q
 ```
 
+## Published CSV-versus-Parquet parity now checked
+
+October 28 [PR #11](https://github.com/yumorepos/network-lab/pull/11)
+merged a warehouse-free check comparing **every field** of the three tracked
+study CSV and Parquet outputs, including keysets, nulls, numeric consistency
+and the generated headline counts. It passed in CI (123 passed, 141 skipped).
+This closes the **committed artifact** parity sub-check, but the public app
+deployment has not been independently captured and the original warehouse
+has not been re-audited against source files.
+
+The previous October 20 local-storage inventory confirms the preservation
+location at `~/Projects/network-lab/data/warehouse.duckdb` on the Mac.
+The read-only, private diagnostic handoff and execution procedure are now in
+[LOCAL_WAREHOUSE_AUDIT_HANDOFF_2026_10.md](LOCAL_WAREHOUSE_AUDIT_HANDOFF_2026_10.md).
+The runner must be executed on the Mac holding those bytes; GitHub/partial
+Drive access alone cannot certify warehouse completeness.
+
 ## Additional warehouse audit (requires local source data)
 
 The new `scripts/audit_warehouse_mapping.py` opens a built DuckDB warehouse
