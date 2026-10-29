@@ -1,4 +1,4 @@
-# Carrier-brand historical source audit — 2026-10-28
+# Carrier-brand historical source audit  -  2026-10-28
 
 **Status:** Documentary correction and measured exposure, not a model re-estimate. Source counts are **T-100 operated scheduled passenger segment legs**. The marketing brands are **not** observable in T-100; do not interpret these as known brand attribution errors or changes in published Network Lab verdicts.
 
@@ -24,7 +24,7 @@ SEC primary evidence:
 
 ## Real-data operator exposure from uploaded T-100 source ZIPs
 
-Source: `data/raw/t100/t100_{year}.zip`, 2022–2026, filtered to `CLASS IN ('F','L')`, positive `DEPARTURES_PERFORMED`. **2026 is Jan–Apr only** in this uploaded source snapshot. These counts are operator traffic, not brand-specific traffic.
+Source: `data/raw/t100/t100_{year}.zip`, 2022 - 2026, filtered to `CLASS IN ('F','L')`, positive `DEPARTURES_PERFORMED`. **2026 is Jan - Apr only** in this uploaded source snapshot. These counts are operator traffic, not brand-specific traffic.
 
 | Source year | Mesa YV departures | Mesa YV passenger-segment legs | Air Wisconsin ZW departures | Air Wisconsin ZW passenger-segment legs |
 |---|---:|---:|---:|---:|
@@ -32,7 +32,7 @@ Source: `data/raw/t100/t100_{year}.zip`, 2022–2026, filtered to `CLASS IN ('F'
 | 2023 | 100,083 | 6,214,266 | 59,210 | 2,469,242 |
 | 2024 | 92,762 | 5,675,597 | 52,587 | 2,154,891 |
 | 2025 | 84,543 | 5,053,331 | 11,450 | 417,794 |
-| 2026 Jan–Apr | 24,894 | 1,447,496 | 997 | 13,359 |
+| 2026 Jan - Apr | 24,894 | 1,447,496 | 997 | 13,359 |
 
 **Exposure ≠ erroneous assignment.** For example, the 2022 Mesa total includes both Mesa-operated American and United service. One cannot infer a marketing brand for each T-100 segment from `UNIQUE_CARRIER` alone. The 2023 transition contains overlap months and cannot be safely expressed as a single year-to-brand mapping.
 
