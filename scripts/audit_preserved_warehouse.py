@@ -135,6 +135,7 @@ def summarize(report: dict) -> str:
     unmatched = mapping["unmatched_us_segment_airport_by_year"]
     fanout = mapping["city_market_fanout_to_cbsa"]
     reuse = mapping.get("ambiguous_latest_airport_lookup")
+    mismatched_labels = mapping.get("airport_dim_market_label_mismatches")
     rows = report["warehouse_table_rows"]
     raw = report["source_inventory"]["raw"]
     pq = report["source_inventory"]["parquet"]
@@ -153,6 +154,7 @@ def summarize(report: dict) -> str:
         f"- Unmatched US airport-code/year/side entries (top 100): {len(unmatched)}.",
         f"- Duplicate city-market-to-CBSA keys: {len(fanout)}.",
         f"- Ambiguous current lookup codes: {len(reuse) if reuse is not None else 'NOT CHECKED (lookup file missing)'}.",
+        f"- Stored airport ID/name inconsistencies against lookup: {len(mismatched_labels) if mismatched_labels is not None else 'NOT CHECKED (label/lookup unavailable)'}.",
         f"- Internal T-100 monthly gaps to review: {len(report['t100_internal_missing_months_for_review'])}.",
         "",
         "## Important interpretation",
