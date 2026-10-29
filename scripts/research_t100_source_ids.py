@@ -49,6 +49,7 @@ def profile(zip_path: Path, year: int) -> dict:
     id_codes = defaultdict(set)
     id_markets = defaultdict(set)
     code_traffic = defaultdict(lambda: [0, 0])
+    identity_traffic = defaultdict(lambda: [0, 0, 0])
     airport_country = defaultdict(set)
     periods = set()
     digest = hashlib.sha256()
@@ -95,6 +96,10 @@ def profile(zip_path: Path, year: int) -> dict:
                     airport_country[airport_id].add(country)
                     code_traffic[code][0] += pax
                     code_traffic[code][1] += departures
+                    p = identity_traffic[(code, airport_id, citymarket, country)]
+                    p[0] += 1
+                    p[1] += pax
+                    p[2] += departures
     ambiguous = []
     for code, ids in sorted(code_ids.items()):
         if len(ids) > 1:
@@ -124,6 +129,14 @@ def profile(zip_path: Path, year: int) -> dict:
         "scheduled_origin_dest_endpoints": endpoint_rows,
         "missing_source_id_endpoints": missing_source_ids,
         "distinct_airport_ids": len(id_codes),
+        "source_airport_identity_pairs": [
+            {"code": key[0], "airport_id": key[1],
+             "city_market_id": key[2], "country": key[3],
+             "endpoint_rows": value[0],
+             "endpoint_segment_passenger_legs": value[1],
+             "endpoint_departures": value[2]}
+            for key, value in sorted(identity_traffic.items())
+        ],
         "ambiguous_codes_within_year": ambiguous,
         "airport_ids_with_multiple_codes_within_year": reused_ids,
         "airport_ids_with_multiple_city_markets_within_year": multi_market_ids,
