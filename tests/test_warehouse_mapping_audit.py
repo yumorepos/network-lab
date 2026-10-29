@@ -84,3 +84,38 @@ def test_negative_control_missing_warehouse_tables_fails_loudly():
     with pytest.raises(ValueError, match="Missing warehouse tables"):
         examine(con)
     con.close()
+
+
+def test_negative_control_market_id_and_display_name_must_be_same_source_row(tmp_path):
+    """The legacy max(id) + independent any_value(name) can form false pairs."""
+    con = fixture()
+    con.execute("ALTER TABLE dim_airport ADD COLUMN city_market_name VARCHAR")
+    con.execute("UPDATE dim_airport SET city_market_name='New York' WHERE iata_code='JFK'")
+    con.execute("UPDATE dim_airport SET city_market_name='Istanbul, Turkey' WHERE iata_code='DJT'")
+    con.execute("""
+        CREATE TABLE master_labels (
+            AIRPORT VARCHAR, AIRPORT_ID INTEGER, CITY_MARKET_ID INTEGER,
+            DISPLAY_CITY_MARKET_NAME_FULL VARCHAR, AIRPORT_IS_LATEST VARCHAR
+        )
+    """)
+    con.execute("""
+        INSERT INTO master_labels VALUES
+          ('JFK',3,100,'New York','true'),
+          ('DJT',4,101,'West Palm Beach, FL','true'),
+          ('DJT',5,999,'Istanbul, Turkey','true')
+    """)
+    out = tmp_path / "master_labels.parquet"
+    con.execute(f"COPY master_labels TO '{out}' (FORMAT PARQUET)")
+    got = examine(con, out)
+    assert got["airport_dim_market_label_mismatches"] == [
+        {"iata_code": "DJT", "city_market_id": 101,
+         "city_market_name": "Istanbul, Turkey",
+         "source_market_names": "West Palm Beach, FL"}
+    ]
+    con.execute(
+        "UPDATE dim_airport SET city_market_name='West Palm Beach, FL' "
+        "WHERE iata_code='DJT'"
+    )
+    fixed = examine(con, out)
+    assert fixed["airport_dim_market_label_mismatches"] == []
+    con.close()
