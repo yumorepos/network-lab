@@ -436,7 +436,7 @@ class Cutoff:
             lookahead_exception=(
                 "carrier_families.csv and carrier_codes.csv carry no effective "
                 "dates, and segment_brands() resolves from a fixed DB1B year. "
-                "Air Wisconsin flew for American to 2023 and United after; "
+                "Air Wisconsin flew for United through early June 2023, then American March 2023-April 2025; "
                 "Mesa's American agreement ended 2023. W1.3 audit vector L3, "
                 "not fixed during Milestone A.")))
         return "not_effective_dated"
