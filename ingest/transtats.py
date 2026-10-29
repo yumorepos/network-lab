@@ -54,7 +54,7 @@ def download_table_year(table_id: int, year: int | str, fields, dest: Path,
         return dest
     s = requests.Session()
     url = _select_url(table_id)
-    r = s.get(url, headers=UA, verify=False, timeout=120)
+    r = s.get(url, headers=UA, verify=True, timeout=120)
     r.raise_for_status()
     page = r.text
     if 'id="form1"' not in page:
@@ -83,7 +83,7 @@ def download_table_year(table_id: int, year: int | str, fields, dest: Path,
     })
     for c in cols:
         body[c] = "on"
-    r2 = s.post(url, data=body, headers={**UA, "Referer": url}, verify=False,
+    r2 = s.post(url, data=body, headers={**UA, "Referer": url}, verify=True,
                 timeout=900, stream=True)
     r2.raise_for_status()
     tmp = dest.with_suffix(".part")
