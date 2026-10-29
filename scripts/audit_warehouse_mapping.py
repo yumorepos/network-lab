@@ -87,6 +87,37 @@ def examine(con: duckdb.DuckDBPyConnection, lookup: Path | None = None) -> dict:
                count(DISTINCT carrier) AS operators
         FROM fact_segment GROUP BY 1,2 ORDER BY 1,2
     """)
+    # The warehouse builder aggregates latest-code market IDs and display
+    # names independently (max(CITY_MARKET_ID), any_value(name)). With reused
+    # airport codes, those two attributes may refer to different places.
+    # Detect actual mismatched stored labels without changing the warehouse.
+    result["airport_dim_market_label_mismatches"] = None
+    label_cols = {
+        row[0] for row in con.execute("DESCRIBE dim_airport").fetchall()
+    }
+    if lookup and lookup.exists() and "city_market_name" in label_cols:
+        quoted = str(lookup).replace("'", "''")
+        result["airport_dim_market_label_mismatches"] = _query(con, f"""
+            WITH latest AS (
+              SELECT DISTINCT AIRPORT AS code,
+                     CITY_MARKET_ID AS market_id,
+                     DISPLAY_CITY_MARKET_NAME_FULL AS market_name
+              FROM read_parquet('{quoted}')
+              WHERE lower(cast(AIRPORT_IS_LATEST AS varchar)) IN ('true','1')
+                AND AIRPORT IS NOT NULL AND CITY_MARKET_ID IS NOT NULL
+            )
+            SELECT a.iata_code, a.city_market_id, a.city_market_name,
+                   string_agg(DISTINCT l.market_name, ' | '
+                              ORDER BY l.market_name) AS source_market_names
+            FROM dim_airport a
+            JOIN latest l ON l.code = a.iata_code
+                          AND l.market_id = a.city_market_id
+            GROUP BY 1,2,3
+            HAVING sum(CASE WHEN
+                        a.city_market_name IS NOT DISTINCT FROM l.market_name
+                       THEN 1 ELSE 0 END) = 0
+            ORDER BY a.iata_code
+        """)
     result["ambiguous_latest_airport_lookup"] = None
     if lookup and lookup.exists():
         quoted = str(lookup).replace("'", "''")
