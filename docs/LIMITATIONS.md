@@ -327,7 +327,7 @@ records themselves, so the list cannot go stale:
    including dates before it was published.
 5. **Carrier operating-to-brand map.** `carrier_families.csv` and
    `carrier_codes.csv` carry no effective dates and brands resolve from a fixed
-   DB1B year. Air Wisconsin flew for American to 2023 and United after; Mesa's
+   DB1B year. Air Wisconsin flew for United through early June 2023, then American March 2023-April 2025; Mesa's
    American agreement ended 2023.
 
 **Revised historical information is not contemporaneously known information.**
