@@ -7,9 +7,7 @@ import zipfile
 from pathlib import Path
 
 import requests
-import urllib3
 
-urllib3.disable_warnings()
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA_RAW = ROOT / "data" / "raw"
@@ -35,7 +33,7 @@ def download_file(url: str, dest: Path, *, retries: int = 3, timeout: int = 600,
         return True
     for attempt in range(1, retries + 1):
         try:
-            with requests.get(url, headers=UA, stream=True, verify=False,
+            with requests.get(url, headers=UA, stream=True, verify=True,
                               timeout=timeout) as r:
                 if r.status_code == 404 and ok_404:
                     log(f"404 (accepted): {url}")
