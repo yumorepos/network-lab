@@ -1,0 +1,39 @@
+name: Research BTS source AirportID pilot
+
+on:
+  pull_request:
+    paths:
+      - "scripts/research_t100_source_ids.py"
+      - "tests/test_research_t100_source_ids.py"
+      - ".github/workflows/research_t100_source_ids.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-ids-2026:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install bounded dependencies
+        run: python -m pip install requests pytest
+      - name: Synthetic stable ID negative controls
+        run: python -m pytest -q tests/test_research_t100_source_ids.py
+      - name: Fetch live official T-100 stable IDs into ephemeral runner
+        run: |
+          python -m scripts.research_t100_source_ids \
+            --download-year 2026 \
+            --output ./research_t100_ids_2026.json
+      - name: Preserve only aggregate JSON evidence, never the source archive
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: t100-source-ids-2026-research
+          path: ./research_t100_ids_2026.json
+          retention-days: 14
+          if-no-files-found: warn
