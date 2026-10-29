@@ -1,0 +1,39 @@
+name: Research 2024 BTS exact-field source parity
+on:
+  pull_request:
+    paths:
+      - "scripts/research_t100_projection_snapshot.py"
+      - "tests/test_research_t100_projection_snapshot.py"
+      - ".github/workflows/research_t100_projection_snapshot.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  official-2024-14-field-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install bounded test/download dependencies
+        run: python -m pip install requests pytest
+      - name: Synthetic projection controls
+        run: python -m pytest -q tests/test_research_t100_projection_snapshot.py
+      - name: Download official 2024 BTS same-14-field source into ephemeral workspace
+        run: |
+          python -m scripts.research_t100_projection_snapshot \
+            --year 2024 \
+            --output-zip ./research_2024_current_14_fields.zip \
+            --output-json ./research_2024_current_14_fields.json
+      - name: Save current *public BTS source* temporarily for independent archive comparison
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: research-2024-exact-14-field-bts-source
+          path: |
+            ./research_2024_current_14_fields.zip
+            ./research_2024_current_14_fields.json
+          retention-days: 7
+          if-no-files-found: warn
