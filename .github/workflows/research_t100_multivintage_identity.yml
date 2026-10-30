@@ -1,0 +1,57 @@
+name: Research historical airport identity sampled vintages
+on:
+  pull_request:
+    paths:
+      - "scripts/research_t100_multivintage_identity.py"
+      - "tests/test_research_t100_multivintage_identity.py"
+      - ".github/workflows/research_t100_multivintage_identity.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  historical-airport-ids:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install bounded source-download and unit-test dependencies
+        run: python -m pip install requests pytest
+      - name: Run synthetic negative controls
+        run: |
+          python -m pytest -q \
+            tests/test_research_t100_source_ids.py \
+            tests/test_compare_t100_source_ids.py \
+            tests/test_research_t100_multivintage_identity.py
+      - name: Download official full-field snapshots in private ephemeral runner
+        run: |
+          for y in 1990 2018 2022 2024 2026; do
+            python -m scripts.research_t100_source_ids \
+              --download-year "$y" \
+              --output "./research_t100_identity_$y.json"
+          done
+      - name: Check cross-vintage AirportID and code trajectories
+        run: |
+          python -m scripts.research_t100_multivintage_identity \
+            --profile ./research_t100_identity_1990.json \
+            --profile ./research_t100_identity_2018.json \
+            --profile ./research_t100_identity_2022.json \
+            --profile ./research_t100_identity_2024.json \
+            --profile ./research_t100_identity_2026.json \
+            --output ./research_t100_multivintage_identity.json
+      - name: Preserve aggregate provenance only, not raw T-100 ZIPs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: research-t100-multivintage-identity
+          path: |
+            ./research_t100_identity_1990.json
+            ./research_t100_identity_2018.json
+            ./research_t100_identity_2022.json
+            ./research_t100_identity_2024.json
+            ./research_t100_identity_2026.json
+            ./research_t100_multivintage_identity.json
+          retention-days: 14
+          if-no-files-found: warn
