@@ -91,3 +91,16 @@ def test_absent_source_pair_inventory_fails_closed():
     del a["source_airport_identity_pairs"]
     with pytest.raises(ValueError, match="provenance"):
         summarize([a, sample(2024, "XYZ", 9, 10)])
+
+
+def test_historical_country_missing_is_reported_without_invented_country():
+    a = sample(1990, "PRG", 14239, 34239, country="", leg_pax=22260)
+    b = sample(2018, "PRG", 14239, 34239, country="CZ", leg_pax=22300)
+    result = summarize([a, b])
+    assert result["source_pairs_with_missing_published_country"] == [{
+        "year": 1990, "code": "PRG", "airport_id": 14239,
+        "city_market_id": 34239, "endpoint_rows": 1,
+        "endpoint_segment_passenger_legs": 22260,
+    }]
+    assert result["same_stable_airport_id_different_countries"] == []
+    assert result["missing_source_country_not_imputed"] is True
