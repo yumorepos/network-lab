@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+from collections import Counter
 from datetime import datetime
 import hashlib
 import json
@@ -23,7 +24,8 @@ EXPECTED_PREVIOUS_MISMATCH_CODES = frozenset({
     "BAT", "BDN", "BGN", "ISL", "KMC",
     "LAC", "LOM", "NEU", "SAW", "TIC",
 })
-STUDIES = ("westjet_yyc", "alaska_sea", "porter_yyz")
+STUDY_COUNTS = {"westjet_yyc": 76, "alaska_sea": 45, "porter_yyz": 79}
+STUDIES = tuple(STUDY_COUNTS)
 
 
 def sha256_small(path: Path, max_bytes: int = 10_000_000):
@@ -96,7 +98,7 @@ def direct_screen_exposure(root: Path, changed_codes: set[str]):
 def analyze_rows(rows: list[dict], root: Path, lookup: Path, warehouse: Path):
     codes = [r["iata_code"] for r in rows]
     nonnull_codes = [x for x in codes if x is not None]
-    duplicates = sorted({c for c in nonnull_codes if nonnull_codes.count(c) > 1})
+    duplicates = sorted(c for c, n in Counter(nonnull_codes).items() if n > 1)
     changed_ids = [
         r for r in rows if r["stored_market_id"] != r["candidate_market_id"]
     ]
@@ -111,7 +113,11 @@ def analyze_rows(rows: list[dict], root: Path, lookup: Path, warehouse: Path):
     unexpected = sorted(changed_codes - EXPECTED_PREVIOUS_MISMATCH_CODES)
     unresolved_expected = sorted(EXPECTED_PREVIOUS_MISMATCH_CODES - changed_codes)
     screen = direct_screen_exposure(root, changed_codes)
-    exact_200_screen_readback = all(x.get("checked") for x in screen.values())
+    exact_200_screen_readback = all(
+        screen[study].get("checked")
+        and screen[study].get("published_rows") == STUDY_COUNTS[study]
+        for study in STUDIES
+    )
     model_change_measured = False
 
     # Source-local candidate preflight only: pass means 8,802 code+numeric
