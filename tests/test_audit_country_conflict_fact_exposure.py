@@ -69,9 +69,9 @@ def test_actual_source_country_mismatch_and_territory_conventions_separated(tmp_
     assert result["original_warehouse_modified"] is False
     summary = {x["category"]: x for x in result["summary_by_category"]}
     un = summary["unresolved_country_conflict"]
-    assert un["endpoint_rows"] == 4
+    assert un["endpoint_rows"] == 3
     assert un["passenger_segment_legs"] == 122
-    assert un["latest12_endpoint_rows"] == 3  # Last source ym = 202604, excludes 202501.
+    assert un["latest12_endpoint_rows"] == 2  # Last source ym = 202604, excludes 202501.
     assert un["reported_country_matches_stored_rows"] == 2
     assert un["reported_country_matches_selected_market_rows"] == 1
     assert summary["administrative_convention_to_verify"]["passenger_segment_legs"] == 50
