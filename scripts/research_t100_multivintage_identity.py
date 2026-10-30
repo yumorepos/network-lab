@@ -24,6 +24,7 @@ def summarize(profiles: list[dict], expected_months: dict[int, list[int]] | None
     code_legs = defaultdict(int)
     code_deps = defaultdict(int)
     observed_pairs = 0
+    missing_country_pairs = []
 
     for profile in profiles:
         year = profile.get("source_year")
@@ -57,7 +58,7 @@ def summarize(profiles: list[dict], expected_months: dict[int, list[int]] | None
             if (not isinstance(code, str) or not code
                     or not isinstance(aid, int) or aid <= 0
                     or not isinstance(cmid, int) or cmid <= 0
-                    or not isinstance(country, str) or not country):
+                    or not isinstance(country, str)):
                 raise ValueError(f"Invalid published identity pair: {year}")
             legs = pair.get("endpoint_segment_passenger_legs")
             deps = pair.get("endpoint_departures")
@@ -68,7 +69,15 @@ def summarize(profiles: list[dict], expected_months: dict[int, list[int]] | None
             id_y = by_id[aid][year]
             id_y["codes"].add(code)
             id_y["markets"].add(cmid)
-            id_y["countries"].add(country)
+            if country:
+                id_y["countries"].add(country)
+            else:
+                missing_country_pairs.append({
+                    "year": year, "code": code, "airport_id": aid,
+                    "city_market_id": cmid,
+                    "endpoint_rows": pair["endpoint_rows"],
+                    "endpoint_segment_passenger_legs": legs,
+                })
             code_legs[(code, year)] += legs
             code_deps[(code, year)] += deps
             observed_pairs += 1
@@ -111,6 +120,8 @@ def summarize(profiles: list[dict], expected_months: dict[int, list[int]] | None
         "sampled_years": years,
         "source_evidence_by_year": {str(y): by_year[y] for y in years},
         "source_identity_pair_records": observed_pairs,
+        "source_pairs_with_missing_published_country": sorted(
+            missing_country_pairs, key=lambda x: (x["year"], x["code"])),
         "distinct_airport_code_strings": len(by_code),
         "distinct_stable_airport_ids": len(by_id),
         "code_reused_by_distinct_stable_ids": code_reuse,
@@ -118,6 +129,7 @@ def summarize(profiles: list[dict], expected_months: dict[int, list[int]] | None
         "same_stable_airport_id_different_city_markets": reassigned_markets,
         "same_stable_airport_id_different_countries": country_changes,
         "source_stable_ids_not_imputed": True,
+        "missing_source_country_not_imputed": True,
         "full_year_by_year_1990_to_2026_checked": False,
         "original_warehouse_compared": False,
         "screen_or_replay_deltas_measured": False,
@@ -156,6 +168,8 @@ def main():
             result["same_stable_airport_id_different_codes"]),
         "stable_ids_with_multiple_markets": len(
             result["same_stable_airport_id_different_city_markets"]),
+        "source_pairs_missing_country": len(
+            result["source_pairs_with_missing_published_country"]),
         "original_warehouse_compared": False,
     }, indent=2))
 
