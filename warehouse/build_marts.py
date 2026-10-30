@@ -47,11 +47,15 @@ CA_AIRPORT_CMA = {
 }
 
 
-def build() -> None:
-    con = duckdb.connect(str(WAREHOUSE_DB))
-    p = DATA_PARQUET
+def _build_dim_airport(con, p) -> None:
+    """Build airport market labels from the SAME source row as their market ID.
 
-    log("dim_airport")
+    Preserves the legacy max(CITY_MARKET_ID) numeric selection for each code,
+    while ensuring city_market_name belongs to that same market. This does
+    NOT resolve historical airport-code reuse or correct market geography.
+    The production warehouse must only be rebuilt in an isolated copy after
+    fixed-source screen/replay comparison.
+    """
     con.execute(f"""
         CREATE OR REPLACE TABLE dim_airport AS
         WITH oa AS (
@@ -63,17 +67,33 @@ def build() -> None:
           FROM read_parquet('{p}/ourairports/airports.parquet')
           GROUP BY iata_code
         ),
-        mc AS (   -- latest master-coordinate row per airport code
-          SELECT AIRPORT AS iata_code,
-                 max(CITY_MARKET_ID) AS city_market_id,
-                 any_value(DISPLAY_CITY_MARKET_NAME_FULL) AS city_market_name
+        mc_ranked AS (
+          SELECT AIRPORT AS iata_code, CITY_MARKET_ID AS city_market_id,
+                 DISPLAY_CITY_MARKET_NAME_FULL AS city_market_name,
+                 row_number() OVER (
+                   PARTITION BY AIRPORT
+                   ORDER BY CITY_MARKET_ID DESC NULLS LAST,
+                            DISPLAY_CITY_MARKET_NAME_FULL ASC NULLS LAST,
+                            AIRPORT_ID DESC NULLS LAST
+                 ) AS rn
           FROM read_parquet('{p}/lookups/master_coord.parquet')
           WHERE AIRPORT_IS_LATEST = 'true' OR AIRPORT_IS_LATEST = '1'
-          GROUP BY AIRPORT
+        ),
+        mc AS (
+          SELECT iata_code, city_market_id, city_market_name
+          FROM mc_ranked WHERE rn = 1
         )
         SELECT oa.*, mc.city_market_id, mc.city_market_name
         FROM oa LEFT JOIN mc USING (iata_code)
     """)
+
+
+def build() -> None:
+    con = duckdb.connect(str(WAREHOUSE_DB))
+    p = DATA_PARQUET
+
+    log("dim_airport")
+    _build_dim_airport(con, p)
 
     log("dim_carrier")
     con.execute(f"""
