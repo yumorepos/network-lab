@@ -47,8 +47,8 @@ def audit(root: Path = ROOT) -> dict:
     paths = {
         "latest_code_to_market": (
             "warehouse/build_marts.py",
-            ["max(CITY_MARKET_ID) AS city_market_id",
-             "GROUP BY AIRPORT"]),
+            ["PARTITION BY AIRPORT",
+             "ORDER BY CITY_MARKET_ID DESC"]),
         "candidate_served_exclusion": (
             "models/candidates.py",
             ["JOIN dim_airport a2 ON a2.iata_code = s.dest",
