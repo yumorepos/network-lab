@@ -20,6 +20,8 @@ import hashlib
 import json
 from pathlib import Path
 
+from scripts.audit_cross_source_country_exposure import CONVENTIONS_TO_VERIFY
+
 EXPECTED_PREVIOUS_MISMATCH_CODES = frozenset({
     "BAT", "BDN", "BGN", "ISL", "KMC",
     "LAC", "LOM", "NEU", "SAW", "TIC",
@@ -41,13 +43,14 @@ def sha256_small(path: Path, max_bytes: int = 10_000_000):
 def project_labels(con, lookup: Path) -> list[dict]:
     """Audit only: no CREATE, UPDATE or DELETE, no read of large fact tables."""
     columns = {row[0] for row in con.execute("DESCRIBE dim_airport").fetchall()}
-    needed = {"iata_code", "city_market_id", "city_market_name"}
+    needed = {"iata_code", "city_market_id", "city_market_name", "iso_country"}
     if missing := sorted(needed - columns):
         raise ValueError(f"Required dim_airport columns absent: {missing}")
     sql = """
         WITH mc_ranked AS (
             SELECT AIRPORT AS code, CITY_MARKET_ID AS market_id,
                    DISPLAY_CITY_MARKET_NAME_FULL AS market_name,
+                   AIRPORT_COUNTRY_CODE_ISO AS source_country,
                    ROW_NUMBER() OVER (
                        PARTITION BY AIRPORT
                        ORDER BY CITY_MARKET_ID DESC NULLS LAST,
@@ -61,8 +64,10 @@ def project_labels(con, lookup: Path) -> list[dict]:
         SELECT a.iata_code,
                CAST(a.city_market_id AS VARCHAR) AS stored_market_id,
                a.city_market_name AS stored_market_name,
+               a.iso_country AS stored_country,
                CAST(m.market_id AS VARCHAR) AS candidate_market_id,
-               m.market_name AS candidate_market_name
+               m.market_name AS candidate_market_name,
+               m.source_country AS candidate_country
         FROM dim_airport a
         LEFT JOIN mc_ranked m ON m.code = a.iata_code AND m.rn = 1
         ORDER BY a.iata_code NULLS FIRST
@@ -110,6 +115,19 @@ def analyze_rows(rows: list[dict], root: Path, lookup: Path, warehouse: Path):
         and r["candidate_market_id"] is None
     ]
     changed_codes = {r["iata_code"] for r in changed_names}
+    # The country's source row is paired with the selected numeric market ID.
+    country_disagreements = [
+        r for r in rows if r.get("stored_country") and r.get("candidate_country")
+        and r["stored_country"] != r["candidate_country"]
+    ]
+    coding_conventions = [
+        r for r in country_disagreements
+        if (r["stored_country"], r["candidate_country"]) in CONVENTIONS_TO_VERIFY
+    ]
+    unresolved_countries = [
+        r for r in country_disagreements
+        if (r["stored_country"], r["candidate_country"]) not in CONVENTIONS_TO_VERIFY
+    ]
     unexpected = sorted(changed_codes - EXPECTED_PREVIOUS_MISMATCH_CODES)
     unresolved_expected = sorted(EXPECTED_PREVIOUS_MISMATCH_CODES - changed_codes)
     screen = direct_screen_exposure(root, changed_codes)
@@ -125,6 +143,7 @@ def analyze_rows(rows: list[dict], root: Path, lookup: Path, warehouse: Path):
     # Never imply it proves regenerated model and replay outputs are equal.
     gate_pass = (not duplicates and not changed_ids and not missing_candidate
                  and not unexpected and not unresolved_expected
+                 and not unresolved_countries
                  and len(rows) == 8802
                  and exact_200_screen_readback
                  and all(not x["direct_changed_destination_codes"]
@@ -140,6 +159,11 @@ def analyze_rows(rows: list[dict], root: Path, lookup: Path, warehouse: Path):
         "numeric_market_id_changes": changed_ids[:150],
         "candidate_label_change_count": len(changed_names),
         "candidate_label_changes": changed_names,
+        "original_warehouse_country_disagreements": country_disagreements,
+        "country_coding_conventions_to_verify": sorted(
+            r["iata_code"] for r in coding_conventions),
+        "unresolved_original_warehouse_country_conflicts": unresolved_countries,
+        "unresolved_original_warehouse_country_conflict_count": len(unresolved_countries),
         "stored_nonnull_id_without_source": missing_candidate,
         "unexpected_name_changes_vs_oct29_audit": unexpected,
         "oct29_audit_codes_no_longer_changed": unresolved_expected,
@@ -218,7 +242,7 @@ def main():
         encoding="utf-8")
     with (dest / "candidate_label_changes.csv").open(
             "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=[
+        writer = csv.DictWriter(f, extrasaction="ignore", fieldnames=[
             "iata_code", "stored_market_id", "stored_market_name",
             "candidate_market_id", "candidate_market_name"])
         writer.writeheader()

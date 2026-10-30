@@ -17,30 +17,32 @@ def test_real_sql_candidate_picks_label_from_same_id_without_writing(tmp_path):
     con = duckdb.connect()
     con.execute("""
         CREATE TABLE dim_airport (
-          iata_code VARCHAR, city_market_id VARCHAR, city_market_name VARCHAR
+          iata_code VARCHAR, city_market_id VARCHAR, city_market_name VARCHAR,
+          iso_country VARCHAR
         )
     """)
     con.execute("""
         INSERT INTO dim_airport VALUES
-          ('SAW','33459','Istanbul, Turkey'),
-          ('ISL','32395','Isabel Pass, AK'),
-          ('SEA','30559','Seattle, WA')
+          ('SAW','33459','Istanbul, Turkey','TR'),
+          ('ISL','32395','Isabel Pass, AK','TR'),
+          ('SEA','30559','Seattle, WA','US')
     """)
     con.execute("""
         CREATE TABLE source (
           AIRPORT VARCHAR, CITY_MARKET_ID VARCHAR,
           DISPLAY_CITY_MARKET_NAME_FULL VARCHAR,
-          AIRPORT_ID VARCHAR, AIRPORT_IS_LATEST VARCHAR
+          AIRPORT_ID VARCHAR, AIRPORT_IS_LATEST VARCHAR,
+          AIRPORT_COUNTRY_CODE_ISO VARCHAR
         )
     """)
     con.execute("""
         INSERT INTO source VALUES
-          ('SAW','32395','Istanbul, Turkey','100','true'),
-          ('SAW','33459','Marquette, MI','200','true'),
-          ('ISL','32395','Istanbul, Turkey','300','1'),
-          ('ISL','12345','Isabel Pass, AK','400','true'),
-          ('SEA','30559','Seattle, WA','500','true'),
-          ('SEA','99999','Wrong vintage','600','false')
+          ('SAW','32395','Istanbul, Turkey','100','true','TR'),
+          ('SAW','33459','Marquette, MI','200','true','US'),
+          ('ISL','32395','Istanbul, Turkey','300','1','TR'),
+          ('ISL','12345','Isabel Pass, AK','400','true','US'),
+          ('SEA','30559','Seattle, WA','500','true','US'),
+          ('SEA','99999','Wrong vintage','600','false','CA')
     """)
     lookup = tmp_path / "master_coord.parquet"
     con.execute(f"COPY source TO '{lookup}' (FORMAT PARQUET)")
@@ -53,6 +55,8 @@ def test_real_sql_candidate_picks_label_from_same_id_without_writing(tmp_path):
     assert (by["ISL"]["candidate_market_id"],
             by["ISL"]["candidate_market_name"]) == ("32395", "Istanbul, Turkey")
     assert by["SEA"]["stored_market_name"] == by["SEA"]["candidate_market_name"]
+    assert by["SAW"]["stored_country"] == "TR"
+    assert by["SAW"]["candidate_country"] == "US"
     assert before == con.execute("SELECT * FROM dim_airport ORDER BY 1").fetchall()
     con.close()
 
@@ -139,3 +143,23 @@ def test_duplicate_airport_code_fails_closed(tmp_path):
     result = analyze_rows(rows, root, lookup, wh)
     assert result["result"] == "REVIEW_REQUIRED"
     assert result["duplicate_nonnull_airport_codes"] == ["C00000"]
+
+
+def test_original_mac_cross_country_conflict_blocks_label_only_adoption(tmp_path):
+    root, wh, lookup, rows = fixture(tmp_path)
+    rows[0]["stored_country"] = "TR"
+    rows[0]["candidate_country"] = "US"
+    report = analyze_rows(rows, root, lookup, wh)
+    assert report["result"] == "REVIEW_REQUIRED"
+    assert report["unresolved_original_warehouse_country_conflict_count"] == 1
+    assert report["unresolved_original_warehouse_country_conflicts"][0]["iata_code"] == "C00000"
+
+
+def test_territorial_country_code_convention_is_flagged_separately(tmp_path):
+    root, wh, lookup, rows = fixture(tmp_path)
+    rows[0]["stored_country"] = "PR"
+    rows[0]["candidate_country"] = "US"
+    report = analyze_rows(rows, root, lookup, wh)
+    assert report["result"] == "PASS_DIMENSION_PROJECTION"
+    assert report["country_coding_conventions_to_verify"] == ["C00000"]
+    assert report["unresolved_original_warehouse_country_conflict_count"] == 0
