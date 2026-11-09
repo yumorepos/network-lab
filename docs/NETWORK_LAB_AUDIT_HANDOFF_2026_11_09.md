@@ -26,6 +26,34 @@ Latest reporting month was **2026-04**, and the latest-12 window is **2025-05 th
 
 This is exposure, **not** passenger loss, ticket O&D, a proven wrong CBSA/city-market assignment, forecast error, or route-verdict delta. The nine traffic-bearing recent unresolved codes are PTL, SKJ, MHM, CAT, LSR, MQJ, NAD, DWA and SAW. SAW has both historical Turkey- and US-reported source rows, illustrating the risk of an IATA code-only join across vintages.
 
+## Second Mac audit: preserved-warehouse inventory and mapping (November 9)
+
+This follows the country/source-endpoint audit above. The user ran `scripts.audit_preserved_warehouse` locally against the **same preserved original** via `duckdb.connect(..., read_only=True)`. Private input: `NetworkLab-Mapping-20261109-154617.zip`, SHA-256 `cdfc267b4f2d4997327dbb40f55d6e8ae5b998f8e83c6d036117079efcdea76e`. The ZIP contains only a summary and JSON diagnostics. **Do not commit the original private data or this ZIP.**
+
+| Actual Mac warehouse check | Observed |
+|---|---:|
+| Warehouse bytes | 5,192,560,640 |
+| Raw source tree | 218 files / 2,961,148,575 bytes |
+| Parquet tree | 164 files / 1,142,110,808 bytes |
+| T-100 `fact_segment` | 13,630,379 rows |
+| DB1B `fact_od_market` | 173,741,663 rows |
+| `dim_airport` / `dim_metro_us` / `map_citymarket_cbsa` | 8,802 / 935 / 815 rows |
+| Duplicate airport codes / duplicate city-market-to-CBSA rows | 0 / 0 |
+| Latest lookup codes with multiple stable AirportIDs or CityMarketIDs | 36 (17 multiple market IDs; 19 same market, multiple AirportIDs) |
+| Actual stored CityMarketID/name disagreements | 10 |
+| US-country airport rows lacking a city-market-to-CBSA join | 1,040 |
+| Top-100 historical US airport endpoint gaps | 100 **returned records, capped by SQL LIMIT 100** |
+| Top-100 historical unmapped US destination-metro traffic | 100 **returned records, capped by SQL LIMIT 100** |
+| Internal T-100 month gaps | 12, **2020-01 through 2020-12 only** |
+
+**Interpretation:** The 2020 exclusion is an existing documented scope choice, not proof of an ingestion failure. `map_citymarket_cbsa` has **no duplicate keys**, but its one-to-one value can still be *geographically wrong*: the builder uses hand-written overrides, token matching, then highest-population choice, so zero duplicate rows is not a correctness certificate. The 1,040 unmapped airport rows are **not 1,040 proven eligible candidate markets or dropped airline passengers**; nonmetropolitan, Alaska, territorial and historic code cases require separate treatment.
+
+Examples worth triage: `GUM` (47,960,300), `STT` (20,824,041), `SPN` (19,360,859) and `STX` (7,771,495) have large **all-years** unmapped-destination segment-leg totals but are territorial or special-scope cases, not straightforward US CBSA failures. `ASE` has 7,760,885 historical unmapped destination segment legs and deserves a specific Aspen/CBSA mapping review. `PFN` is a large historical unmatched-code example; this diagnostic does not establish a current route verdict delta. The `PBI/DJT` diagnostic groups both code strings **together by year**, so it cannot establish which code has a valid, vintage-correct AirportID, and it cannot establish lost traffic or a changed verdict.
+
+The ten label inconsistencies are `BAT, BDN, BGN, ISL, KMC, LAC, LOM, NEU, SAW, TIC`. `SAW`'s stored city name identifies Istanbul while the stored numeric market source identifies Marquette, illustrating why draft PR #28 is not safe to adopt as an identity repair. Both actual Mac audit reports explicitly say the warehouse was opened read-only and the original model outputs were not recomputed. The report's seven small SHA-256 output hashes are a **local fingerprint**, not independently compared to `main` here.
+
+**Next narrow gate (issue #14, then #7):** (a) report **latest-12** operated-segment traffic, by hub and destination, where the current CBSA join fails or maps ambiguously; separate territorial/rural/retired codes; (b) test source-vintage `ASE`, `PFN` and `PBI/DJT` mapping provenance, and the 10 source-ambiguous high-traffic markets from issue #14; (c) trace only evidence-backed cases through actual candidate, served-market and competition consumers. The present all-years top-100 lists are **not exhaustive** and should never be added as if they were a complete error count. Conditional source-stable-ID validation and isolated counterfactual come **after** this consumer evidence. Freeze the original 200 screens and 463 historical replay decisions until that gate.
+
 ## Decision
 
 1. **Close the bounded source-endpoint fact-exposure evidence request as measured**, but do not certify historical identity or downstream accuracy. Keep [#7](https://github.com/yumorepos/network-lab/issues/7), [#14](https://github.com/yumorepos/network-lab/issues/14) and [#30](https://github.com/yumorepos/network-lab/issues/30) open.
