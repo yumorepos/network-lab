@@ -54,6 +54,10 @@ The ten label inconsistencies are `BAT, BDN, BGN, ISL, KMC, LAC, LOM, NEU, SAW, 
 
 **Next narrow gate (issue #14, then #7):** (a) report **latest-12** operated-segment traffic, by hub and destination, where the current CBSA join fails or maps ambiguously; separate territorial/rural/retired codes; (b) test source-vintage `ASE`, `PFN` and `PBI/DJT` mapping provenance, and the 10 source-ambiguous high-traffic markets from issue #14; (c) trace only evidence-backed cases through actual candidate, served-market and competition consumers. The present all-years top-100 lists are **not exhaustive** and should never be added as if they were a complete error count. Conditional source-stable-ID validation and isolated counterfactual come **after** this consumer evidence. Freeze the original 200 screens and 463 historical replay decisions until that gate.
 
+### Follow-up implementation status
+
+A separate *draft, unmerged* [PR #35](https://github.com/yumorepos/network-lab/pull/35) now contains the narrow **read-only** `scripts.audit_hub_cbsa_consumer_exposure` runner plus synthetic tests. [GitHub CI passed](https://github.com/yumorepos/network-lab/actions/runs/42698825568) on commit `706335980eb106e35c2c1d9483b6dac83e4c7a18`. The script has **not** been run against the actual original Mac warehouse at the time of this handoff; the real consumer result remains unknown. This runner only measures recent source endpoint mapping, not full candidate eligibility, brand reconstruction or counterfactual changes.
+
 ## Decision
 
 1. **Close the bounded source-endpoint fact-exposure evidence request as measured**, but do not certify historical identity or downstream accuracy. Keep [#7](https://github.com/yumorepos/network-lab/issues/7), [#14](https://github.com/yumorepos/network-lab/issues/14) and [#30](https://github.com/yumorepos/network-lab/issues/30) open.
