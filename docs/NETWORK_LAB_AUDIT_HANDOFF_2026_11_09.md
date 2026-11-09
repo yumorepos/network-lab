@@ -58,6 +58,25 @@ The ten label inconsistencies are `BAT, BDN, BGN, ISL, KMC, LAC, LOM, NEU, SAW, 
 
 A separate *draft, unmerged* [PR #35](https://github.com/yumorepos/network-lab/pull/35) now contains the narrow **read-only** `scripts.audit_hub_cbsa_consumer_exposure` runner plus synthetic tests. [GitHub CI passed](https://github.com/yumorepos/network-lab/actions/runs/42698825568) on commit `706335980eb106e35c2c1d9483b6dac83e4c7a18`. The script has **not** been run against the actual original Mac warehouse at the time of this handoff; the real consumer result remains unknown. This runner only measures recent source endpoint mapping, not full candidate eligibility, brand reconstruction or counterfactual changes.
 
+## Third Mac audit: actual recent YYC/SEA/YYZ CBSA source-consumer exposure
+
+The user independently executed the **read-only** `scripts.audit_hub_cbsa_consumer_exposure.py` from research [draft PR #35](https://github.com/yumorepos/network-lab/pull/35) on the preserved Mac warehouse on November 9, 2026. Private upload: `NetworkLab-Hub-CBSA-20261109-161909.zip` (SHA-256 `48484f3ca48cf300b7eb4f7c9fba9bfb2ce32f3d1d0efc7d47dce707449f5857`). **Do not commit the ZIP or original warehouse.** The JSON and CSV agree across all **383 distinct hub/destination/status groups** and numerical source sums; six hub/status aggregates reconcile.
+
+**Latest 12 reported months:** May 2025–April 2026 (`latest_reported_month = 202604`, exclusive cutoff `202504`); direct flights from YYC/SEA/YYZ to source-reported U.S. destinations; scheduled `F/L` categories with positive operated departures. This is *not* an airline-brand, candidate eligibility, ticket O&D, one-stop reconstruction, or replay query.
+
+| Hub | Direct hub/destination groups | No CBSA | No-CBSA segment-passenger legs | All source segment legs | % |
+|---|---:|---:|---:|---:|---:|
+| YYC | 67 | 1 | 786 | 1,814,314 | 0.043% |
+| SEA | 161 | 7 | 30,288 | 21,951,725 | 0.138% |
+| YYZ | 155 | 14 | 1,443 | 5,510,043 | 0.026% |
+| **Total** | **383** | **22** | **32,517** | **29,276,082** | **0.111%** |
+
+The **22** missing-CBSA hub groups represent **20 distinct destination codes**, 168 source segment rows and 475 departures. SEA→SIT (Sitka, AK) contributes **28,730** of 32,517 unmapped source passenger-segment legs; other cases include SEA/YYC/YYZ→IFP and YYZ→BED/TEB. Several reflect small, rural/Alaska/specialized airport services; do not assume they are eligible metros under the model's 400k population rule. None of these 20 codes appears as a direct `dest_airport` in the **200 published screening rows**, verified against the three canonical committed screen CSVs, but **indirect competitive, already-served, and geographic effects are still unmeasured**.
+
+**Focused source mappings:** `PBI` is currently CBSA-mapped (33100) in the stored warehouse; the report does not establish point-in-time `PBI/DJT` AirportID correctness. `SJU` is CBSA-key-mapped (41980) and is a PR/US convention, yet its focus lookup records **null census population**; mapped key is not identical to complete demographic eligibility. `ASE` lacks CBSA mapping, but **no current qualifying direct hub→ASE destination** appears in this window. Historical PFN and territorial GUM/SPN/STT/STX exposures cannot automatically be treated as current eligible U.S. metros.
+
+**Decision:** This closes the narrow *direct missing-CBSA source-endpoint measurement only*, **not** the broader CBSA geography/consumer-impact issue #14. The higher-value next check is a scoped read-only **wrong-but-present CBSA** audit for the ten source-ambiguous traffic-bearing markets in #14, plus the Aspen override, using original source geography/IDs. Before considering any fix, trace those markets into eligible 3-study candidates, brand-resolved served exclusion and reconstructed one-stop competition; stop if no credible material impact. Do not rebuild, update the original warehouse or change 200 screens/463 replay decisions. On the current evidence, **prioritize portfolio readiness over broad model work**.
+
 ## Decision
 
 1. **Close the bounded source-endpoint fact-exposure evidence request as measured**, but do not certify historical identity or downstream accuracy. Keep [#7](https://github.com/yumorepos/network-lab/issues/7), [#14](https://github.com/yumorepos/network-lab/issues/14) and [#30](https://github.com/yumorepos/network-lab/issues/30) open.
