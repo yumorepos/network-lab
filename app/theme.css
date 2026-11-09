@@ -114,7 +114,7 @@ a, a:visited { color: #60a5fa; }
 }
 .nl-metrics.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .nl-metric {
-  background: linear-gradient(145deg, #1a1a1a, #111419);
+  background: linear-gradient(145deg, #1a1a1a, #111111);
   border: 1px solid var(--nl-border);
   border-radius: 14px;
   padding: 17px 19px 16px;
@@ -204,8 +204,8 @@ a, a:visited { color: #60a5fa; }
   font-size: .61rem;
   white-space: nowrap;
 }
-.nl-pill.launch { border-color:#365786; color:#60a5fa; }
-.nl-pill.monitor { border-color:#685d45; color:#d7ba7e; }
+.nl-pill.launch { border-color: #3b82f6; color: #93c5fd; }
+.nl-pill.monitor { border-color: #7c7c7c; color: #d4d4d8; }
 .nl-market-detail {
   display:flex;
   flex-wrap: wrap;
@@ -286,8 +286,6 @@ a, a:visited { color: #60a5fa; }
   outline-offset: 3px;
 }
 .nl-brand-sep { color: #888888; }
-.nl-pill.launch { border-color: #3b82f6; color: #93c5fd; }
-.nl-pill.monitor { border-color: #7c7c7c; color: #d4d4d8; }
 .nl-market:hover { border-color: #414141; }
 @media (prefers-reduced-motion: reduce) {
   .nl-market, .nl-home-link { transition: none !important; }
