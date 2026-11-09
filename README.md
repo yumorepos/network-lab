@@ -23,7 +23,7 @@ full contract is [docs/FINAL_SCOPE_CONTRACT.md](docs/FINAL_SCOPE_CONTRACT.md);
 the story of how the claim got narrowed to that is
 [docs/PORTFOLIO_NARRATIVE.md](docs/PORTFOLIO_NARRATIVE.md).
 
-[![Route screen](docs/img/dashboard_route_screen.png)](https://network-lab-tweqoqjxhfrhj7imgmuftl.streamlit.app)
+**Visual evidence note (2026-11):** The archived `docs/img/dashboard_route_screen.png` image comes from a pre-final prototype and still displays Porter's obsolete **5 LAUNCH / 3 MONITOR / 71 PASS** results and retired right-sizing wording. It is **not** a screenshot of the verified current model or proof of the live Streamlit rendering. Current saved result counts are in [`headline_metrics.yaml`](data/parquet/outputs/headline_metrics.yaml) and [`screen_porter_yyz.csv`](data/parquet/outputs/screen_porter_yyz.csv). A replacement screenshot requires a fresh visual capture of the actual live dashboard.
 
 ---
 
@@ -103,7 +103,7 @@ read against its own downside, not a single point estimate. The example below is
 a thin Porter candidate that is negative in all nine cells, a clean PASS the tool
 does not dress up:
 
-![Per-market scenario grid](docs/img/dashboard_scenario_grid.png)
+*The archived `docs/img/dashboard_scenario_grid.png` is also a pre-final UI example, not current deployment evidence. Re-capture its visualization from the present app before using it for recruiting materials.*
 
 ## Validation: the numbers behind the verdicts
 
