@@ -28,8 +28,11 @@ st.markdown("<style>" + (ROOT / "app" / "theme.css").read_text() + "</style>",
 
 def page_heading(section: str, title: str, subtitle: str) -> None:
     st.markdown(
-        '<div class="nl-brand"><span class="nl-star"></span> NETWORK / LAB'
-        ' &nbsp;·&nbsp; OPEN DATA RESEARCH</div>'
+        '<div class="nl-brand"><span class="nl-star"></span>'
+        '<a class="nl-home-link" href="https://yumorepos.github.io/network-lab.html" '
+        'target="_blank" rel="noopener noreferrer" '
+        'aria-label="Network Lab case study on portfolio">NETWORK / LAB</a>'
+        '<span class="nl-brand-sep">·</span><span>OPEN DATA RESEARCH</span></div>'
         f'<section class="nl-hero"><div class="nl-eyebrow">{html.escape(section)}</div>'
         f'<h1>{html.escape(title)}</h1>'
         f'<div class="nl-subtitle">{html.escape(subtitle)}</div></section>',
@@ -236,8 +239,8 @@ elif page == "Market detail":
                                     color="margin %"),
                         color_continuous_scale="RdYlGn",
                         color_continuous_midpoint=0)
-        fig.update_layout(template="plotly_dark", paper_bgcolor="#0a0b0e",
-                          plot_bgcolor="#12151a", font_color="#d8dee6")
+        fig.update_layout(template="plotly_dark", paper_bgcolor="#0a0a0a",
+                          plot_bgcolor="#141414", font_color="#ededed")
         st.plotly_chart(fig, use_container_width=True)
         if comp is not None:
             cm = comp[comp["cbsa"] == e["cbsa"].iloc[0]]
@@ -264,7 +267,9 @@ elif page == "Validation":
     if tp is not None:
         st.subheader("Transfer factor distribution (2018 anchor pairs)")
         fig = px.histogram(tp, x="transfer", nbins=30,
-                           hover_data=["geo"])
+                           hover_data=["geo"], color_discrete_sequence=["#3b82f6"])
+        fig.update_layout(template="plotly_dark", paper_bgcolor="#0a0a0a",
+                          plot_bgcolor="#141414", font_color="#ededed")
         st.plotly_chart(fig, use_container_width=True)
 
 elif page == "Backtest":
