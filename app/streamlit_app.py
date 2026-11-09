@@ -92,6 +92,14 @@ STUDIES = {
     "Porter YYZ transborder (portability)": "porter_yyz",
 }
 
+# Keep the full research study names in headings; use short, untruncated
+# labels inside Streamlit's narrower sidebar selectbox.
+SIDEBAR_STUDY_LABELS = {
+    "WestJet YYC transborder (flagship)": "WestJet · YYC",
+    "Alaska SEA domestic (validation)": "Alaska · SEA",
+    "Porter YYZ transborder (portability)": "Porter · YYZ",
+}
+
 
 def load(name: str) -> pd.DataFrame | None:
     p = OUT / name
@@ -101,7 +109,8 @@ def load(name: str) -> pd.DataFrame | None:
 st.sidebar.caption("RESEARCH WORKSPACE · SCREENING, NOT A FORECAST")
 page = st.sidebar.radio("View", ["Route screen", "Market detail",
                                  "Validation", "Backtest", "About"])
-study_label = st.sidebar.selectbox("Study", list(STUDIES))
+study_label = st.sidebar.selectbox("Study", list(STUDIES),
+                                   format_func=lambda value: SIDEBAR_STUDY_LABELS[value])
 sid = STUDIES[study_label]
 
 if page == "Route screen":
@@ -242,6 +251,9 @@ elif page == "Market detail":
         fig.update_layout(template="plotly_dark", paper_bgcolor="#0a0a0a",
                           plot_bgcolor="#141414", font_color="#ededed")
         st.plotly_chart(fig, use_container_width=True)
+        st.caption(
+            "Scenario colors reflect the estimated margin in each cell; "
+            "the chart does not change the evaluated route verdict.")
         if comp is not None:
             cm = comp[comp["cbsa"] == e["cbsa"].iloc[0]]
             st.subheader("Reconstructed competition")
@@ -258,11 +270,20 @@ elif page == "Market detail":
 elif page == "Validation":
     page_heading("03 / Evidence & checks", "Validation",
                  "Reconciliation, share error, and known limits")
-    for f in ("validation.md", "reconciliation.md"):
-        p = DOCS / f
+    st.markdown(
+        "This page documents observed validation errors and independent "
+        "source-total reconciliations. Open the research appendices to "
+        "inspect the full tables; results are not forecasts.")
+    for filename, label in (
+        ("validation.md", "Model validation and transfer-factor evidence"),
+        ("reconciliation.md", "Source reconciliation: computed vs published"),
+    ):
+        p = DOCS / filename
         if p.exists():
-            st.markdown(p.read_text())
-            st.divider()
+            with st.expander(label):
+                st.markdown(p.read_text())
+        else:
+            st.warning(f"Research document unavailable: {filename}")
     tp = load("transfer_pairs.parquet")
     if tp is not None:
         st.subheader("Transfer factor distribution (2018 anchor pairs)")
@@ -307,11 +328,35 @@ elif page == "Backtest":
     st.divider()
     p = DOCS / "backtest.md"
     if p.exists():
-        st.markdown(p.read_text())
+        with st.expander("Launch backtest: full study tables and named routes"):
+            st.caption(
+                "Display note: 'not recorded' means the archived table has "
+                "no launch date, including never-launched rows. Original "
+                "research files and statuses are unchanged.")
+            st.markdown(p.read_text().replace("| nan |", "| not recorded |"))
     else:
         st.warning("Run `python -m backtest.run_backtest`.")
 
 else:
     page_heading("05 / Project notes", "About Network Lab",
                  "Architecture, assumptions, data sources and project history")
-    st.markdown((ROOT / "README.md").read_text())
+    st.markdown(
+        "**Network Lab is fixed-gauge route-screening research**, not "
+        "validated route prediction, aircraft assignment, or network design. "
+        "Its historical replay found no detectable additional ranking value "
+        "over a demand-only baseline at effects larger than the study's "
+        "resolution. Smaller effects remain unresolved.")
+    st.markdown(
+        "[Read the portfolio case study](https://yumorepos.github.io/network-lab.html)"
+        " · [View the source and methods](https://github.com/yumorepos/network-lab)"
+        " · [Study limitations](https://github.com/yumorepos/network-lab/blob/main/docs/LIMITATIONS.md)")
+    with st.expander("Complete README, source references and audit history"):
+        readme = (ROOT / "README.md").read_text()
+        # Relative GitHub README links do not resolve correctly from
+        # streamlit.app; rewrite only their display destinations.
+        readme = readme.replace(
+            "](docs/", "](https://github.com/yumorepos/network-lab/blob/main/docs/"
+        ).replace(
+            "](data/", "](https://github.com/yumorepos/network-lab/blob/main/data/"
+        )
+        st.markdown(readme)
