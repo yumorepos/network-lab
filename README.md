@@ -23,7 +23,7 @@ full contract is [docs/FINAL_SCOPE_CONTRACT.md](docs/FINAL_SCOPE_CONTRACT.md);
 the story of how the claim got narrowed to that is
 [docs/PORTFOLIO_NARRATIVE.md](docs/PORTFOLIO_NARRATIVE.md).
 
-**Visual evidence note (2026-11):** The archived `docs/img/dashboard_route_screen.png` image comes from a pre-final prototype and still displays Porter's obsolete **5 LAUNCH / 3 MONITOR / 71 PASS** results and retired right-sizing wording. It is **not** a screenshot of the verified current model or proof of the live Streamlit rendering. Current saved result counts are in [`headline_metrics.yaml`](data/parquet/outputs/headline_metrics.yaml) and [`screen_porter_yyz.csv`](data/parquet/outputs/screen_porter_yyz.csv). A replacement screenshot requires a fresh visual capture of the actual live dashboard.
+**Visual evidence note (2026-11):** The archived `docs/img/dashboard_route_screen.png` image shows a **retired pre-final version** of the Porter screen, including now-invalid verdict counts and right-sizing wording. **It is not a current-results or live-deployment screenshot.** The verified Porter figures are **1 LAUNCH / 1 MONITOR / 77 PASS**, as recorded in [`headline_metrics.yaml`](data/parquet/outputs/headline_metrics.yaml) and [`screen_porter_yyz.csv`](data/parquet/outputs/screen_porter_yyz.csv). Refresh visual evidence from the actual app before reusing screenshots in the portfolio.
 
 ---
 
