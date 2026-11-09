@@ -88,26 +88,45 @@ The **22** missing-CBSA hub groups represent **20 distinct destination codes**, 
 - **Actual direct study exposure already measured:** in the May 2025–April 2026 source-US hub diagnostic, `SEA→GSP` had 1 reported segment row / 189 passenger-segment legs; `YYZ→GSP` had 2 rows / 35 legs. No qualifying `YYC/SEA/YYZ→JAN` recent direct row appeared. These are source segments and **not** marketing-brand or historical replay coverage.
 - **Published result exposure:** Both GSP and JAN are listed as screened `dest_airport` in **all three** frozen study screens (six candidate rows). Every verdict is `PASS`; margins remain the original computed values and **were not corrected/recomputed**.
 - **Scope definitions:** BTS [AirportID and CityMarketID documentation](https://www.transtats.bts.gov/Fields.asp?gnoyr_VQ=FMF) distinguishes a stable AirportID from the commercial city market. Census [CBSA guidance](https://www.census.gov/programs-surveys/metro-micro/about.html) defines the county-based statistical areas. The units cannot safely be interchanged or assumed additively exhaustive for an airline catchment.
-- **Implementation gate:** CI has now passed for an additional read-only **GSP/JAN diagnostic and synthetic tests** in draft [PR #35](https://github.com/yumorepos/network-lab/pull/35) (commit `2edd2c3bb3e6ea6dbff8c4858f5e06f6991b64b6`). It reads source AirportIDs, actual stored geography, recent segment exposure and six committed screen rows. The **real original-Mac execution is still pending**, and this diagnostic cannot produce a counterfactual verdict delta.
+- **Implementation gate:** CI has now passed for an additional read-only **GSP/JAN diagnostic and synthetic tests** in draft [PR #35](https://github.com/yumorepos/network-lab/pull/35) (commit `2edd2c3bb3e6ea6dbff8c4858f5e06f6991b64b6`). It reads source AirportIDs, actual stored geography, recent segment exposure and six committed screen rows. The real original-Mac read-only run **completed on November 9, 2026**, with no warnings and the expected six screen rows; as designed, it does not produce a counterfactual verdict delta.
 
-**Decision:** leave the current mappings unmodified pending the *actual Mac readback*. If the local report confirms the same IDs and no new relevant consumer defect, record GSP as a documented simplified airport-catchment/CBSA proxy and JAN as an airport-location-appropriate CBSA, leave broader source/metro issues open for periodic review and focus on portfolio presentation. Any source-supported change requires a separate isolated candidate warehouse and full 200+463 decision comparison, never a blind swap.
+**Decision after local readback:** retain GSP and JAN's current mapped IDs as *documented source-backed proxies*, not as validated all-catchment demand geographies; no evidence-backed mapping change is justified. Keep the broader geography/candidate-consumer issue open. Any hypothetical source-supported correction requires an isolated warehouse and full 200+463 decision comparison; do not rewrite the original.
 
-## Decision
+## Fourth Mac audit: GSP/JAN source-ID and actual stored CBSA gate COMPLETE
 
-1. **Close the bounded source-endpoint fact-exposure evidence request as measured**, but do not certify historical identity or downstream accuracy. Keep [#7](https://github.com/yumorepos/network-lab/issues/7), [#14](https://github.com/yumorepos/network-lab/issues/14) and [#30](https://github.com/yumorepos/network-lab/issues/30) open.
-2. Keep [draft PR #28](https://github.com/yumorepos/network-lab/pull/28) **unmerged**. Its label-only fix cannot reconcile source-vintage airport identity or geographically ambiguous numeric CityMarketIDs.
-3. Next bounded check: use the existing `scripts.audit_preserved_warehouse` **read-only** against the preserved local warehouse, with a new output folder **outside** the project. Assess real `map_citymarket_cbsa` cardinality, source airport-code gaps, monthly coverage and PBI/DJT. [#14](https://github.com/yumorepos/network-lab/issues/14) has much larger **source-side** ambiguous-CBSA exposure (9.22M segment-passenger legs across 10 markets), but production misassignment is **not yet demonstrated**.
-4. If and only if a consumer path and official point-in-time stable identifiers support a correction, compare an **isolated candidate** warehouse against all 200 screens and 463 replay decisions under fixed source snapshots and the full gates. Never overwrite the original DuckDB or hand-edit generated reports.
-5. Prioritize an evidence-first portfolio case study and live dashboard visual review over further model tuning. The [final scope contract](FINAL_SCOPE_CONTRACT.md) remains controlling: **fixed-gauge route screening**, not optimized network design, validated frequency selection or demonstrated predictive superiority.
+**Execution:** November 9, 2026, preserved original Mac DuckDB opened `read_only=True` by research-only `scripts/audit_gsp_jan_geography.py` (draft [PR #35](https://github.com/yumorepos/network-lab/pull/35), blob SHA `1b6295f8312973d662307e802fc24efb6a4e0388`; the user's uploaded script matches the exact Git blob). Local report folder `NetworkLab-GSP-JAN-20261109-173958`; private ZIP SHA-256 `e4f904e8d33fab2e32a7419f48b51531bbde1d5c3040298fa73f8bcfd7faf7b8`. **The ZIP, local path contents and original DuckDB are not committed.** The script read existing output CSVs; no data, model or replay files were written.
 
-## Short work plan (5 hours/week)
+| Airport | Archive BTS AirportID | BTS CityMarketID (stored = source) | Actual mapped CBSA | Actual stored source name |
+|---|---|---|---|---|
+| GSP | `11996` | `31871` | `24860` Greenville-Anderson-Greer, SC | Greenville/Spartanburg, SC |
+| JAN | `12448` | `32448` | `27140` Jackson, MS | Jackson/Vicksburg, MS |
 
-- **Now, 0.5–1 hour:** record this result, preserve the audit archive privately, leave model defaults/outputs unchanged.
-- **Next, 2–4 hours:** targeted existing read-only preserved-warehouse/mapping audit, review join/candidate consumer pathways and determine stop/continue.
-- **Conditional, 2–6 hours:** official historic AirportID/CBSA source validation and isolated counterfactual only if impact evidence exists.
-- **Portfolio, 3–5 hours:** demonstrate clear problem → data → model → validation → bounded negative result → stop decision; confirm live Streamlit rendering. Do not publish the private career website without explicit approval.
-- **Deferred:** DB1C full migration [#9](https://github.com/yumorepos/network-lab/issues/9), source-vintage backfill [#23](https://github.com/yumorepos/network-lab/issues/23), major model expansion and separate optimization/history products.
+The archived BTS Master Coordinate includes **two latest-flag variants of each airport code**, but **both variants agree on the same AirportID and CityMarketID for each airport**. All four reference component CBSAs are present: GSP 24860 population 996,680; Spartanburg 43900 population 395,934; Jackson 27140 population 606,178; Vicksburg 46980 population 42,105. The mapping method is `token` in both cases. **Zero script warnings**.
 
-**Do not run** `make data`, `make marts`, `make reproducibility` or `make clean-data` against the preserved production directory during audit work. Some of these commands modify or delete local data.
+The May 2025–April 2026 source-US, scheduled F/L, positive-departure direct hub window contains exactly **three rows to GSP**: SEA→GSP May 2025 (189 passenger-segment legs; one departure), YYZ→GSP October 2025 (2 legs; one departure), YYZ→GSP November 2025 (33 legs; one departure): **224 passenger-segment legs / 3 departures in total**. No qualifying YYC/SEA/YYZ→JAN segment was present in that narrow window. These sparse rows may include reporting categories outside the regular airline study brand rules; neither passenger O&D nor forecast impacts follow from them.
 
-Related canonical documents: [Final scope](FINAL_SCOPE_CONTRACT.md), [Publication readiness](PUBLICATION_READINESS_AUDIT_2026_10.md), [October fact-exposure diagnostic](ACTUAL_MAC_COUNTRY_CONFLICT_FACT_EXPOSURE_2026_10.md), [2026 gated research roadmap](UPGRADE_2026_ROADMAP.md).
+The read-only report matched exactly **six published GSP/JAN candidate rows**, all `PASS`. Frozen base-case margin percentages:
+- YYC: GSP **−1600.1%**, JAN **−1089.5%**
+- SEA: GSP **−819.8%**, JAN **−784.2%**
+- YYZ: GSP **−559.5%**, JAN **−1676.4%**
+
+These extreme modeled negatives are reported as **existing screening estimates**, not independently validated route economics. No screens or 463 replay rows were recomputed, and there is **no measured hypothetical geographic correction**. The source's four explicit false certification flags (`source_stable_airport_id_snapshot_certified`, `bts_citymarket_cbsa_semantics_certified`, `brand_resolved_served_competition_recomputed`, `six_screen_verdicts_recomputed`) remain **false**.
+
+**Interpretation:** Identity consistency is verified **for these two codes in this archived lookup and actual stored warehouse**. It does not establish source-stable ID correctness across every historical vintage, entire city-market population allocation, marketing-brand connections or a full production accuracy certificate. GSP is an airport whose broader region spans two CBSAs, and JAN sits in the Jackson CBSA despite the broader BTS market label. **No demonstrated production defect supports remapping either airport.**
+
+## Updated stop/continue decision
+
+1. **CLOSE THIS BOUNDED GSP/JAN READ-ONLY CHECK AS COMPLETED.** Keep GSP→24860 and JAN→27140 unmodified; clearly disclose cross-geography simplification instead of claiming catchment-wide population truth.
+2. **DO NOT merge the label-only [draft PR #28](https://github.com/yumorepos/network-lab/pull/28)** or modify city-market IDs, frozen inputs, model results or 463 replay decisions. **Keep issues #7, #14 and #30 open** for unsolved general historical/cross-source identity cases.
+3. Research [draft PR #35](https://github.com/yumorepos/network-lab/pull/35) contains synthetic-tested, locally exercised read-only tools and may be reviewed as a standalone research utility. The evidence is recorded here on [draft PR #34](https://github.com/yumorepos/network-lab/pull/34). **Neither needs to be merged automatically** to complete the immediate audit decision.
+4. **Next priority: portfolio presentation**, not more diagnosis. Build one recruiter-friendly Network Lab case study using the locked 200-market study, point-in-time replay, fixes that worsened results, and the bounded negative predictive finding. Live Streamlit deployment verification and presentation review are still separate tasks.
+5. **Only reopen a geography correction if new independent point-in-time source evidence identifies a material affected consumer path.** Before any production change, use a separate candidate warehouse and compare all 200 screens plus 463 historical decisions using fixed-source reproducibility gates. Do not auto-sum two CBSAs or infer a correction from a bigger candidate population.
+
+## Near-term roadmap (approximately 5 focused hours per week)
+
+- **Completed:** three broader source/warehouse audits plus the GSP/JAN source-ID/local-CBSA run; read-only reports retained privately; documentation/research draft CI passed.
+- **Week 1 (3–5 hours):** finalize a one-page case study and three strong visuals: workflow, audited claim/method result, and replay-vs-demand comparison. Make limitations explicit.
+- **Week 2 (2–4 hours):** verify the current Streamlit rendering and committed data/artifact parity, polish recruiter narrative and portfolio screenshots. No new model fitting.
+- **Optional later, gated:** revisit DB1C compatibility, 2024 source-vintage rows and ambiguous CBSA city-market semantics only if practical job relevance or independent contradictory source evidence justifies the effort.
+
+**Final recommendation: stabilize Network Lab as a credible research artifact and switch effort to the portfolio and the next distinct optimization project.** A cautious finding is a feature of the work, not a defect to optimize away.
