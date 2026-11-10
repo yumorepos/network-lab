@@ -17,7 +17,7 @@ changed. Every mutation described below was a temporary probe, reverted, with
 
 | check | result |
 |---|---|
-| `pwd` | `/Users/yumo/Projects/network-lab` |
+| `pwd` | `<redacted-local-project-path>` |
 | branch | `claude/network-lab-finalization` |
 | HEAD | `1e8dafd4eca90c62f0e637cf659ce87affb1e9fd` |
 | working tree at start | clean |
