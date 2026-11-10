@@ -6,7 +6,7 @@ Route-evaluation engine for airline network planning, built on open government
 data. One config-driven pipeline, three studies (WestJet YYC flagship, Alaska
 SEA validation, Porter YYZ portability). The published results are frozen. Read the final scope contract and
 computed `data/parquet/outputs/headline_metrics.yaml` for current claims;
-`PROGRESS.md` and `INTEGRITY_REPORT.md` preserve historical corrections.
+`PROGRESS.md` and `docs/history/INTEGRITY_REPORT.md` preserve historical corrections.
 
 ## Stack
 
@@ -46,7 +46,7 @@ pytest. No new dependency without a one-line justification and approval.
 `make all && make test` is green from a clean state; new constants are in
 `assumptions.yaml` with a source; reports are regenerated from outputs, not
 hand-edited; the consistency tests pass (they fail the build if any headline
-number or verdict count drifts); PROGRESS.md reflects the current numbers.
+number or verdict count drifts); current reported claims must match the committed outputs. `PROGRESS.md` is a guarded historical phase log, not a future-work order.
 
 ## Where things are
 
