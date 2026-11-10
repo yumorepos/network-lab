@@ -2,6 +2,15 @@
 
 This is the documentation set for Network Lab (repo root: one level up).
 
+## Choose your path
+
+- **Recruiters / hiring managers:** [short case study](https://yumorepos.github.io/network-lab.html) and [live route-screening dashboard](https://network-lab-tweqoqjxhfrhj7imgmuftl.streamlit.app/). Start with the *fixed-gauge scope* and bounded ranking result, not an implied production route recommendation.
+- **Reviewers:** [final scope contract](FINAL_SCOPE_CONTRACT.md), [known limitations](LIMITATIONS.md), [historical replay resolution](STAGE_2R0_RESOLUTION.md), then [validation](validation.md) and [reconciliation](reconciliation.md).
+- **Developers:** [repository README](../README.md), [Makefile](../Makefile), [CI workflow](../.github/workflows/ci.yml), and [AGENTS.md](../AGENTS.md). The Streamlit app reads the **tracked** precomputed output files and does not rebuild the Mac warehouse.
+- **Maintainers:** [public/private file policy](REPOSITORY_MAINTENANCE_POLICY.md), [34-branch retirement ledger](maintenance/BRANCH_RETIREMENT_2026_11_09.md), and [November Mac warehouse audit handoff](NETWORK_LAB_AUDIT_HANDOFF_2026_11_09.md).
+
+**Status:** historical plans, agent handoffs and career-writing drafts remain in their original paths for now because published documentation links and automated tests reference them. A physical move requires a tested migration; a public file cannot be hidden simply by renaming it.
+
 ## Start here
 
 - [FINAL_SCOPE_CONTRACT.md](FINAL_SCOPE_CONTRACT.md) - what the project claims
