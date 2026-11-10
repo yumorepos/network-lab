@@ -1,10 +1,12 @@
 # Network Lab: conventions for AI pair programming
 
+> **Current status (2026-11-09):** This project is stable, evidence-bounded **fixed-gauge route screening**. Before any edit, read `docs/FINAL_SCOPE_CONTRACT.md`, `docs/REPOSITORY_MAINTENANCE_POLICY.md`, and `docs/NETWORK_LAB_AUDIT_HANDOFF_2026_11_09.md`. Prior Phase 5/6 and agent handoff documents remain historical, not an instruction to resume development. Do not rerun models or overwrite the original local DuckDB as part of documentation, design, or branch cleanup.
+
 Route-evaluation engine for airline network planning, built on open government
 data. One config-driven pipeline, three studies (WestJet YYC flagship, Alaska
-SEA validation, Porter YYZ portability). The build is complete and shipped. Read
-PROGRESS.md for the canonical current numbers and INTEGRITY_REPORT.md for the
-correctness-review history.
+SEA validation, Porter YYZ portability). The published results are frozen. Read the final scope contract and
+computed `data/parquet/outputs/headline_metrics.yaml` for current claims;
+`PROGRESS.md` and `INTEGRITY_REPORT.md` preserve historical corrections.
 
 ## Stack
 
