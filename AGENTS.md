@@ -24,4 +24,4 @@
 
 The current instructions are **this file and CLAUDE.md**. Historical notes and retired plans reside in [docs/history/](docs/history/README.md); they explain prior choices and **are not new work authorizations**. `PROGRESS.md` remains at root temporarily because canonical-value tests explicitly read it. See [documentation index](docs/README.md) for the latest public research narrative.
 
-The synthetic `experiments/disruption_recovery/` is a separate, still exploratory optimization concept. Do not represent it as a validated Network Lab capability.
+The synthetic `experiments/disruption_recovery/` is separate, unfinished experimental code and must not be presented as a validated capability of Network Lab.
