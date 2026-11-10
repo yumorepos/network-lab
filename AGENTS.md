@@ -1,11 +1,12 @@
 # AGENTS.md: working rules for coding agents
 
+> **Current status (2026-11-09):** The shipped research engine is **stabilized and frozen** at the [final scope contract](docs/FINAL_SCOPE_CONTRACT.md). The [November local-warehouse audit handoff](docs/NETWORK_LAB_AUDIT_HANDOFF_2026_11_09.md) and [public repository maintenance policy](docs/REPOSITORY_MAINTENANCE_POLICY.md) supersede any earlier plan that proposes automatic model expansion or source backfill. Old `docs/CODEX_HANDOFF.md`, `PHASE_5_6_PLAN.md` and `PROGRESS.md` retain historical evidence; they are **not new work authorizations**. Changes must keep the frozen 200 screens, 463 historical replay decisions and public Streamlit read-only data inputs unchanged unless a separately approved isolated counterfactual proves need.
+
 Instructions for any coding agent working in this repository. Derived from
 `CLAUDE.md`, which remains in force and is the original. The two files state the
 same substantive rules; where wording differs, `CLAUDE.md` is authoritative.
 
-Read `docs/CODEX_HANDOFF.md` first for current state, then this file for the
-rules, then `PHASE_5_6_PLAN.md` before implementing anything new.
+Read `docs/FINAL_SCOPE_CONTRACT.md` and `docs/REPOSITORY_MAINTENANCE_POLICY.md` first. The old `docs/CODEX_HANDOFF.md` and `PHASE_5_6_PLAN.md` are historical context, not current action plans.
 
 ## 1. What this project is
 
@@ -18,8 +19,7 @@ Three studies run through the same engine: WestJet YYC (flagship, transborder),
 Alaska SEA (validation, US domestic, where demand and share are observable) and
 Porter YYZ (portability, transborder).
 
-The build is complete and shipped. Current work is Phase 5 and Phase 6, whose
-purpose is to replace asserted parameters with measured ones.
+The build and published studies are complete. Additional model experiments require explicit approval, a new isolated workspace, and unchanged frozen baseline artifacts.
 
 ## 2. Canonical source-of-truth documents
 
