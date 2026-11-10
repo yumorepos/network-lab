@@ -57,9 +57,9 @@ def test_no_public_surface_claims_schedule_optimisation():
     This is strictly stronger than the pre-T2 assertion it replaces. The old
     test required the audit to be non-empty, which was a statement about a
     defect that has since been fixed; this one requires it to be empty, which
-    is a statement about the fix holding. Neither tolerance nor scope was
-    relaxed: the surface list grew by eight files and the pattern gained three
-    forms at the same commit.
+    is a statement about the fix holding. The detection pattern and public research surfaces remain guarded.
+    Personal résumé, interview and post-writing files were removed from the
+    public tree; they are no longer surfaces that can change live claims.
     """
     df = G.claim_audit()
     assert df.empty, (
@@ -89,9 +89,20 @@ def test_every_claim_audit_exemption_is_an_explicit_retraction():
 
 
 def test_claim_audit_covers_every_public_surface_that_exists():
-    """A surface silently dropped from the list would understate T2's scope."""
+    """Keep live research surfaces guarded; never make private drafts required."""
     missing = [s for s in G.PUBLIC_SURFACES if not (ROOT / s).exists()]
     assert not missing, f"public surfaces listed but absent: {missing}"
+    required = {
+        "README.md", "app/streamlit_app.py", "reports/generate.py",
+        "docs/demo_script.md", "docs/LIMITATIONS.md", "docs/validation.md",
+        "docs/backtest.md", "docs/PORTFOLIO_NARRATIVE.md",
+        "reports/alaska_sea_validation.md", "reports/porter_yyz_portability.md",
+        "config/assumptions.yaml", "AGENTS.md", "CLAUDE.md",
+    }
+    assert set(G.PUBLIC_SURFACES) == required, (
+        "reader-facing research surfaces were silently added or removed")
+    assert not any("resume" in p or "interview_story" in p or
+                   "linkedin_posts" in p for p in G.PUBLIC_SURFACES)
 
 
 def test_the_option_set_does_not_span_the_demand():
