@@ -50,7 +50,7 @@ def test_transfer_median_consistent():
     _need(OUT / "transfer_factor.yaml")
     tf = yaml.safe_load((OUT / "transfer_factor.yaml").read_text())
     canon = f"median {tf['median']:.2f}"
-    for f in ("README.md", "docs/validation.md", "docs/interview_story.md"):
+    for f in ("README.md", "docs/validation.md"):
         assert canon in (ROOT / f).read_text(), f"{f} lacks '{canon}'"
 
 
@@ -63,8 +63,7 @@ def test_transfer_consistent_in_progress():
              f"[{tf['iqr'][0]:.2f}, {tf['iqr'][1]:.2f}]")
     assert canon in (ROOT / "PROGRESS.md").read_text(), \
         f"PROGRESS.md lacks '{canon}'"
-    for f in ("PROGRESS.md", "README.md", "docs/validation.md",
-              "docs/interview_story.md"):
+    for f in ("PROGRESS.md", "README.md", "docs/validation.md"):
         t = (ROOT / f).read_text()
         for stale in ("0.56, 2.10", "0.55, 2.04"):
             assert stale not in t, f"{f} has stale IQR {stale}"
@@ -77,11 +76,10 @@ def test_share_mae_consistent():
     _need(OUT / "share_validation.parquet")
     sv = pd.read_parquet(OUT / "share_validation.parquet")
     canon = f"{100 * sv['abs_err'].mean():.1f} share"
-    # docs/linkedin_posts.md added at T6: it was outside every guard and had
-    # drifted to "7.0 share-point error" against a computed 5.7.
-    for f in ("README.md", "docs/validation.md", "docs/interview_story.md",
-              "docs/resume_material.md", "reports/alaska_sea_validation.md",
-              "docs/linkedin_posts.md"):
+    # Guard public scientific surfaces, not optional personal career drafts.
+    # The latter were removed from the public working tree in Nov 2026.
+    for f in ("README.md", "docs/validation.md",
+              "reports/alaska_sea_validation.md"):
         assert canon in (ROOT / f).read_text(), f"{f} lacks '{canon}'"
 
 
@@ -103,8 +101,6 @@ def test_backtest_n_consistent():
     assert f"N = {n}" in (ROOT / "docs" / "backtest.md").read_text()
     contexts = {
         "README.md": rf"\*{{0,2}}{n}\*{{0,2}} launched-and-resolved",
-        "docs/interview_story.md": rf"{n} launched-and-resolved",
-        "docs/resume_material.md": rf"Backtested {n} real",
     }
     for f, pattern in contexts.items():
         text = (ROOT / f).read_text()
@@ -164,8 +160,7 @@ def test_handwritten_docs_match_generated_headline_metrics():
         r"(\d+)\s*LAUNCH\s*/\s*(\d+)\s*MONITOR\s*/\s*(\d+)\s*PASS")
 
     problems = []
-    for rel in ("README.md", "PROGRESS.md", "docs/interview_story.md",
-                "docs/resume_material.md", "docs/demo_script.md"):
+    for rel in ("README.md", "PROGRESS.md", "docs/demo_script.md"):
         p = ROOT / rel
         if not p.exists():
             continue
@@ -212,8 +207,7 @@ def test_handwritten_docs_match_generated_scalar_metrics():
                       "nonstop competition", "sole reconstructed")
 
     problems = []
-    for rel in ("README.md", "PROGRESS.md", "docs/interview_story.md",
-                "docs/resume_material.md"):
+    for rel in ("README.md", "PROGRESS.md"):
         p = ROOT / rel
         if not p.exists():
             continue
@@ -269,8 +263,7 @@ def test_readme_degeneracy_count_matches_the_decision_document():
         "docs/STAGE_2R_DECISION.md no longer states the decision-row and "
         "fallback counts in the shape this guard reads")
     canon = f"{fallback.group(1)} of {total.group(1)}"
-    for rel in ("README.md", "docs/PORTFOLIO_NARRATIVE.md",
-                "docs/interview_story.md"):
+    for rel in ("README.md", "docs/PORTFOLIO_NARRATIVE.md"):
         assert canon in (ROOT / rel).read_text(), (
             f"{rel} must state the fallback count as '{canon}' to match "
             f"docs/STAGE_2R_DECISION.md; it does not")
@@ -336,9 +329,9 @@ def test_the_bounded_predictive_claim_is_never_shortened():
               "the model beats demand",
               "no incremental value over demand")
     problems = []
-    for rel in ("README.md", "docs/LIMITATIONS.md", "docs/interview_story.md",
-                "docs/resume_material.md", "docs/FINAL_SCOPE_CONTRACT.md",
-                "docs/linkedin_posts.md"):
+    for rel in ("README.md", "docs/LIMITATIONS.md",
+                "docs/FINAL_SCOPE_CONTRACT.md", "docs/PORTFOLIO_NARRATIVE.md",
+                "docs/demo_script.md"):
         p = ROOT / rel
         if not p.exists():
             continue
