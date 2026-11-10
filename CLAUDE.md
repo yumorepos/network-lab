@@ -20,8 +20,10 @@ pytest. No new dependency without a one-line justification and approval.
    value: stop and ask. No plausible industry defaults.
 2. Never invent a column name. Read the record layout in `data/reference/` or
    the mart definitions in `warehouse/` first.
-3. Never commit anything under `data/` except `data/reference/`. The Streamlit
-   deploy force-adds `data/parquet/outputs/` explicitly (see docs/deploy.md).
+3. Never commit raw downloads, warehouses or intermediate Parquet under `data/`.
+   Public exceptions: vetted `data/reference/` and the existing small,
+   explicitly force-tracked `data/parquet/outputs/` artifacts required by
+   Streamlit. Keep output parity and source claims guarded (see docs/deploy.md).
 4. Demand is observed (DB1B) where it exists, anchor-scaled or gravity+transfer
    only where it does not. Every demand row records which path produced it via
    the `demand_source` and `demand_method` fields.
