@@ -60,7 +60,7 @@ survive correctness review: it divided bidirectional demand by one-directional
 departures, and it reconstructed competitors by operating certificate rather
 than marketing brand, which made every mainline-plus-regional itinerary
 invisible. Both defects are fixed and the before and after is in
-[INTEGRITY_REPORT.md](INTEGRITY_REPORT.md).
+[historical integrity report](docs/history/INTEGRITY_REPORT.md).
 
 **2. WestJet transborder from Calgary (YYC): 0 LAUNCH / 0 MONITOR / 76 PASS.**
 The flagship study recommends nothing, and that is the finding. Every viable
