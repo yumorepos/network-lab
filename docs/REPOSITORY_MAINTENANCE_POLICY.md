@@ -29,7 +29,7 @@ Reviewed 2026-11-09. Repository: [yumorepos/network-lab](https://github.com/yumo
 
 ### Important privacy disclaimer
 
-**GitHub does not offer private folders inside a public repository.** A hidden-looking path or `.gitignore` does not conceal a committed file. Moving/deleting an existing file leaves reachable copies in commit history, PRs, forks, or caches. A real sensitive-data exposure requires identifying affected commits, revoking credentials first, then considering history rewriting and GitHub's sensitive-data-removal process; this has consequences for clones, tags, deployed artifacts and collaborators. The initial targeted scan of root docs, career-writing materials, reference CSVs and key setup docs found **no obvious credential tokens**, but that is **not a full Git-history or secret-scanning certification**.
+**GitHub does not offer private folders inside a public repository.** A hidden-looking path or `.gitignore` does not conceal a committed file. Moving/deleting an existing file leaves reachable copies in commit history, PRs, forks, or caches. A real sensitive-data exposure requires identifying affected commits, revoking credentials first, then considering history rewriting and GitHub's sensitive-data-removal process; this has consequences for clones, tags, deployed artifacts and collaborators. A current-tree [deterministic privacy guard](../tests/test_public_privacy_guard.py) runs in CI; one home-directory path was redacted. This remains **neither a full Git-history audit nor a secret-scanning certification**. See the [scoped privacy review](maintenance/PUBLICATION_PRIVACY_REVIEW_2026_11_09.md).
 
 ## Proposed navigable structure (keep live imports stable)
 
