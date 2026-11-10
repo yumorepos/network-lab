@@ -1,10 +1,10 @@
 # Network Lab
 
-**A route-evaluation engine for airline network planning, built entirely on
-open government data.** One config-driven pipeline turns raw BTS, StatCan, BEA,
-and EIA files into LAUNCH / MONITOR / PASS verdicts for new airline routes, with
-every demand number flagged observed or modeled and every assumption traceable
-to a source.
+**Evidence-first airline route-screening research using public aviation and
+economic datasets.** A Python, DuckDB and Parquet pipeline combines BTS, StatCan,
+BEA and EIA source information to evaluate configured route scenarios. Each
+candidate receives a LAUNCH / MONITOR / PASS research classification, with
+observed versus modeled demand and source limitations disclosed.
 
 **Start here:** [Recruiter case study](https://yumorepos.github.io/network-lab.html) · [Live dashboard](https://network-lab-tweqoqjxhfrhj7imgmuftl.streamlit.app/) · [Documentation index](docs/README.md) · [Source and scope limits](docs/FINAL_SCOPE_CONTRACT.md) · [Repository maintenance policy](docs/REPOSITORY_MAINTENANCE_POLICY.md)
 
@@ -15,9 +15,11 @@ to a source.
 ![data](https://img.shields.io/badge/data-open%20government-informational)
 
 **Live dashboard: https://network-lab-tweqoqjxhfrhj7imgmuftl.streamlit.app** -
-click through the route screen, per-market scenario economics, validation, and
-backtest. Everything is reproducible from public sources with `make data && make
-all`.
+inspect frozen route screens, per-market scenario economics, validation and
+historical replay. Streamlit reads committed precomputed artifacts, not the
+original local 5.19 GB warehouse. A full source rebuild uses `make data && make
+all` and depends on historical public source availability/vintage; see
+[deployment guidance](docs/deploy.md) and [limitations](docs/LIMITATIONS.md).
 
 **Scope, stated once:** this is fixed-gauge route screening. It is not fleet
 assignment, network design, frequency selection, or a validated predictor. The
@@ -26,6 +28,17 @@ the story of how the claim got narrowed to that is
 [docs/PORTFOLIO_NARRATIVE.md](docs/PORTFOLIO_NARRATIVE.md).
 
 **Visual evidence note (2026-11):** Retired pre-final dashboard screenshots are removed from the active repository tree because they showed obsolete verdicts and right-sizing claims. Historical versions remain in Git history, **not** as current deployment evidence. The verified Porter figures are **1 LAUNCH / 1 MONITOR / 77 PASS**, as recorded in [`headline_metrics.yaml`](data/parquet/outputs/headline_metrics.yaml) and [`screen_porter_yyz.csv`](data/parquet/outputs/screen_porter_yyz.csv). Use the current [live dashboard](https://network-lab-tweqoqjxhfrhj7imgmuftl.streamlit.app/) for presentation; a fresh, independently checked screenshot is still required before adding static visual evidence.
+
+## Reviewer overview
+
+| Question | Verified research result |
+|---|---|
+| **What was built?** | Python/DuckDB airline route screening, economics scenarios, public-source reconciliation and a read-only Streamlit research dashboard |
+| **What was tested?** | 200 candidate screens across WestJet YYC, Alaska SEA and Porter YYZ; 463 historical replay decisions |
+| **What survived validation?** | Fixed-gauge screening and explicit source/method evidence; *no detectable incremental ranking lift* over demand-only at effects larger than the study's resolution |
+| **What are the limits?** | Not a validated route predictor, frequency optimizer, fleet assignment model, or commercial airline decision system |
+
+The project is designed to show **data engineering, model validation, independent error detection and sound stopping decisions**—not to manufacture profitable route recommendations. [See the concise employer-facing case study](https://yumorepos.github.io/network-lab.html).
 
 ---
 
