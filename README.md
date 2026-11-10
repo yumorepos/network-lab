@@ -6,6 +6,8 @@ and EIA files into LAUNCH / MONITOR / PASS verdicts for new airline routes, with
 every demand number flagged observed or modeled and every assumption traceable
 to a source.
 
+**Start here:** [Recruiter case study](https://yumorepos.github.io/network-lab.html) · [Live dashboard](https://network-lab-tweqoqjxhfrhj7imgmuftl.streamlit.app/) · [Documentation index](docs/README.md) · [Source and scope limits](docs/FINAL_SCOPE_CONTRACT.md) · [Repository maintenance policy](docs/REPOSITORY_MAINTENANCE_POLICY.md)
+
 [![Live demo](https://img.shields.io/badge/live%20demo-Streamlit-ff4b4b?logo=streamlit&logoColor=white)](https://network-lab-tweqoqjxhfrhj7imgmuftl.streamlit.app)
 [![tests](https://github.com/yumorepos/network-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/yumorepos/network-lab/actions/workflows/ci.yml)
 ![python](https://img.shields.io/badge/python-3.11-blue)
@@ -23,7 +25,7 @@ full contract is [docs/FINAL_SCOPE_CONTRACT.md](docs/FINAL_SCOPE_CONTRACT.md);
 the story of how the claim got narrowed to that is
 [docs/PORTFOLIO_NARRATIVE.md](docs/PORTFOLIO_NARRATIVE.md).
 
-**Visual evidence note (2026-11):** The archived `docs/img/dashboard_route_screen.png` image shows a **retired pre-final version** of the Porter screen, including now-invalid verdict counts and right-sizing wording. **It is not a current-results or live-deployment screenshot.** The verified Porter figures are **1 LAUNCH / 1 MONITOR / 77 PASS**, as recorded in [`headline_metrics.yaml`](data/parquet/outputs/headline_metrics.yaml) and [`screen_porter_yyz.csv`](data/parquet/outputs/screen_porter_yyz.csv). Refresh visual evidence from the actual app before reusing screenshots in the portfolio.
+**Visual evidence note (2026-11):** Retired pre-final dashboard screenshots are removed from the active repository tree because they showed obsolete verdicts and right-sizing claims. Historical versions remain in Git history, **not** as current deployment evidence. The verified Porter figures are **1 LAUNCH / 1 MONITOR / 77 PASS**, as recorded in [`headline_metrics.yaml`](data/parquet/outputs/headline_metrics.yaml) and [`screen_porter_yyz.csv`](data/parquet/outputs/screen_porter_yyz.csv). Use the current [live dashboard](https://network-lab-tweqoqjxhfrhj7imgmuftl.streamlit.app/) for presentation; a fresh, independently checked screenshot is still required before adding static visual evidence.
 
 ---
 
@@ -103,7 +105,7 @@ read against its own downside, not a single point estimate. The example below is
 a thin Porter candidate that is negative in all nine cells, a clean PASS the tool
 does not dress up:
 
-*The archived `docs/img/dashboard_scenario_grid.png` is also a pre-final UI example, not current deployment evidence. Re-capture its visualization from the present app before using it for recruiting materials.*
+*The old scenario-grid screenshot was also retired from the active tree. Inspect the live market-detail view for current scenario visuals; historical image versions remain in Git history.*
 
 ## Validation: the numbers behind the verdicts
 
