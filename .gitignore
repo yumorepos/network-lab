@@ -20,3 +20,21 @@ __pycache__/
 scratch/
 archive/
 .playwright-mcp/
+
+# Private local files and credentials: never commit to the public repository
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.credentials.json
+private/
+local/
+
+# Scratch archives and local diagnostic reports
+NetworkLab-Audit-*/
+NetworkLab-Mapping-*/
+NetworkLab-Hub-CBSA-*/
+NetworkLab-GSP-JAN-*/
