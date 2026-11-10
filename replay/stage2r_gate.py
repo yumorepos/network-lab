@@ -40,13 +40,11 @@ NECESSITY = ("REQUIRED", "TARGETED / OPTIONAL", "NOT JUSTIFIED",
 # generator are included because they are read far more often than the docs.
 PUBLIC_SURFACES = [
     "README.md", "app/streamlit_app.py", "reports/generate.py",
-    "docs/interview_story.md", "docs/resume_material.md",
     "docs/demo_script.md", "docs/LIMITATIONS.md", "docs/validation.md",
-    # Added at T2. The first list was the Stage 2R audit scope; these are the
-    # remaining surfaces a reader actually meets, including the generated
-    # reports, so a regression in `reports/generate.py` is caught in its output
-    # and not only in its source.
-    "docs/linkedin_posts.md", "docs/backtest.md", "docs/PORTFOLIO_NARRATIVE.md",
+    # Kept public scientific surfaces. Private career drafts were retired from
+    # the current tree in November 2026, so they no longer form a public claim
+    # surface. The original Stage 2R evidence and report contracts remain.
+    "docs/backtest.md", "docs/PORTFOLIO_NARRATIVE.md",
     "reports/alaska_sea_validation.md", "reports/porter_yyz_portability.md",
     "config/assumptions.yaml", "AGENTS.md", "CLAUDE.md",
 ]
