@@ -84,12 +84,16 @@ merge. See [change_report_template.md](change_report_template.md).
 
 Personal résumé bullets, interview preparation and draft social posts are intentionally **not** project documentation.
 
+## Archived research history
+
+Older roadmap drafts, July independent audits, and the original agent instructions have moved to [docs/history/](history/README.md). The files are preserved for provenance; they do not authorize current model development. 
+
 ## Elsewhere in the repo
 
 - `../reports/` - WestJet route evaluations, Alaska validation study, Porter
   portability table, and two route post-mortems (YYC-LAS: Flair route cut vs
   Lynx corporate shutdown, same market)
-- `../INTEGRITY_REPORT.md` - what the correctness reviews changed, round by
+- [archived integrity report](history/INTEGRITY_REPORT.md) - what the correctness reviews changed, round by
   round, including the demotions
-- `../PROGRESS.md` - the phase log. The block at the top is current; the dated
+- [PROGRESS.md](../PROGRESS.md) - a guarded phase log; verified current claims come from data outputs. Its dated
   entries below record what was true at the time and are not rewritten
