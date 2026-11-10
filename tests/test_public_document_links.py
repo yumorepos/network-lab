@@ -17,6 +17,15 @@ DOCS = (
     "docs/REPOSITORY_MAINTENANCE_POLICY.md",
     "docs/FINAL_SCOPE_CONTRACT.md",
     "docs/deploy.md",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "docs/history/README.md",
+    "docs/history/AGENTS_legacy_2026.md",
+    "docs/history/AUDIT_2026-07-27.md",
+    "docs/history/AUDIT_2026-07-27_VERIFIED.md",
+    "docs/history/INTEGRITY_REPORT.md",
+    "docs/history/PLAN.md",
+    "docs/history/PHASE_5_6_PLAN.md",
 )
 LINK_PATTERN = re.compile(r"!?(?:\[[^\]\n]*\])\(([^)\s]+)(?:\s+[^)]*)?\)")
 
@@ -66,3 +75,19 @@ def test_no_old_personal_documents_in_curated_navigation():
         for old in ("docs/interview_story.md", "docs/resume_material.md",
                     "docs/linkedin_posts.md"):
             assert old not in text, f"{rel} still links personal draft {old}"
+
+
+def test_historical_records_archived_not_confused_with_active_scope():
+    historical = (
+        "AUDIT_2026-07-27.md", "AUDIT_2026-07-27_VERIFIED.md",
+        "INTEGRITY_REPORT.md", "PLAN.md", "PHASE_5_6_PLAN.md",
+    )
+    for name in historical:
+        assert not (ROOT / name).exists(), f"Retired plan still at repository root: {name}"
+        archived = ROOT / "docs" / "history" / name
+        assert archived.is_file(), f"Missing archived source: {name}"
+        assert "Historical record." in archived.read_text(encoding="utf-8")
+    assert (ROOT / "AGENTS.md").is_file()
+    assert (ROOT / "CLAUDE.md").is_file()
+    assert (ROOT / "PROGRESS.md").is_file(), "History migration needs test coordination"
+    assert (ROOT / "docs/history/AGENTS_legacy_2026.md").is_file()
