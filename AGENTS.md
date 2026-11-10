@@ -127,8 +127,9 @@ These are the rules most likely to be violated by an agent moving fast.
    `docs/validation.md` and `docs/backtest.md`, is generated. Fix the generator
    in `reports/generate.py`, `backtest/postmortem.py` or `models/run_all.py`.
 3. Regenerate with `make reports` (or `make all`).
-4. **Never commit anything under `data/` except `data/reference/`.** The
-   Streamlit deploy force-adds `data/parquet/outputs/` explicitly; see
+4. **Never commit raw, private warehouse or intermediate Parquet data.**
+   Public exceptions: vetted `data/reference/` and force-tracked small
+   `data/parquet/outputs/` artifacts needed by the live Streamlit app; see
    `docs/deploy.md` and the `deploy-prep` make target.
 5. **No em dashes, en dashes or double hyphens** in any generated text, comment
    or document. Spaced hyphens only.
