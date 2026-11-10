@@ -50,7 +50,7 @@ jobs:
                   skipped.append((name, "head moved; preserve: " + str(found)))
                   continue
               try:
-                  request(url, method="DELETE")
+                  request(url.replace("/git/ref/heads/", "/git/refs/heads/", 1), method="DELETE")
                   removed.append(name)
               except urllib.error.HTTPError as e:
                   failed.append((name, "DELETE HTTP " + str(e.code)))
