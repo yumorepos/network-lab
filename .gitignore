@@ -1,5 +1,6 @@
-# Data: raw downloads and derived stores are rebuilt by `make data`; only
-# small hand-compiled reference files under data/reference/ are committed.
+# Raw downloads, the warehouse and intermediate Parquet stay local.
+# `data/reference/` and the deliberately force-tracked small
+# `data/parquet/outputs/` artifacts are public and required by Streamlit.
 data/raw/
 data/parquet/
 data/*.duckdb
