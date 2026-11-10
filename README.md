@@ -178,9 +178,10 @@ inventing new ones:
 
 The hard part is not the methods; it is that there is no public Canadian domestic
 O&D, no transborder fare data, and the transborder O&D survey froze in 2018. So
-the model is calibrated where truth exists (US markets), transferred to Canada-US
-markets with an anchored, dispersion-reported correction factor, and validated
-end to end on a US hub. Every demand number carries an `observed`/`modeled` flag,
+the model is calibrated on US market data, transferred to Canada-US markets
+with a dispersion-reported correction factor, and component-tested using
+observed US hub data. This is not proof of route-outcome prediction. Each
+demand estimate is identified as `observed` or `modeled`,
 every non-derived value lives in one YAML file with source and sensitivity, and a
 proposed nonstop is never scored against an empty market: competitor one-stops
 are reconstructed from T-100 first.
@@ -199,9 +200,10 @@ reports/    generated markdown business cases and ranked tables
 app/        Streamlit dashboard reading only the precomputed outputs
 ```
 
-No single open-source project combines DB1B, T-100, Form 41, gravity, QSI, and
-route economics end to end, which is what this repo is. It is config-driven: a
-new study is a YAML file (`config/studies/`), not a code change. Continuous
+The project integrates DB1B, T-100, Form 41 and economic data into an
+auditable, config-driven screening workflow. Each new study has a YAML
+configuration (`config/studies/`), but data suitability and source coverage
+still require study-specific verification. Continuous
 integration runs on every push ([.github/workflows/ci.yml](.github/workflows/ci.yml)),
 and the consistency tests fail the build if any reader-facing number, verdict
 count or scope claim drifts from the computed artifacts. CI runs the subset
@@ -240,7 +242,11 @@ rejected research tasks are recorded there as decisions, not as a backlog.
 
 ## Data sources and licenses
 
-BTS TranStats (public domain), StatCan (Open Government Licence - Canada; tables
-23-10-0253/0256/0249/0255/0257/0259/0312, 17-10-0135), BEA (public domain), EIA
-(public domain), Census delineation files (public domain), OurAirports (public
-domain).
+The repository's original source code is under the [MIT License](LICENSE).
+Upstream source data retains its own license and provenance terms: BTS
+TranStats, BEA, EIA and US Census public-sector data; Statistics Canada under
+the [Open Government Licence – Canada](https://open.canada.ca/en/open-government-licence-canada)
+(tables 23-10-0253/0256/0249/0255/0257/0259/0312 and 17-10-0135); and
+[OurAirports data](https://ourairports.com/data/) under its published terms.
+Review the upstream licenses before redistributing raw archives. The committed
+output artifacts contain derived research results, not those large raw archives.
