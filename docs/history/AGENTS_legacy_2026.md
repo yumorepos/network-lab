@@ -4,7 +4,7 @@
 
 # AGENTS.md: working rules for coding agents
 
-> **Current status (2026-11-09):** The shipped research engine is **stabilized and frozen** at the [final scope contract](docs/FINAL_SCOPE_CONTRACT.md). The [November local-warehouse audit handoff](docs/NETWORK_LAB_AUDIT_HANDOFF_2026_11_09.md) and [public repository maintenance policy](docs/REPOSITORY_MAINTENANCE_POLICY.md) supersede any earlier plan that proposes automatic model expansion or source backfill. Old `docs/CODEX_HANDOFF.md`, `PHASE_5_6_PLAN.md` and `PROGRESS.md` retain historical evidence; they are **not new work authorizations**. Changes must keep the frozen 200 screens, 463 historical replay decisions and public Streamlit read-only data inputs unchanged unless a separately approved isolated counterfactual proves need.
+> **Current status (2026-11-09):** The shipped research engine is **stabilized and frozen** at the [final scope contract](../FINAL_SCOPE_CONTRACT.md). The [November local-warehouse audit handoff](../NETWORK_LAB_AUDIT_HANDOFF_2026_11_09.md) and [public repository maintenance policy](../REPOSITORY_MAINTENANCE_POLICY.md) supersede any earlier plan that proposes automatic model expansion or source backfill. Old `docs/CODEX_HANDOFF.md`, `PHASE_5_6_PLAN.md` and `PROGRESS.md` retain historical evidence; they are **not new work authorizations**. Changes must keep the frozen 200 screens, 463 historical replay decisions and public Streamlit read-only data inputs unchanged unless a separately approved isolated counterfactual proves need.
 
 Instructions for any coding agent working in this repository. Derived from
 `CLAUDE.md`, which remains in force and is the original. The two files state the
