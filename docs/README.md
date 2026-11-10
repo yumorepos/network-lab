@@ -9,7 +9,7 @@ This is the documentation set for Network Lab (repo root: one level up).
 - **Developers:** [repository README](../README.md), [Makefile](../Makefile), [CI workflow](../.github/workflows/ci.yml), and [AGENTS.md](../AGENTS.md). The Streamlit app reads the **tracked** precomputed output files and does not rebuild the Mac warehouse.
 - **Maintainers:** [public/private file policy](REPOSITORY_MAINTENANCE_POLICY.md), [complete file-by-file inventory](maintenance/TRACKED_FILE_INVENTORY_2026_11_09.md), [34-branch retirement ledger](maintenance/BRANCH_RETIREMENT_2026_11_09.md), and [November Mac warehouse audit handoff](NETWORK_LAB_AUDIT_HANDOFF_2026_11_09.md).
 
-**Status:** historical plans, agent handoffs and career-writing drafts remain in their original paths for now because published documentation links and automated tests reference them. A physical move requires a tested migration; a public file cannot be hidden simply by renaming it.
+**Status:** scientific sources and historical plans remain traceable. Personal résumé, interview and social-post drafts have been removed from the current public tree, and the reproducibility tests now validate research evidence directly. Git history can still contain prior versions; do not treat deletion as a privacy scrub.
 
 ## Start here
 
@@ -75,14 +75,14 @@ merge. See [change_report_template.md](change_report_template.md).
 - [change_reports/T2_scope_retirement.md](change_reports/T2_scope_retirement.md)
   - the right-sizing retirement, and a pre-existing red test found with it
 
-## Portfolio material
+## Employer-facing walkthrough and deployment
 
-- [interview_story.md](interview_story.md) - the narrative, numbers first
-- [resume_material.md](resume_material.md) - bullets, framing, and the terms
-  that overstate the evidence and are therefore not used
-- [linkedin_posts.md](linkedin_posts.md) - three posts
-- [demo_script.md](demo_script.md) - 2-3 minute demo storyboard
-- [deploy.md](deploy.md) - one-command GitHub + Streamlit Community Cloud path
+- [Portfolio case study](https://yumorepos.github.io/network-lab.html) - concise, evidence-backed overview
+- [Live dashboard](https://network-lab-tweqoqjxhfrhj7imgmuftl.streamlit.app/) - read-only screening results and validation
+- [demo_script.md](demo_script.md) - 2-3 minute technical walkthrough
+- [deploy.md](deploy.md) - reproducible Streamlit deployment instructions
+
+Personal résumé bullets, interview preparation and draft social posts are intentionally **not** project documentation.
 
 ## Elsewhere in the repo
 
