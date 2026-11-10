@@ -18,14 +18,14 @@ Reviewed 2026-11-09. Repository: [yumorepos/network-lab](https://github.com/yumo
 | `docs/validation.md`, `docs/reconciliation.md`, `docs/backtest.md`, `docs/deploy.md` | **Yes** | Reproducible current research evidence and deployment instructions. |
 | `scripts/` and research GitHub workflows | **Keep for now** | Historical source-vintage and audit tools. Reorganize or disable old network-dependent research jobs only with full dependency checks. |
 | `experiments/disruption_recovery/` | **Keep until isolated** | An independent *synthetic* MILP experiment already exists; migrate to its own repository with its tests and provenance if a second portfolio project is pursued. |
-| `AGENTS.md`, `CLAUDE.md`, `PROGRESS.md` and root audit/plan files | **Keep until tested migration** | Some are hardcoded into tests/agent workflows. Their historical status must be clearly labeled rather than silently rewritten. |
+| `AGENTS.md`, `CLAUDE.md`, `PROGRESS.md` | **Yes, conditionally** | Concise active agent rules at root; PROGRESS remains because tests reference its canonical historical data. Historical audits and plans moved to `docs/history/`. |
 
 ## Content better kept outside the public working tree (conditional)
 
 - **Private Mac-only:** `data/warehouse.duckdb`, `data/raw/`, raw/lookup `data/parquet/` caches not explicitly tracked, audit ZIP archives, account credentials, employer records, and any personal/transcript material. These are not deployed.
 - **Career-writing drafts (retired from `main`):** former interview, résumé-bullet, and social-post preparation files have been removed from the current public working tree. Their scientific assertions are now tested against actual research documents instead of personal writing. Public Git history and cached URLs may still expose older revisions; removing files is **not a privacy scrub**. Keep new personal drafts in private storage.
-- **Old screenshot assets:** `docs/img/dashboard_route_screen.png` and `docs/img/dashboard_scenario_grid.png` show obsolete pre-final model/UI claims. They are already excluded from current page embeds. Remove only once any surviving reference is updated and the tests pass.
-- **Past planning and agent handoffs:** `PLAN.md`, `PHASE_5_6_PLAN.md`, `AUDIT_2026-07-27*.md`, and historical research docs. Preserve provenance in a `docs/history/` index during a controlled link-and-test migration, not a mass rename.
+- **Old screenshot assets:** The pre-final dashboard PNGs are removed from current `main` and remain visible in historic commits only. New screenshots must show the frozen verified output.
+- **Past planning and agent handoffs:** former root plans, July audit files, integrity report, and original verbose agent rules are now indexed in [`docs/history/`](history/README.md). These are historical public records, **not** private or active instructions.
 
 ### Important privacy disclaimer
 
@@ -49,7 +49,7 @@ network-lab/
   docs/
     README.md                 # curated reader navigation
     maintenance/              # review, branch retirement, privacy policy
-    history/                  # OPTIONAL future move, only after tests/link QA
+    history/                  # retired plans, historical audits and older guidance
   experiments/                # temporary synthetic MILP, independent of main engine
 ```
 
@@ -58,7 +58,7 @@ network-lab/
 1. **Now:** retire stale remote branches after writing a SHA manifest and closing unresolved PRs without merging them. Keep **only `main`** as a remote branch; preserve the existing tag as release history. Protect `main` in GitHub Settings → Branches/Rulesets; require tests before changes.
 2. **Now:** keep public source/results stable; make documentation discoverable and mark historical plans as archived. Retire obsolete screenshots with careful reference updates.
 3. **Next:** separate optional research workflows from required offline CI and add deterministic fixture-based tests. Prefer a dependency/lockfile strategy after pinning a tested Python version and checking packaging constraints.
-4. **Completed:** remove personal career drafts from the active public tree and decouple their former consistency/claim-surface tests. **Later:** move obsolete research notes under `docs/history/` and refactor `scripts/` only after a dependency audit and passing tests. Avoid a sweeping `src/` rewrite.
+4. **Completed:** remove personal career drafts from active public files; archive the obsolete root plan/audit files under `docs/history/`; shorten `AGENTS.md`. **Later:** group research scripts after checking callers and full tests. Avoid a sweeping `src/` rewrite.
 5. **Separate project:** copy the existing synthetic disruption recovery optimizer into a fresh repository and verify its regression test, baseline and any extended benchmark independently before removing it here.
 6. **Stop criterion:** the public Streamlit app, 200 frozen screenings, 463 replay decisions and source/baseline honesty stay unchanged. Any meaningful identity/source correction needs a separate isolated candidate data warehouse and counterfactual.
 
