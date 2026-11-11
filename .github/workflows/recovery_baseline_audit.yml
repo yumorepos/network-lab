@@ -27,6 +27,11 @@ jobs:
       - name: Run fixed-seed 30-scenario illustrative benchmark
         run: |
           python -m experiments.disruption_recovery.benchmark --count 30 --seed 20261111 --output recovery_baseline_30_synthetic.json
+      - name: Verify the 30-scenario report is byte-for-byte reproducible
+        run: |
+          python -m experiments.disruption_recovery.benchmark --count 30 --seed 20261111 --output recovery_baseline_30_repeat.json
+          cmp recovery_baseline_30_synthetic.json recovery_baseline_30_repeat.json
+          rm recovery_baseline_30_repeat.json
       - name: Store scenario checksum and objective summary artifact
         if: always()
         uses: actions/upload-artifact@v4
