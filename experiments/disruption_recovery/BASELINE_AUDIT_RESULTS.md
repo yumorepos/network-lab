@@ -29,7 +29,7 @@ The naive fly-first greedy policy has weak economics (never considers cancelling
 - Code rejects scenarios too large for exact path enumeration rather than silently clipping them.
 - No original Network Lab route-screening model, frozen demand-only baseline, 200-market screens, 463 historical replay choices or dashboard results changed.
 
-**Reproducibility check:** The branch-only workflow also reruns the complete 30-scenario benchmark and checks byte-for-byte identical JSON output. The full rerun's pass/fail status must be checked before merging/publishing these benchmark results.
+**Reproducibility check:** The branch-only workflow also reruns the complete 30-scenario benchmark and checks byte-for-byte identical JSON output. [GitHub Actions run #43094153033](https://github.com/yumorepos/network-lab/actions/runs/43094153033) completed successfully: the complete 30-scenario second JSON report was **byte-for-byte identical** to the first (`cmp` exit 0).
 
 ## Non-claims and weaknesses
 

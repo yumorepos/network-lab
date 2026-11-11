@@ -1,12 +1,6 @@
 # One-time synthetic optimizer baseline audit. No schedule, no external data.
 name: Synthetic disruption recovery baseline audit
 on:
-  push:
-    branches: [research/disruption-recovery-baselines-20261111]
-    paths:
-      - 'experiments/disruption_recovery/benchmark.py'
-      - 'tests/test_disruption_recovery_benchmark.py'
-      - '.github/workflows/recovery_baseline_audit.yml'
   workflow_dispatch:
 permissions:
   contents: read

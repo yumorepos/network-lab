@@ -45,11 +45,15 @@ The corrected solution operates all flights for **12 illustrative units**.
 The old sorted-schedule enumerator canceled `F1` for a cost of 1,000 units.
 This is an **algorithm correctness** result, **not real airline savings**.
 
-A separate local benchmark package was tested on 30 fixed-seed synthetic
-instances: the repaired MILP improved upon a simple chronological greedy
-baseline in 11 cases and tied in 19. Average illustrative objective was 7,276.77
-for greedy and 6,335.10 for MILP. This repository directory does not import or
-alter the original model and does not use real flight schedules.
+A **reproducible 30-scenario fixed-seed synthetic baseline study** is documented
+in [BASELINE_AUDIT_RESULTS.md](BASELINE_AUDIT_RESULTS.md). It compares the exact
+finite MILP against the original fly-first greedy, a more defensible **cost-aware
+greedy**, and all-cancel. On these particular fictional instances, the MILP
+averaged **413.62 illustrative units** against **503.67 for cost-aware greedy**,
+improving in 12 scenarios and tying in 18. Two identical full generated reports
+were independently rerun byte-for-byte. These are **not real airline savings**.
+The prior ad-hoc benchmark's 30-instance numbers were not independently
+reproduced on this generator and should not be mixed with the current results.
 
 ## Stop / validity limits
 
@@ -59,8 +63,10 @@ alter the original model and does not use real flight schedules.
 - Not airline dispatch software: no crew legality, passenger connections,
   airport slots, security, maintenance, rotations across days, recovery
   positioning, curfew, weather, or aircraft type compatibility.
-- The greedy baseline always takes an earliest feasible aircraft, even if
-  cancellation is cheaper. It is intentionally weak; claims must identify it.
+- The **original fly-first greedy** always operates a feasible flight even when
+  cancellation is cheaper; it is intentionally weak. The **new cost-aware
+  greedy** uses an immediate cost check but cannot anticipate future aircraft
+  positioning, so it is not an operationally complete dispatch policy.
 - Synthetic improvements cannot be represented as practical operational savings.
 - Before operational scale, use an expanded time-space network or column
   generation, scenario-specific constraint checks, and independent evaluation.
