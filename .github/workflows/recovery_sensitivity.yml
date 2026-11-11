@@ -1,12 +1,6 @@
 # Bounded synthetic sensitivity, not an automated aviation optimizer.
 name: Synthetic recovery sensitivity validation
 on:
-  push:
-    branches: [research/recovery-sensitivity-20261111]
-    paths:
-      - 'experiments/disruption_recovery/sensitivity.py'
-      - 'tests/test_disruption_recovery_sensitivity.py'
-      - '.github/workflows/recovery_sensitivity.yml'
   workflow_dispatch:
 permissions:
   contents: read

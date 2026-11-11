@@ -21,6 +21,8 @@ are recorded. Every variant reports wins, ties, mean modeled objective gap
 and cancellation decisions. This is a limited **sensitivity check, not a
 new optimization method or proof of generalization**.
 
-Actual sensitivity numbers will be documented only after the GitHub Actions
-real execution succeeds. Published website or investor-style savings
-percentages are not appropriate for this toy model.
+Verified numerical outcomes are recorded in
+[SENSITIVITY_RESULTS.md](SENSITIVITY_RESULTS.md). The 30-scenario sensitivity
+audit and its byte-for-byte repeat both passed:
+https://github.com/yumorepos/network-lab/actions/runs/43104762481 .
+The workflow is manual-only. The study does not estimate real savings.

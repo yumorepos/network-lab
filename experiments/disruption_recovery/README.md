@@ -55,6 +55,12 @@ were independently rerun byte-for-byte. These are **not real airline savings**.
 The prior ad-hoc benchmark's 30-instance numbers were not independently
 reproduced on this generator and should not be mixed with the current results.
 
+A separate [fixed-seed parameter sensitivity study](SENSITIVITY_RESULTS.md)
+examines the same synthetic cases under alternative delay penalties,
+cancellation penalties and turnaround screening assumptions. The MILP
+outperformed cost-aware greedy in 11–13 of 30 cases per configuration,
+but tied in the rest. These are illustrative costs, not airline savings.
+
 ## Stop / validity limits
 
 - Exact only for the finite flight/tail/delay set and within enumerated path cap.
