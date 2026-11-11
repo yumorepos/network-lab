@@ -26,10 +26,15 @@ VARIANTS=(
 def changed(data, variant):
     name,delay_factor,turn_increase,cancel_factor=variant
     x=copy.deepcopy(data)
-    x["delay_cost_per_passenger_minute"]*=delay_factor
-    x["turn_minutes"]+=turn_increase
-    for flight in x["flights"]:
-        flight["cancel_cost"]*=cancel_factor
+    # Exact reference identity matters: avoid int -> float coercion when
+    # multiplying an integer cancellation penalty by the no-op factor 1.0.
+    if delay_factor!=1.0:
+        x["delay_cost_per_passenger_minute"]*=delay_factor
+    if turn_increase:
+        x["turn_minutes"]+=turn_increase
+    if cancel_factor!=1.0:
+        for flight in x["flights"]:
+            flight["cancel_cost"]*=cancel_factor
     return x
 
 def benchmark(count=30,seed=DEFAULT_SEED):
