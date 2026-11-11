@@ -1,0 +1,37 @@
+# One-time synthetic optimizer baseline audit. No schedule, no external data.
+name: Synthetic disruption recovery baseline audit
+on:
+  push:
+    branches: [research/disruption-recovery-baselines-20261111]
+    paths:
+      - 'experiments/disruption_recovery/benchmark.py'
+      - 'tests/test_disruption_recovery_benchmark.py'
+      - '.github/workflows/recovery_baseline_audit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: Install bounded solver dependencies
+        run: python -m pip install 'numpy>=1.26' 'scipy>=1.11' 'pytest>=8.0' -q
+      - name: Run original permutation oracle and new baseline unit tests
+        run: |
+          python -m pytest -q tests/test_disruption_recovery_experiment.py tests/test_disruption_recovery_benchmark.py
+      - name: Run fixed-seed 30-scenario illustrative benchmark
+        run: |
+          python -m experiments.disruption_recovery.benchmark --count 30 --seed 20261111 --output recovery_baseline_30_synthetic.json
+      - name: Store scenario checksum and objective summary artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: recovery-baseline-synthetic
+          path: recovery_baseline_30_synthetic.json
+          retention-days: 14
+          if-no-files-found: warn
