@@ -63,7 +63,8 @@ but tied in the rest. These are illustrative costs, not airline savings.
 
 A [bounded solver scalability and failure-mode study](SCALABILITY_RESULTS.md)
 extends the exact same finite MILP to deterministic 5-, 8-, and 11-flight
-fictional instances, plus two 14-flight stress cases. The instrumented
+fictional instances, controlled eight-flight aircraft-count/delay-option
+comparisons, and two 14-flight stress cases. The instrumented
 optimizer records separate enumeration, model construction and HiGHS solve
 times, process memory and validated objective comparisons. All ten primary
 cases were certified under the study's path and time limits; one of two
