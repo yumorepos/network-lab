@@ -61,6 +61,18 @@ cancellation penalties and turnaround screening assumptions. The MILP
 outperformed cost-aware greedy in 11–13 of 30 cases per configuration,
 but tied in the rest. These are illustrative costs, not airline savings.
 
+A [bounded solver scalability and failure-mode study](SCALABILITY_RESULTS.md)
+extends the exact same finite MILP to deterministic 5-, 8-, and 11-flight
+fictional instances, controlled eight-flight aircraft-count/delay-option
+comparisons, and two 14-flight stress cases. The instrumented
+optimizer records separate enumeration, model construction and HiGHS solve
+times, process memory and validated objective comparisons. All ten primary
+cases were certified under the study's path and time limits; one of two
+14-flight stress cases hit an explicit **per-tail path cap** and was **not**
+counted as an optimum. The research has a [predeclared protocol](SCALABILITY_PROTOCOL.md)
+and a bounded [CI workflow](../../.github/workflows/recovery_scalability.yml).
+These small synthetic cases do not establish operational scalability.
+
 ## Stop / validity limits
 
 - Exact only for the finite flight/tail/delay set and within enumerated path cap.
