@@ -164,7 +164,9 @@ def run_isolated(data: dict, *, path_cap: int = 15000,
     process.start()
     child.close()
     try:
-        process.join(wall_seconds)
+        # Count process startup in the hard deadline, not just join time.
+        remaining = max(0.0, wall_seconds - (perf_counter() - start))
+        process.join(remaining)
         if process.is_alive():
             process.terminate()
             process.join(timeout=1)
