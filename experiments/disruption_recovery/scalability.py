@@ -191,18 +191,22 @@ def run_isolated(data: dict, *, path_cap: int = 15000,
 
 def benchmark(*, cases: int = 2, sizes: tuple[int, ...] = (5, 8, 11),
               path_cap: int = 15000, wall_seconds: float = 6.0,
-              seed: int = DEFAULT_SEED) -> dict:
+              seed: int = DEFAULT_SEED, tails: int = 2,
+              delay_choices: int = 6) -> dict:
     if type(cases) is not int or not 1 <= cases <= 4:
         raise ValueError("Benchmark supports 1–4 seeded cases per design cell")
     if (not sizes or len(sizes) > 3 or len(set(sizes)) != len(sizes)
             or any(n not in (5, 8, 11, 14) for n in sizes)):
         raise ValueError("Sizes must be distinct within (5, 8, 11, 14)")
+    if tails not in (2, 3) or delay_choices not in (3, 6):
+        raise ValueError("Invalid bounded aircraft or delay-choice factor")
     rows = []
     for n in sizes:
         topologies = ("connected",) if n == 5 else ("connected", "distributed")
         for topology in topologies:
             for index in range(cases):
-                data = scaled_scenario(index, n, topology=topology, seed=seed)
+                data = scaled_scenario(index, n, topology=topology, seed=seed,
+                                       tails=tails, delay_choices=delay_choices)
                 observed = run_isolated(data, path_cap=path_cap, wall_seconds=wall_seconds)
                 rows.append({"flights": n, "tails": len(data["tails"]),
                              "delay_choices": len(data["delay_options_minutes"]),
@@ -232,6 +236,7 @@ def benchmark(*, cases: int = 2, sizes: tuple[int, ...] = (5, 8, 11),
         "seed": seed, "synthetic_data": True,
         "study_type": "bounded benchmark, not an estimate of production scalability",
         "scenarios_per_cell": cases,
+        "factor_settings": {"tails": tails, "delay_choices": delay_choices},
         "limits": {"path_cap_per_tail": path_cap,
                    "hard_wall_seconds_per_case": wall_seconds,
                    "max_flights_supported_by_unchanged_model": 14},
@@ -252,10 +257,13 @@ def main(argv=None) -> int:
     p.add_argument("--path-cap", type=int, default=15000)
     p.add_argument("--wall-seconds", type=float, default=6.0)
     p.add_argument("--seed", type=int, default=DEFAULT_SEED)
+    p.add_argument("--tails", type=int, default=2)
+    p.add_argument("--delay-choices", type=int, default=6)
     p.add_argument("--output", type=Path, required=True)
     a = p.parse_args(argv)
     result = benchmark(cases=a.cases, sizes=tuple(a.sizes),
-                       path_cap=a.path_cap, wall_seconds=a.wall_seconds, seed=a.seed)
+                       path_cap=a.path_cap, wall_seconds=a.wall_seconds,
+                       seed=a.seed, tails=a.tails, delay_choices=a.delay_choices)
     a.output.parent.mkdir(parents=True, exist_ok=True)
     with a.output.open("x", encoding="utf8") as out:
         json.dump(result, out, indent=2, sort_keys=True, allow_nan=False)
