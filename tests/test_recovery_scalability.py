@@ -145,3 +145,10 @@ def test_invalid_generator_inputs_rejected():
 def test_cooperative_total_deadline_interrupts_preprocessing():
     with pytest.raises(TimeoutError, match="budget exhausted"):
         optimize(tiny_overtaking(), total_time_limit=1e-9)
+
+
+def test_invalid_factor_settings_rejected():
+    with pytest.raises(ValueError):
+        benchmark(cases=1, sizes=(8,), tails=4)
+    with pytest.raises(ValueError):
+        benchmark(cases=1, sizes=(8,), delay_choices=4)
