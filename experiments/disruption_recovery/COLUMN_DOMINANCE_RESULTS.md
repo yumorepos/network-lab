@@ -1,6 +1,6 @@
 # Exact completed-column dominance — verified synthetic study
 
-**Verified November 16–17, 2026.** [Independent GitHub Actions benchmark #43989372221](https://github.com/yumorepos/network-lab/actions/runs/43989372221) passed the paired research workflow and archived the entire 12-pair aggregate JSON. A separate [repository-wide test run #43989372182](https://github.com/yumorepos/network-lab/actions/runs/43989372182) and the preexisting [scalability workflow #43989372248](https://github.com/yumorepos/network-lab/actions/runs/43989372248) also passed for that same implementation commit. Later regression-only tests further exercise all 30 historical reference scenarios and a crafted cheaper-later-order counterexample; check the PR's final CI head for those additional gates.
+**Verified November 16–17, 2026.** [Independent GitHub Actions balanced-order benchmark #43989948527](https://github.com/yumorepos/network-lab/actions/runs/43989948527) passed the paired research workflow and archived the entire 12-pair aggregate JSON. Full repository tests, the previous scaling regression and the strengthened dominance tests (including all 30 historical reference cases and a crafted cheaper-later-order counterexample) have passed on the research branch; check the PR's final head for the release gate.
 
 This is a **finite, educational, synthetic aircraft-rotation MILP**, not airline disruption recovery software or an estimate of real monetary savings. The original Network Lab frozen route-ranking findings are unchanged.
 
@@ -20,7 +20,7 @@ For each separate worker process:
 - A **6-second hard parent-process wall deadline** (including spawn startup); any cap or timeout is censored rather than an objective.
 - Independent feasibility and objective arithmetic verification on every certified solution.
 - Objective equality required to `1e-6` whenever **both** methods certify. No assertion of empirical objective parity on a capped control.
-- File/protocol source, seed, scenario SHA-256, all per-case statuses, phase times and RSS are recorded. Timing applies only to the Linux Python 3.11.18 GitHub Actions runner used, not generally to other machines.
+- File/protocol source, seed, scenario SHA-256, all per-case statuses, phase times and RSS are recorded. The method order was **deterministically balanced, original first in six cases and pruned first in six**, to reduce systematic execution-order bias. Timing applies only to the Linux Python 3.11.18 GitHub Actions runner used, not generally to other machines.
 
 ## Summary results
 
@@ -31,12 +31,12 @@ For each separate worker process:
 | Per-tail path-cap stops | **1** | **0** |
 | Paired certified objectives with equality | **11/11** | **11/11** |
 | Median columns across 11 both-certified cases | 1,777 | 53 |
-| Median total optimizer time across those 11 cases | 0.036805 s | 0.006904 s |
-| Median OS process peak RSS across those 11 cases | 94.176 MiB | 91.164 MiB |
+| Median total optimizer time across those 11 cases | 0.055277 s | 0.010242 s |
+| Median OS process peak RSS across those 11 cases | 94.023 MiB | 90.906 MiB |
 
-**Median reduction in retained MILP columns: 96.132%.** The observed paired median optimizer times are approximately **5.3× apart on this one CI host**. They exclude Python child-process startup and baseline calculation and are not a guarantee of future performance; the sample is small and repeated trials/host variance are not characterized.
+**Median reduction in retained MILP columns: 96.132%.** The observed paired median optimizer times are approximately **5.4× apart on this one CI host**. They exclude Python child-process startup and baseline calculation and are not a guarantee of future performance; the sample is small, execution order is only balanced rather than randomized, and repeated trials/host variance are not characterized.
 
-The primary reduction is in stored completed rotations and the resulting sparse set-partitioning matrix. Every raw feasible path is still traversed: the faster solved instances do **not** prove a reduction in combinatorial enumeration complexity. The paired run recorded median construction times **0.008872 s original vs 0.000581 s pruned**, and median HiGHS times **0.024694 s original vs 0.004586 s pruned**, conditional on both methods certifying.
+The primary reduction is in stored completed rotations and the resulting sparse set-partitioning matrix. Every raw feasible path is still traversed: the faster solved instances do **not** prove a reduction in combinatorial enumeration complexity. The paired run recorded median construction times **0.014967 s original vs 0.000765 s pruned**, and median HiGHS times **0.035184 s original vs 0.008203 s pruned**, conditional on both methods certifying.
 
 ### Selected case evidence
 
@@ -59,8 +59,8 @@ All these values are **illustrative penalty units**, not dollars or actual fligh
 | Raw feasible paths visited | Censored at cap | **68,989** (58,518 tail A, 10,471 tail B) |
 | Retained columns | Not a complete model | **792** (579 tail A, 213 tail B) |
 | Certified MILP objective | **Unavailable** | **1,271.50** illustrative units |
-| Full internal optimizer time | N/A | **0.224 s** |
-| Process peak RSS | Partial process (not comparable) | **94.004 MiB** |
+| Full internal optimizer time | N/A | **0.366 s** |
+| Process peak RSS | Partial process (not comparable) | **94.582 MiB** |
 
 This is a **real improvement for the exact synthetic problem**: the treatment explores all complete paths under its raw-visit guard and then solves the dramatically smaller equivalent master. However, because the original **failed** to construct a complete MILP, there is **no directly observed original objective** to compare. The equivalence claim rests on the proof for identical terminal flight-set columns, the unchanged finite decision universe and the independently certified treatment result.
 
