@@ -24,7 +24,7 @@ This proof depends on the **current model having no terminal-position, end-time,
 - The existing isolated worker enforces **6 seconds wall time per case**, including spawn startup, separately for each method. OS process peak memory and optimizer-internal phase times are recorded.
 - Each certified result is independently checked for flight/aircraft feasibility, cancellation coverage and exact objective arithmetic. Original and treatment are compared on the **same SHA-256 versioned synthetic scenario**. If both certify, their full-precision objectives must agree to `1e-6`, and treatment must retain no more columns than control.
 - If the control caps and the treatment certifies, report it as a **one-sided improvement in this bounded test**. There is no empirical objective parity with the censored control; the analytical dominance proof and the treatment's independent feasibility checks are the basis for interpreting its certified result.
-- Unadjusted wall timings are noisy because each method runs in a new Python process. Record raw counts, model construction and solver time; only make cautious machine-specific performance observations.
+- Unadjusted wall timings are noisy because each method runs in a new Python process. **The order of original-first versus pruned-first is deterministically balanced (six each) across the 12 pairs** to reduce systematic cache/order bias. There are no repeated timing replications, so do not infer stable speedup factors. Record raw counts, model construction and solver time; make only cautious machine-specific observations.
 
 ### Fixed study grid
 
