@@ -25,7 +25,8 @@ from experiments.disruption_recovery.benchmark import (
     DEFAULT_SEED, cost_aware_greedy_baseline, hash_scenario, scenario,
 )
 from experiments.disruption_recovery.recovery import (
-    PathLimitExceeded, optimize, parse_scenario, validate_solution,
+    PathLimitExceeded, PathExplorationLimitExceeded, optimize,
+    parse_scenario, validate_solution,
 )
 
 GENERATOR_VERSION = "recovery-scaling-v1"
@@ -91,7 +92,9 @@ def _peak_process_rss_mib() -> float:
     return round(peak / (1024 * 1024 if sys.platform == "darwin" else 1024), 3)
 
 
-def _evaluate(data: dict, path_cap: int, deadline: float) -> dict:
+def _evaluate(data: dict, path_cap: int, deadline: float,
+              prune_columns: bool = False,
+              raw_visit_cap: int = 250000) -> dict:
     t0 = perf_counter()
     baseline = cost_aware_greedy_baseline(data)
     greedy_cost = calculate_objective(data, baseline)
@@ -104,10 +107,18 @@ def _evaluate(data: dict, path_cap: int, deadline: float) -> dict:
     try:
         exact = optimize(data, time_limit=remaining,
                          total_time_limit=remaining,
-                         max_paths_per_tail=path_cap, profile=True)
+                         max_paths_per_tail=path_cap, profile=True,
+                         prune_dominated_columns=prune_columns,
+                         max_explored_states_per_tail=raw_visit_cap)
     except PathLimitExceeded as exc:
         return {"status": "PATH_CAP", "detail": str(exc),
                 "partial_paths": exc.paths_generated,
+                "baseline_objective": greedy_cost,
+                "baseline_seconds": greedy_seconds,
+                "peak_process_rss_mib": _peak_process_rss_mib()}
+    except PathExplorationLimitExceeded as exc:
+        return {"status": "RAW_VISIT_CAP", "detail": str(exc),
+                "raw_visits_before_cap": exc.explored,
                 "baseline_objective": greedy_cost,
                 "baseline_seconds": greedy_seconds,
                 "peak_process_rss_mib": _peak_process_rss_mib()}
@@ -134,15 +145,20 @@ def _evaluate(data: dict, path_cap: int, deadline: float) -> dict:
         "baseline_cancellations": len(baseline["canceled"]),
         "path_count": exact["paths_considered"],
         "paths_by_tail": exact["paths_by_tail"],
+        "raw_paths_explored": exact["raw_paths_explored"],
+        "pruning_method": exact["pruning_method"],
+        "enumeration_stats_by_tail": exact["enumeration_stats_by_tail"],
         "timing_seconds": exact["timing_seconds"],
         "baseline_seconds": greedy_seconds,
         "peak_process_rss_mib": _peak_process_rss_mib(),
     }
 
 
-def _worker(pipe, data: dict, cap: int, seconds: float):
+def _worker(pipe, data: dict, cap: int, seconds: float,
+            prune_columns: bool = False, raw_visit_cap: int = 250000):
     try:
-        result = _evaluate(data, cap, seconds)
+        result = _evaluate(data, cap, seconds,
+                           prune_columns=prune_columns, raw_visit_cap=raw_visit_cap)
     except Exception as exc:
         result = {"status": "ERROR", "detail": f"{type(exc).__name__}: {exc}"}
     try:
@@ -152,14 +168,20 @@ def _worker(pipe, data: dict, cap: int, seconds: float):
 
 
 def run_isolated(data: dict, *, path_cap: int = 15000,
-                 wall_seconds: float = 6.0) -> dict:
+                 wall_seconds: float = 6.0,
+                 prune_columns: bool = False,
+                 raw_visit_cap: int = 250000) -> dict:
     """Terminate hung work after its hard wall deadline; never claim optimality."""
     if (not 0 < wall_seconds <= MAX_HARD_BUDGET
-            or type(path_cap) is not int or not 0 < path_cap <= MAX_PATH_CAP):
+            or type(path_cap) is not int or not 0 < path_cap <= MAX_PATH_CAP
+            or type(raw_visit_cap) is not int or not 0 < raw_visit_cap <= 1000000
+            or type(prune_columns) is not bool):
         raise ValueError("Invalid bounded benchmark resource limits")
     ctx = mp.get_context("spawn")
     parent, child = ctx.Pipe(duplex=False)
-    process = ctx.Process(target=_worker, args=(child, data, path_cap, wall_seconds))
+    process = ctx.Process(
+        target=_worker,
+        args=(child, data, path_cap, wall_seconds, prune_columns, raw_visit_cap))
     start = perf_counter()
     process.start()
     child.close()

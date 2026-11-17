@@ -73,6 +73,16 @@ counted as an optimum. The research has a [predeclared protocol](SCALABILITY_PRO
 and a bounded [CI workflow](../../.github/workflows/recovery_scalability.yml).
 These small synthetic cases do not establish operational scalability.
 
+An [exact completed-column dominance experiment](COLUMN_DOMINANCE_RESULTS.md)
+tests a safe optional reduction of duplicate master columns: for the same
+aircraft and identical set of covered flights, retain only the cheapest
+complete rotation. The unchanged original method certified 11 of 12 paired
+small synthetic problems and hit its 15,000-path-per-tail cap once; the
+opt-in reduced formulation certified all 12, preserved all 11 directly
+comparable objectives, and cut median retained columns by 96.1% on those
+11 cases. This **does not prune raw DFS visits** or establish airline-scale
+performance; see the [predeclared proof and failure gates](COLUMN_DOMINANCE_PROTOCOL.md).
+
 ## Stop / validity limits
 
 - Exact only for the finite flight/tail/delay set and within enumerated path cap.

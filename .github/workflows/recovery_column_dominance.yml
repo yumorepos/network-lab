@@ -1,0 +1,42 @@
+name: Recovery exact column dominance (bounded research)
+on:
+  pull_request:
+    paths:
+      - "experiments/disruption_recovery/recovery.py"
+      - "experiments/disruption_recovery/scalability.py"
+      - "experiments/disruption_recovery/column_dominance.py"
+      - "tests/test_recovery_column_dominance.py"
+      - ".github/workflows/recovery_column_dominance.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  exact-pruning-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install existing Python dependencies
+        run: python -m pip install -q -r requirements.txt
+      - name: Independent correctness and safety regressions
+        run: |
+          python -m pytest -q \
+            tests/test_disruption_recovery_experiment.py \
+            tests/test_recovery_scalability.py \
+            tests/test_recovery_column_dominance.py
+      - name: Compare original and exactly pruned MILP on identical bounded cases
+        run: |
+          python -m experiments.disruption_recovery.column_dominance \
+            --path-cap 15000 --raw-visit-cap 250000 --wall-seconds 6 \
+            --output recovery_column_dominance.json
+      - name: Retain only source-free benchmark results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: recovery-exact-column-dominance-audit
+          path: recovery_column_dominance.json
+          if-no-files-found: warn
+          retention-days: 7
