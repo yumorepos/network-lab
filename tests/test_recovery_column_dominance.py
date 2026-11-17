@@ -218,3 +218,14 @@ def test_all_frozen_five_flight_baseline_objectives_preserved_by_pruning(index):
     pruned = optimize(data, prune_dominated_columns=True, profile=True)
     assert pruned["objective"] == full["objective"]
     assert pruned["paths_considered"] <= full["paths_considered"]
+
+
+def test_method_execution_order_is_balanced_and_recorded():
+    report = run_study(grid=((5, "connected", 0), (5, "connected", 1)),
+                       wall_seconds=10)
+    assert report["summary"]["first_method_counts"] == {
+        "original": 1, "pruned": 1,
+    }
+    assert [row["execution_order"] for row in report["rows"]] == [
+        "original_first", "pruned_first",
+    ]
