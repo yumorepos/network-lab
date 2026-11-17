@@ -67,24 +67,61 @@ class PathLimitExceeded(ValueError):
         super().__init__(f"Too many paths for {tail_id}: {paths_generated} > {cap}")
 
 
-def enumerate_paths(flights, tail, turn, delays, price, max_paths=100000, *, deadline=None):
-    """List all feasible rotations or fail before any truncated solution is used.
+class PathExplorationLimitExceeded(ValueError):
+    """Safe pruning exhausted its *raw search* budget (not a MILP optimum)."""
 
-    A shared wall deadline can interrupt exponential DFS growth. The optional
-    deadline is cooperative: callers needing a hard deadline must also isolate
-    the optimizer in a separately time-limited process.
+    def __init__(self, tail_id: str, explored: int, cap: int):
+        self.tail_id, self.explored, self.cap = tail_id, explored, cap
+        super().__init__(f"Too many explored states for {tail_id}: {explored} > {cap}")
+
+
+def enumerate_paths(flights, tail, turn, delays, price, max_paths=100000, *,
+                    deadline=None, prune_dominated_columns=False,
+                    max_explored_states=250000, stats=None):
+    """Enumerate feasible columns with *optional* exact terminal dominance.
+
+    In this set-partitioning model, a column is defined only by tail identity,
+    covered flight IDs and additive delay cost. Two COMPLETE rotations for the
+    same tail with the same flight set have identical master-constraint
+    coefficients. Keep the cheaper rotation; no future flights follow a
+    complete path, so final airport / completion time do not enter the master.
+
+    This is NOT unsafe greedy pruning of partial paths. Raw DFS visits are
+    counted and separately capped to avoid disguising exponential effort.
     """
     if type(max_paths) is not int or max_paths <= 0:
         raise ValueError("max_paths must be a positive integer")
+    if type(max_explored_states) is not int or max_explored_states <= 0:
+        raise ValueError("max_explored_states must be a positive integer")
+    if type(prune_dominated_columns) is not bool:
+        raise ValueError("prune_dominated_columns must be a boolean")
+
     paths = []
+    best_by_mask = {}
     chosen = []
+    explored = 0
+    replacements = 0
 
     def visit(used, airport, ready, cost):
+        nonlocal explored, replacements
         if deadline is not None and perf_counter() >= deadline:
             raise TimeoutError("Total optimization budget exhausted during path enumeration")
-        paths.append((tuple(chosen), cost))
-        if len(paths) > max_paths:
-            raise PathLimitExceeded(tail.id, len(paths), max_paths)
+        explored += 1
+        if prune_dominated_columns:
+            if explored > max_explored_states:
+                raise PathExplorationLimitExceeded(tail.id, explored, max_explored_states)
+            previous = best_by_mask.get(used)
+            if previous is None or cost < previous[1]:
+                if previous is not None:
+                    replacements += 1
+                best_by_mask[used] = (tuple(chosen), cost)
+            if len(best_by_mask) > max_paths:
+                raise PathLimitExceeded(tail.id, len(best_by_mask), max_paths)
+        else:
+            paths.append((tuple(chosen), cost))
+            if len(paths) > max_paths:
+                raise PathLimitExceeded(tail.id, len(paths), max_paths)
+
         for ix, f in enumerate(flights):
             if used & (1 << ix) or f.origin != airport:
                 continue
@@ -99,7 +136,15 @@ def enumerate_paths(flights, tail, turn, delays, price, max_paths=100000, *, dea
                 chosen.pop()
 
     visit(0, tail.location, tail.available, 0.0)
+    if prune_dominated_columns:
+        # Insertion-order is deterministic for the same flight/delay enumeration.
+        paths = list(best_by_mask.values())
+    if stats is not None:
+        stats.update({"explored": explored, "retained": len(paths),
+                      "discarded": explored - len(paths),
+                      "cheaper_replacements": replacements})
     return paths
+
 
 def validate_solution(flights, tails, assignments, canceled, turn, delays):
     by_flight = {f.id: f for f in flights}
@@ -150,7 +195,8 @@ def greedy_baseline(data):
 
 
 def optimize(data, *, time_limit=20.0, total_time_limit=None,
-             max_paths_per_tail=100000, profile=False):
+             max_paths_per_tail=100000, profile=False,
+             prune_dominated_columns=False, max_explored_states_per_tail=250000):
     """Certify exact finite MILP or fail; optionally expose phase timings.
 
     The solver time_limit only bounds HiGHS, not Python preprocessing.
@@ -168,6 +214,10 @@ def optimize(data, *, time_limit=20.0, total_time_limit=None,
         raise ValueError("Invalid total optimization time limit")
     if type(max_paths_per_tail) is not int or max_paths_per_tail <= 0:
         raise ValueError("max_paths_per_tail must be a positive integer")
+    if type(max_explored_states_per_tail) is not int or max_explored_states_per_tail <= 0:
+        raise ValueError("max_explored_states_per_tail must be a positive integer")
+    if type(prune_dominated_columns) is not bool:
+        raise ValueError("prune_dominated_columns must be a boolean")
     deadline = (started + total_time_limit
                 if total_time_limit is not None else None)
 
@@ -181,11 +231,17 @@ def optimize(data, *, time_limit=20.0, total_time_limit=None,
 
     plans = []
     paths_by_tail = {}
+    enumeration_stats_by_tail = {}
     for tail in tails:
         remaining("enumeration")
-        options = enumerate_paths(flights, tail, turn, delays, price,
-                                  max_paths=max_paths_per_tail, deadline=deadline)
+        stats = {}
+        options = enumerate_paths(
+            flights, tail, turn, delays, price,
+            max_paths=max_paths_per_tail, deadline=deadline,
+            prune_dominated_columns=prune_dominated_columns,
+            max_explored_states=max_explored_states_per_tail, stats=stats)
         paths_by_tail[tail.id] = len(options)
+        enumeration_stats_by_tail[tail.id] = stats
         plans.extend((tail.id, path, cost) for path, cost in options)
     enumerated = perf_counter()
 
@@ -238,6 +294,11 @@ def optimize(data, *, time_limit=20.0, total_time_limit=None,
         output["objective_raw"] = float(result.fun)
         output["savings_vs_fly_first_greedy"] = output["savings_vs_greedy"]
         output["paths_by_tail"] = paths_by_tail
+        output["pruning_method"] = ("same-tail-flight-set-min-delay-cost"
+                                    if prune_dominated_columns else "none")
+        output["enumeration_stats_by_tail"] = enumeration_stats_by_tail
+        output["raw_paths_explored"] = sum(
+            x["explored"] for x in enumeration_stats_by_tail.values())
         output["timing_seconds"] = {
             "parse": parsed - started,
             "enumeration": enumerated - parsed,
