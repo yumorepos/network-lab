@@ -33,6 +33,17 @@ jobs:
           python -m experiments.disruption_recovery.scalability \
             --cases 1 --sizes 14 --path-cap 15000 --wall-seconds 6 \
             --output recovery_scalability_stress_14.json
+      - name: Controlled factor audit at eight flights (same seeded routes)
+        run: |
+          python -m experiments.disruption_recovery.scalability \
+            --cases 1 --sizes 8 --tails 3 --delay-choices 6 \
+            --path-cap 15000 --wall-seconds 6 --output recovery_factor_8_3tails_6delays.json
+          python -m experiments.disruption_recovery.scalability \
+            --cases 1 --sizes 8 --tails 2 --delay-choices 3 \
+            --path-cap 15000 --wall-seconds 6 --output recovery_factor_8_2tails_3delays.json
+          python -m experiments.disruption_recovery.scalability \
+            --cases 1 --sizes 8 --tails 3 --delay-choices 3 \
+            --path-cap 15000 --wall-seconds 6 --output recovery_factor_8_3tails_3delays.json
       - name: Retain source-free aggregate evidence for review
         if: always()
         uses: actions/upload-artifact@v4
@@ -41,5 +52,8 @@ jobs:
           path: |
             recovery_scalability_v1.json
             recovery_scalability_stress_14.json
+            recovery_factor_8_3tails_6delays.json
+            recovery_factor_8_2tails_3delays.json
+            recovery_factor_8_3tails_3delays.json
           if-no-files-found: warn
           retention-days: 7
