@@ -173,3 +173,48 @@ def test_paired_study_does_not_claim_parity_when_both_are_capped():
     assert result["summary"]["both_certified_objective_equal"] == 0
     assert not result["rows"][0]["objective_parity_checked"]
     assert "milp_objective" not in result["rows"][0]["pruned"]
+
+
+def test_later_cheaper_order_replaces_earlier_expensive_column():
+    # Same three-flight coverage via two *different actual departure orders*.
+    # DFS first finds F1→F3→F2 (F2 incurs large delay), then F2→F3→F1
+    # (only F1 incurs a small passenger-weighted delay). The latter must win.
+    data = {
+        "tails": [{"id": "T", "location": "AAA", "available": 0}],
+        "flights": [
+            {"id": "F1", "origin": "AAA", "destination": "BBB",
+             "departure": 0, "duration": 10, "passengers": 1,
+             "cancel_cost": 10000},
+            {"id": "F2", "origin": "AAA", "destination": "BBB",
+             "departure": 20, "duration": 10, "passengers": 100,
+             "cancel_cost": 10000},
+            {"id": "F3", "origin": "BBB", "destination": "AAA",
+             "departure": 40, "duration": 10, "passengers": 1,
+             "cancel_cost": 10000},
+        ],
+        "turn_minutes": 0, "delay_options_minutes": [0, 30, 60],
+        "delay_cost_per_passenger_minute": 1.0,
+    }
+    flights, tails, turn, delays, price = parse_scenario(data)
+    control = enumerate_paths(flights, tails[0], turn, delays, price)
+    stats = {}
+    reduced = enumerate_paths(flights, tails[0], turn, delays, price,
+                              prune_dominated_columns=True, stats=stats)
+    covered_all = frozenset({"F1", "F2", "F3"})
+    costs = [cost for path, cost in control
+             if frozenset(fid for fid, _ in path) == covered_all]
+    kept = [cost for path, cost in reduced
+            if frozenset(fid for fid, _ in path) == covered_all]
+    assert len(costs) > 1 and kept == [min(costs)] == [60.0]
+    assert stats["cheaper_replacements"] > 0
+    assert optimize(data)["objective"] == optimize(
+        data, prune_dominated_columns=True)["objective"] == 60.0
+
+
+@pytest.mark.parametrize("index", range(30))
+def test_all_frozen_five_flight_baseline_objectives_preserved_by_pruning(index):
+    data = scenario(index)
+    full = optimize(data)
+    pruned = optimize(data, prune_dominated_columns=True, profile=True)
+    assert pruned["objective"] == full["objective"]
+    assert pruned["paths_considered"] <= full["paths_considered"]
