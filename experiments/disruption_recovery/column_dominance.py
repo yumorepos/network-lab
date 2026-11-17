@@ -34,12 +34,19 @@ def run_study(*, path_cap: int = 15000, raw_visit_cap: int = 250000,
     rows = []
     for size, topology, index in grid:
         data = scaled_scenario(index, size, topology=topology, seed=seed)
-        original = run_isolated(data, path_cap=path_cap,
-                                wall_seconds=wall_seconds, prune_columns=False,
+        # Alternate method order to reduce systematic cache/startup bias.
+        # It is still a small descriptive microbenchmark, not speedup proof.
+        pruned_first = (index + int(topology == "distributed")) % 2 == 1
+        def evaluate(flag: bool):
+            return run_isolated(data, path_cap=path_cap,
+                                wall_seconds=wall_seconds, prune_columns=flag,
                                 raw_visit_cap=raw_visit_cap)
-        pruned = run_isolated(data, path_cap=path_cap,
-                              wall_seconds=wall_seconds, prune_columns=True,
-                              raw_visit_cap=raw_visit_cap)
+        if pruned_first:
+            pruned = evaluate(True)
+            original = evaluate(False)
+        else:
+            original = evaluate(False)
+            pruned = evaluate(True)
         if original["status"] == "ERROR" or pruned["status"] == "ERROR":
             raise RuntimeError(f"Unexpected execution error: {size}/{topology}/{index}")
         both = original["status"] == pruned["status"] == "OPTIMAL"
@@ -58,6 +65,7 @@ def run_study(*, path_cap: int = 15000, raw_visit_cap: int = 250000,
         rows.append({
             "flights": size, "topology": topology, "case_index": index,
             "scenario_sha256": hash_scenario(data),
+            "execution_order": ("pruned_first" if pruned_first else "original_first"),
             "objective_parity_checked": both,
             "original": original, "pruned": pruned,
         })
@@ -88,6 +96,10 @@ def run_study(*, path_cap: int = 15000, raw_visit_cap: int = 250000,
                         "platform": platform.platform()},
         "summary": {
             "attempted_pairs": len(rows),
+            "first_method_counts": {
+                "original": sum(r["execution_order"] == "original_first" for r in rows),
+                "pruned": sum(r["execution_order"] == "pruned_first" for r in rows),
+            },
             "both_certified_objective_equal": len(both),
             "original_statuses": status_count("original"),
             "pruned_statuses": status_count("pruned"),
