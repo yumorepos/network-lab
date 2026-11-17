@@ -1,6 +1,6 @@
 # Verified bounded recovery MILP scaling experiment — 2026-11-16
 
-**Status:** Reproducible *synthetic* performance audit, **not** an airline-scale optimizer claim. Source and CI evidence: [GitHub Actions recovery scaling run #43987232474](https://github.com/yumorepos/network-lab/actions/runs/43987232474) (both the ten-case primary grid and the additional two-case 14-flight stress grid passed their execution/validation gates). The benchmark keeps timeout and capped outcomes **visible rather than recoding them as solutions**. The repo-wide test workflow for the same research commit also passed. The final PR may include one additional test-only regression commit.
+**Status:** Reproducible *synthetic* performance audit, **not** an airline-scale optimizer claim. Source and CI evidence: [GitHub Actions recovery scaling run #43988045914](https://github.com/yumorepos/network-lab/actions/runs/43988045914) (ten primary cases, two 14-flight stress cases, and six controlled aircraft/delay factor cases all passed their execution/validation gates). The benchmark keeps timeout and capped outcomes **visible rather than recoding them as solutions**. The repo-wide test workflow for the same research commit also passed. The final PR may include one additional test-only regression commit.
 
 ## Baseline preservation
 
@@ -22,9 +22,9 @@ Experimental host from the CI artifact: **Ubuntu Linux x86_64, Python 3.11.18, S
 
 | Synthetic flights | Attempted | Certified optimal | Other statuses | Median enumerated paths, solved only | Median full optimizer time, solved only | Median process peak RSS, solved only |
 | --- | ---: | ---: | --- | ---: | ---: | ---: |
-| 5 | 2 | 2 | None | **131.5** | **0.0062 s** | **91.1 MiB** |
-| 8 | 4 | 4 | None | **768** | **0.0166 s** | **92.3 MiB** |
-| 11 | 4 | 4 | None | **6,947** | **0.1291 s** | **104.8 MiB** |
+| 5 | 2 | 2 | None | **131.5** | **0.0057 s** | **91.0 MiB** |
+| 8 | 4 | 4 | None | **768** | **0.0169 s** | **92.3 MiB** |
+| 11 | 4 | 4 | None | **6,947** | **0.1300 s** | **104.8 MiB** |
 
 **Important:** only 2 or 4 samples per size are available. These are descriptive benchmark medians, not estimates of a growth rate, confidence intervals, or typical performance at arbitrary scale.
 
@@ -50,18 +50,31 @@ A second bounded run used **one** fixed-seed scenario in each topology, otherwis
 | Synthetic scenario | Outcome | Paths / evidence | Interpretation |
 | --- | --- | --- | --- |
 | 14 flights, connected motif | **PATH_CAP** | 15,001st path generated for a single tail | Exact enumeration **aborted intentionally**; no certified optimization objective or solver comparison |
-| 14 flights, distributed motif | **OPTIMAL** | 12,986 paths across tails; ~0.235 s inside optimizer | Feasible certified finite-model optimum, with cost-aware greedy 1,634.50 vs MILP 1,478.00 illustrative units |
+| 14 flights, distributed motif | **OPTIMAL** | 12,986 paths across tails; ~0.239 s inside optimizer | Feasible certified finite-model optimum, with cost-aware greedy 1,634.50 vs MILP 1,478.00 illustrative units |
 
 This is a *constructive failure-mode result*. Different graph connectivity, timing, and delay choices produce different feasible path growth. **It is not a universal 14-flight threshold**, and the ceiling of 14 flights is still an explicit model input bound.
+
+## Controlled aircraft-count and delay-menu factor audit (8 flights)
+
+The benchmark also exercises the originally approved sensitivity axes instead of merely making them configurable. These are **six additional** fixed-seed `case_index=0` runs plus the two matching primary-grid baselines. Both artificial connectivity patterns use **exactly the same eight generated flights, departures and penalties** within each topology; only the number of available aircraft or the discrete delay-choice menu changes.
+
+| Network pattern | Two tails, six delays (primary baseline) | Three tails, six delays | Two tails, three delays | Three tails, three delays |
+| --- | ---: | ---: | ---: | ---: |
+| Connected routes | 356 paths | 686 paths | 66 paths | 114 paths |
+| Distributed routes | 586 paths | 1,088 paths | 96 paths | 155 paths |
+
+All eight factor scenarios (including the two already in the primary grid) returned **certified finite optima**. On these fixed inputs, adding an aircraft increased the number of feasible tail paths while reducing the delay menu from six to three reduced that path count substantially. This is a controlled diagnostic of **search-space sensitivity**, not a general scaling law.
+
+The new three-tail scenarios may have very different cancellation and objective values because an additional aircraft changes feasibility. The three-delay scenarios use a **different finite decision menu**. Therefore costs across factor cells are **not a measure of algorithmic speedup, monetary savings, or an operational intervention**. Each cell's MILP and cost-aware greedy are compared only *within* that cell, under identical assumptions.
 
 ## What the timings do and do not establish
 
 The path count rises sharply within this particular case family. However, **path enumeration is not yet demonstrated to be the dominant *time* bottleneck on solved cases**. For example, in the 11-flight connected case with 17,572 paths, GitHub Actions measured approximately:
 
-- Enumeration: **0.027 s**
-- Sparse model construction: **0.105 s**
-- HiGHS solution: **0.198 s**
-- Full instrumented optimization: **0.337 s**
+- Enumeration: **0.028 s**
+- Sparse model construction: **0.106 s**
+- HiGHS solution: **0.201 s**
+- Full instrumented optimization: **0.342 s**
 
 Thus solver time was largest in that measured instance, construction was material, and enumeration produced the combinatorial work that feeds both. In a 14-flight connected case the path cap prevented construction/solving entirely. Both observations matter.
 
